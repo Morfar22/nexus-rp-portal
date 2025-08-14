@@ -222,7 +222,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Email HTML length:', html.length);
 
     const emailResponse = await resendClient.emails.send({
-      from: "FiveM Server <onboarding@resend.dev>",
+      from: "Gaming Community <noreply@mmorfar.dk>",
       to: [toEmail],
       subject,
       html,
