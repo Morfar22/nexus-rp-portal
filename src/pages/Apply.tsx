@@ -383,36 +383,41 @@ const Apply = () => {
                           <p className="text-xs text-muted-foreground">Selected type: {selectedApplicationType.name}</p>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-6">
-                          {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => (
-                            <div key={field.name} className="space-y-2">
-                              <Label htmlFor={field.name} className="text-foreground">
-                                {field.label}
-                                {field.required && <span className="text-red-500 ml-1">*</span>}
-                              </Label>
-                              
-                              {field.type === 'textarea' ? (
-                                <Textarea
-                                  id={field.name}
-                                  value={formData[field.name] || ''}
-                                  onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
-                                  placeholder={field.placeholder || ''}
-                                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
-                                  required={field.required}
-                                />
-                              ) : (
-                                <Input
-                                  id={field.name}
-                                  type={field.type}
-                                  value={formData[field.name] || ''}
-                                  onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
-                                  placeholder={field.placeholder || ''}
-                                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                                  required={field.required}
-                                  min={field.type === 'number' ? '16' : undefined}
-                                />
-                              )}
-                            </div>
-                          ))}
+                          {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => {
+                            // Create unique field key to avoid conflicts with duplicate names
+                            const fieldKey = `${field.name}_${index}`;
+                            
+                            return (
+                              <div key={fieldKey} className="space-y-2">
+                                <Label htmlFor={fieldKey} className="text-foreground">
+                                  {field.label}
+                                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                                </Label>
+                                
+                                {field.type === 'textarea' ? (
+                                  <Textarea
+                                    id={fieldKey}
+                                    value={formData[fieldKey] || ''}
+                                    onChange={(e) => setFormData({...formData, [fieldKey]: e.target.value})}
+                                    placeholder={field.placeholder || ''}
+                                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
+                                    required={field.required}
+                                  />
+                                ) : (
+                                  <Input
+                                    id={fieldKey}
+                                    type={field.type}
+                                    value={formData[fieldKey] || ''}
+                                    onChange={(e) => setFormData({...formData, [fieldKey]: e.target.value})}
+                                    placeholder={field.placeholder || ''}
+                                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                                    required={field.required}
+                                    min={field.type === 'number' ? '16' : undefined}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
 
                           <div className="flex items-center space-x-2">
                             <input
