@@ -41,7 +41,9 @@ const StaffPanel = () => {
   const [applicationSettings, setApplicationSettings] = useState({
     autoApprove: false,
     emailNotifications: true,
-    discordIntegration: false
+    discordIntegration: false,
+    discordWebhook: "",
+    discordChannel: ""
   });
 
   const [systemStatus, setSystemStatus] = useState({
@@ -50,6 +52,11 @@ const StaffPanel = () => {
     serverHealth: "healthy",
     lastBackup: "2 hours ago"
   });
+
+  const [showLogsDialog, setShowLogsDialog] = useState(false);
+  const [showDiscordDialog, setShowDiscordDialog] = useState(false);
+  const [systemLogs, setSystemLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -531,6 +538,100 @@ const StaffPanel = () => {
         ...prev,
         database: "offline"
       }));
+    }
+  };
+
+  // Discord integration
+  const testDiscordWebhook = async () => {
+    if (!applicationSettings.discordWebhook) {
+      toast({
+        title: "Error",
+        description: "Please enter a Discord webhook URL first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(applicationSettings.discordWebhook, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: '🎮 **FiveM RP Server** - Discord integration test successful!',
+          embeds: [{
+            title: 'System Test',
+            description: 'Discord integration is working properly.',
+            color: 0x00ff00,
+            timestamp: new Date().toISOString()
+          }]
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Discord webhook test successful!",
+        });
+      } else {
+        throw new Error('Webhook test failed');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Discord webhook test failed. Check your webhook URL.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchSystemLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      // For now, use mock logs since we can't directly access postgres logs from client
+      // In a real app, you'd have a backend endpoint to fetch logs
+      setSystemLogs([
+        {
+          id: '1',
+          timestamp: new Date().toISOString(),
+          level: 'INFO',
+          message: 'Application started successfully',
+          source: 'system'
+        },
+        {
+          id: '2',
+          timestamp: new Date(Date.now() - 60000).toISOString(),
+          level: 'WARNING',
+          message: 'High memory usage detected',
+          source: 'monitor'
+        },
+        {
+          id: '3',
+          timestamp: new Date(Date.now() - 120000).toISOString(),
+          level: 'ERROR',
+          message: 'Database connection timeout',
+          source: 'database'
+        },
+        {
+          id: '4',
+          timestamp: new Date(Date.now() - 180000).toISOString(),
+          level: 'INFO',
+          message: 'User authentication successful',
+          source: 'auth'
+        },
+        {
+          id: '5',
+          timestamp: new Date(Date.now() - 240000).toISOString(),
+          level: 'ERROR',
+          message: 'Failed to send notification email',
+          source: 'email'
+        }
+      ]);
+    } catch (error: any) {
+      console.error('Error fetching logs:', error);
+    } finally {
+      setLoadingLogs(false);
     }
   };
 
@@ -1219,14 +1320,24 @@ const StaffPanel = () => {
                       <Label className="text-sm font-medium">Discord integration</Label>
                       <p className="text-xs text-muted-foreground">Post updates to Discord channel</p>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => toggleApplicationSetting('discordIntegration')}
-                      className={`border-gaming-border ${applicationSettings.discordIntegration ? 'bg-neon-purple/20 text-neon-purple' : ''}`}
-                    >
-                      {applicationSettings.discordIntegration ? 'Enabled' : 'Disabled'}
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowDiscordDialog(true)}
+                        className="border-gaming-border"
+                      >
+                        Configure
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => toggleApplicationSetting('discordIntegration')}
+                        className={`border-gaming-border ${applicationSettings.discordIntegration ? 'bg-neon-purple/20 text-neon-purple' : ''}`}
+                      >
+                        {applicationSettings.discordIntegration ? 'Enabled' : 'Disabled'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 <Button 
@@ -1310,6 +1421,10 @@ const StaffPanel = () => {
                   </Button>
                   <Button 
                     variant="outline" 
+                    onClick={() => {
+                      setShowLogsDialog(true);
+                      fetchSystemLogs();
+                    }}
                     className="flex-1 border-gaming-border hover:bg-gaming-darker"
                   >
                     View Logs
@@ -1584,6 +1699,135 @@ const StaffPanel = () => {
                   Add Staff Member
                 </Button>
               </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discord Configuration Dialog */}
+      <Dialog open={showDiscordDialog} onOpenChange={setShowDiscordDialog}>
+        <DialogContent className="bg-gaming-card border-gaming-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Discord Integration Setup</DialogTitle>
+            <DialogDescription>
+              Configure Discord webhook to receive server notifications
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="discord-webhook">Discord Webhook URL</Label>
+              <input
+                id="discord-webhook"
+                type="url"
+                value={applicationSettings.discordWebhook}
+                onChange={(e) => setApplicationSettings(prev => ({...prev, discordWebhook: e.target.value}))}
+                className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
+                placeholder="https://discord.com/api/webhooks/..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="discord-channel">Channel Name (Optional)</Label>
+              <input
+                id="discord-channel"
+                value={applicationSettings.discordChannel}
+                onChange={(e) => setApplicationSettings(prev => ({...prev, discordChannel: e.target.value}))}
+                className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
+                placeholder="#applications"
+              />
+            </div>
+            <div className="flex space-x-2 pt-4">
+              <Button 
+                onClick={testDiscordWebhook}
+                variant="outline"
+                className="flex-1 border-gaming-border"
+                disabled={!applicationSettings.discordWebhook}
+              >
+                Test Connection
+              </Button>
+              <Button 
+                onClick={() => {
+                  handleSaveApplicationSettings();
+                  setShowDiscordDialog(false);
+                }}
+                className="flex-1 bg-neon-purple hover:bg-neon-purple/80"
+              >
+                Save Settings
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* System Logs Dialog */}
+      <Dialog open={showLogsDialog} onOpenChange={setShowLogsDialog}>
+        <DialogContent className="bg-gaming-card border-gaming-border max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">System Logs</DialogTitle>
+            <DialogDescription>
+              Recent system events and error logs
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={fetchSystemLogs}
+                  variant="outline"
+                  size="sm"
+                  className="border-gaming-border"
+                  disabled={loadingLogs}
+                >
+                  {loadingLogs ? 'Loading...' : 'Refresh'}
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="border-gaming-border"
+                >
+                  Export Logs
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {systemLogs.length} entries
+              </div>
+            </div>
+            
+            <div className="bg-gaming-dark rounded-lg border border-gaming-border p-4 max-h-96 overflow-y-auto">
+              {loadingLogs ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neon-purple mx-auto"></div>
+                  <p className="text-muted-foreground mt-2">Loading logs...</p>
+                </div>
+              ) : systemLogs.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No logs available</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {systemLogs.map((log) => (
+                    <div key={log.id} className="flex items-start space-x-3 p-2 rounded hover:bg-gaming-darker">
+                      <Badge 
+                        variant="outline"
+                        className={`text-xs ${
+                          log.level === 'ERROR' ? 'border-red-500 text-red-500' :
+                          log.level === 'WARNING' ? 'border-yellow-500 text-yellow-500' :
+                          'border-green-500 text-green-500'
+                        }`}
+                      >
+                        {log.level}
+                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground">{log.message}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(log.timestamp).toLocaleString()} • {log.source}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
