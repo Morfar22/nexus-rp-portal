@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -105,10 +106,30 @@ const Apply = () => {
     }
   };
 
+  const handleApplicationTypeChange = (applicationTypeId: string) => {
+    const selectedType = applicationTypes.find(type => type.id === applicationTypeId);
+    if (selectedType) {
+      setSelectedApplicationType(selectedType);
+      // Reset form data based on new application type
+      const newFormData: Record<string, any> = {};
+      const formFields = selectedType.form_fields as any[];
+      formFields?.forEach((field: any) => {
+        newFormData[field.name] = field.type === 'number' ? 0 : '';
+      });
+      setFormData(newFormData);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    if (!selectedApplicationType) {
+      setError("Please select an application type");
+      setIsLoading(false);
+      return;
+    }
 
     if (!user) {
       setError("You must be logged in to submit an application");
@@ -261,120 +282,151 @@ const Apply = () => {
 
             <TabsContent value="apply" className="space-y-6">
               <div className="max-w-2xl mx-auto">
-
-          {/* Show existing application status if exists */}
-          {existingApplication && (
-            <Card className="mb-6 p-6 bg-gaming-card border-gaming-border">
-              <div className="flex items-center space-x-3 mb-4">
-                {getStatusIcon(existingApplication.status)}
-                <h3 className="text-lg font-semibold text-foreground">Application Status</h3>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(existingApplication.status)}`}>
-                    {existingApplication.status.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Submitted:</span>
-                  <span className="text-foreground">
-                    {new Date(existingApplication.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                {existingApplication.review_notes && (
-                  <div className="mt-4 p-4 bg-gaming-dark rounded-lg border border-gaming-border">
-                    <h4 className="font-medium text-foreground mb-2">Staff Notes:</h4>
-                    <p className="text-muted-foreground">{existingApplication.review_notes}</p>
-                  </div>
+                {/* Show existing application status if exists */}
+                {existingApplication && (
+                  <Card className="mb-6 p-6 bg-gaming-card border-gaming-border">
+                    <div className="flex items-center space-x-3 mb-4">
+                      {getStatusIcon(existingApplication.status)}
+                      <h3 className="text-lg font-semibold text-foreground">Application Status</h3>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Status:</span>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(existingApplication.status)}`}>
+                          {existingApplication.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Submitted:</span>
+                        <span className="text-foreground">
+                          {new Date(existingApplication.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {existingApplication.review_notes && (
+                        <div className="mt-4 p-4 bg-gaming-dark rounded-lg border border-gaming-border">
+                          <h4 className="font-medium text-foreground mb-2">Staff Notes:</h4>
+                          <p className="text-muted-foreground">{existingApplication.review_notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
                 )}
-              </div>
-            </Card>
-          )}
 
-          {/* Show form only if no approved application exists */}
-          {(!existingApplication || existingApplication.status === 'denied') && (
-            <Card className="p-8 bg-gaming-card border-gaming-border shadow-gaming">
-              {error && (
-                <Alert className="mb-6 border-destructive/50 bg-destructive/10">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => (
-                  <div key={field.name} className="space-y-2">
-                    <Label htmlFor={field.name} className="text-foreground">
-                      {field.label}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
-                    </Label>
-                    
-                    {field.type === 'textarea' ? (
-                      <Textarea
-                        id={field.name}
-                        value={formData[field.name] || ''}
-                        onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
-                        placeholder={field.placeholder || ''}
-                        className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
-                        required={field.required}
-                      />
-                    ) : (
-                      <Input
-                        id={field.name}
-                        type={field.type}
-                        value={formData[field.name] || ''}
-                        onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
-                        placeholder={field.placeholder || ''}
-                        className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                        required={field.required}
-                        min={field.type === 'number' ? '16' : undefined}
-                      />
+                {/* Show form only if no approved application exists */}
+                {(!existingApplication || existingApplication.status === 'denied') && (
+                  <Card className="p-8 bg-gaming-card border-gaming-border shadow-gaming">
+                    {error && (
+                      <Alert className="mb-6 border-destructive/50 bg-destructive/10">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
                     )}
-                  </div>
-                ))}
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="rulesAgreed"
-                    checked={rulesAgreed}
-                    onChange={(e) => setRulesAgreed(e.target.checked)}
-                    className="rounded border-gaming-border"
-                    required
-                  />
-                  <Label htmlFor="rulesAgreed" className="text-sm">
-                    I have read and agree to follow all server rules
-                  </Label>
-                </div>
+                    {/* Application Type Selector */}
+                    {applicationTypes.length > 1 && (
+                      <div className="space-y-2 mb-6">
+                        <Label htmlFor="application-type" className="text-foreground">Application Type</Label>
+                        <Select value={selectedApplicationType?.id || ""} onValueChange={handleApplicationTypeChange}>
+                          <SelectTrigger className="bg-gaming-dark border-gaming-border focus:border-neon-purple">
+                            <SelectValue placeholder="Select an application type" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gaming-card border-gaming-border">
+                            {applicationTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id} className="hover:bg-gaming-dark">
+                                <div>
+                                  <div className="font-medium">{type.name}</div>
+                                  {type.description && (
+                                    <div className="text-sm text-muted-foreground">{type.description}</div>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
-                <Button 
-                  type="submit" 
-                  variant="hero" 
-                  size="lg" 
-                  className="w-full" 
-                  disabled={isLoading || !selectedApplicationType}
-                >
-                  {isLoading ? "Submitting..." : "Submit Application"}
-                </Button>
-              </form>
-          </Card>
-          )}
+                    {!selectedApplicationType && applicationTypes.length > 1 && (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Please select an application type to continue</p>
+                      </div>
+                    )}
 
-          {existingApplication?.status === 'approved' && (
-            <Card className="p-6 bg-gaming-card border-gaming-border">
-              <div className="text-center">
-                <CheckCircle className="h-12 w-12 text-neon-green mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">Application Approved!</h3>
-                <p className="text-muted-foreground mb-4">
-                  Congratulations! Your application has been approved. You can now join the server.
-                </p>
-                <Button variant="neon" size="lg">
-                  Join Server
-                </Button>
-              </div>
-            </Card>
-           )}
+                    {selectedApplicationType && (
+                      <form onSubmit={handleSubmit} className="space-y-6">
+                        {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => (
+                          <div key={field.name} className="space-y-2">
+                            <Label htmlFor={field.name} className="text-foreground">
+                              {field.label}
+                              {field.required && <span className="text-red-500 ml-1">*</span>}
+                            </Label>
+                            
+                            {field.type === 'textarea' ? (
+                              <Textarea
+                                id={field.name}
+                                value={formData[field.name] || ''}
+                                onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                                placeholder={field.placeholder || ''}
+                                className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
+                                required={field.required}
+                              />
+                            ) : (
+                              <Input
+                                id={field.name}
+                                type={field.type}
+                                value={formData[field.name] || ''}
+                                onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                                placeholder={field.placeholder || ''}
+                                className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                                required={field.required}
+                                min={field.type === 'number' ? '16' : undefined}
+                              />
+                            )}
+                          </div>
+                        ))}
+
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="rulesAgreed"
+                            checked={rulesAgreed}
+                            onChange={(e) => setRulesAgreed(e.target.checked)}
+                            className="rounded border-gaming-border"
+                            required
+                          />
+                          <Label htmlFor="rulesAgreed" className="text-sm">
+                            I have read and agree to follow all server rules
+                          </Label>
+                        </div>
+
+                        <Button 
+                          type="submit" 
+                          variant="hero" 
+                          size="lg" 
+                          className="w-full" 
+                          disabled={isLoading || !selectedApplicationType}
+                        >
+                          {isLoading ? "Submitting..." : "Submit Application"}
+                        </Button>
+                      </form>
+                    )}
+                  </Card>
+                )}
+
+                {existingApplication?.status === 'approved' && (
+                  <Card className="p-6 bg-gaming-card border-gaming-border">
+                    <div className="text-center">
+                      <CheckCircle className="h-12 w-12 text-neon-green mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-foreground mb-2">Application Approved!</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Congratulations! Your application has been approved. You can now join the server.
+                      </p>
+                      <Button variant="neon" size="lg">
+                        Join Server
+                      </Button>
+                    </div>
+                  </Card>
+                )}
               </div>
             </TabsContent>
 
