@@ -385,6 +385,59 @@ const StaffPanel = () => {
     }
   };
 
+  const handleApplicationAction = async (applicationId: string, action: 'approved' | 'denied' | 'under_review') => {
+    if (!user) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Update application status
+      const { error: updateError } = await supabase
+        .from('applications')
+        .update({
+          status: action,
+          reviewed_by: user.id,
+          review_notes: reviewNotes || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', applicationId);
+      
+      if (updateError) throw updateError;
+      
+      // Log the action
+      const { error: logError } = await supabase
+        .from('application_actions')
+        .insert({
+          application_id: applicationId,
+          staff_id: user.id,
+          action: action,
+          notes: reviewNotes || null
+        });
+      
+      if (logError) throw logError;
+      
+      toast({
+        title: "Success",
+        description: `Application ${action.replace('_', ' ')} successfully`,
+      });
+      
+      // Reset review notes
+      setReviewNotes("");
+      setSelectedApplication(null);
+      
+      // Refresh applications
+      fetchApplications();
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update application",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const pendingApplications = applications.filter(app => app.status === 'pending');
   console.log('All applications:', applications);
   console.log('Pending applications:', pendingApplications);
@@ -547,7 +600,7 @@ const StaffPanel = () => {
                               <div className="flex space-x-2 pt-4">
                                 <Button 
                                   variant="neon" 
-                                  onClick={() => {/* Approve logic */}}
+                                  onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'approved')}
                                   disabled={isSubmitting}
                                   className="flex-1"
                                 >
@@ -556,7 +609,7 @@ const StaffPanel = () => {
                                 </Button>
                                 <Button 
                                   variant="outline"
-                                  onClick={() => {/* Under review logic */}}
+                                  onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'under_review')}
                                   disabled={isSubmitting}
                                   className="flex-1 hover:border-neon-blue/50"
                                 >
@@ -565,7 +618,7 @@ const StaffPanel = () => {
                                 </Button>
                                 <Button 
                                   variant="destructive" 
-                                  onClick={() => {/* Deny logic */}}
+                                  onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'denied')}
                                   disabled={isSubmitting}
                                   className="flex-1"
                                 >
