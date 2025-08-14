@@ -29,6 +29,9 @@ const Navbar = () => {
           <Link to="/map" className="text-foreground hover:text-neon-purple transition-colors">
             Live Map
           </Link>
+          <Link to="/team" className="text-foreground hover:text-neon-purple transition-colors">
+            Our Team
+          </Link>
           <Link to="/staff" className="text-foreground hover:text-neon-purple transition-colors">
             Staff Panel
           </Link>

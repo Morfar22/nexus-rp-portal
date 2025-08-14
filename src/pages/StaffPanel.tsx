@@ -33,9 +33,11 @@ const StaffPanel = () => {
   const [recentActions, setRecentActions] = useState<any[]>([]);
   const [rules, setRules] = useState<any[]>([]);
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
   const [serverSettings, setServerSettings] = useState<any>({});
+  const [serverJoinLink, setServerJoinLink] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -46,6 +48,17 @@ const StaffPanel = () => {
   const [showStaffDialog, setShowStaffDialog] = useState(false);
   const [newStaffEmail, setNewStaffEmail] = useState("");
   const [newStaffRole, setNewStaffRole] = useState("moderator");
+  
+  // Team Member Management
+  const [newTeamMember, setNewTeamMember] = useState({
+    name: "",
+    role: "",
+    bio: "",
+    image_url: "",
+    order_index: 0
+  });
+  const [showTeamMemberDialog, setShowTeamMemberDialog] = useState(false);
+  const [editingTeamMember, setEditingTeamMember] = useState<any>(null);
   
   // Application Type Management
   const [newApplicationType, setNewApplicationType] = useState({
@@ -115,12 +128,20 @@ const StaffPanel = () => {
 
       console.log('Final processed staff members:', processedStaffMembers);
 
-      const [applicationsRes, rulesRes, typesRes, settingsRes] = await Promise.all([
+      const [applicationsRes, rulesRes, typesRes, settingsRes, teamMembersRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
         supabase.from('rules').select('*').order('category', { ascending: true }),
         supabase.from('application_types').select('*'),
-        supabase.from('server_settings').select('*').single()
+        supabase.from('server_settings').select('*').maybeSingle(),
+        supabase.from('team_members').select('*').order('order_index', { ascending: true })
       ]);
+
+      // Get server join link from settings
+      const joinLinkSetting = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'server_join_link')
+        .maybeSingle();
 
       if (applicationsRes.data) setApplications(applicationsRes.data);
       if (rulesRes.data) setRules(rulesRes.data);
@@ -130,6 +151,8 @@ const StaffPanel = () => {
       }
       if (typesRes.data) setApplicationTypes(typesRes.data);
       if (settingsRes.data) setServerSettings(settingsRes.data);
+      if (teamMembersRes.data) setTeamMembers(teamMembersRes.data);
+      if (joinLinkSetting.data) setServerJoinLink(joinLinkSetting.data.setting_value as string);
       
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1986,6 +2009,304 @@ const StaffPanel = () => {
                         handleSettingUpdate('logging_settings', newSettings);
                       }}
                     />
+                  </div>
+                </div>
+              </Card>
+              
+              {/* Server Join Link Management */}
+              <Card className="bg-gaming-card border-gaming-border">
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
+                    Server Join Link
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="joinLink" className="text-foreground">
+                        Server Join Link
+                      </Label>
+                      <div className="flex space-x-2 mt-2">
+                        <Input
+                          id="joinLink"
+                          value={serverJoinLink}
+                          onChange={(e) => setServerJoinLink(e.target.value)}
+                          placeholder="Enter server join link (e.g., fivem://connect/ip:port)"
+                          className="bg-gaming-dark border-gaming-border text-foreground"
+                        />
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const { error } = await supabase
+                                .from('server_settings')
+                                .upsert({
+                                  setting_key: 'server_join_link',
+                                  setting_value: serverJoinLink
+                                });
+                              
+                              if (error) throw error;
+                              
+                              toast({
+                                title: "Success",
+                                description: "Server join link updated successfully",
+                              });
+                            } catch (error) {
+                              console.error('Error updating join link:', error);
+                              toast({
+                                title: "Error",
+                                description: "Failed to update server join link",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="bg-neon-purple hover:bg-neon-purple/80"
+                        >
+                          Save
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        This link will be used for "Connect Now" buttons throughout the site
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            
+            {/* Team Members Management */}
+            <div className="space-y-6">
+              <Card className="bg-gaming-card border-gaming-border">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Team Members
+                    </h3>
+                    <Dialog open={showTeamMemberDialog} onOpenChange={setShowTeamMemberDialog}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-neon-purple hover:bg-neon-purple/80">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Team Member
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-gaming-card border-gaming-border">
+                        <DialogHeader>
+                          <DialogTitle className="text-foreground">
+                            {editingTeamMember ? 'Edit Team Member' : 'Add Team Member'}
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="memberName" className="text-foreground">Name</Label>
+                            <Input
+                              id="memberName"
+                              value={newTeamMember.name}
+                              onChange={(e) => setNewTeamMember({ ...newTeamMember, name: e.target.value })}
+                              className="bg-gaming-dark border-gaming-border text-foreground"
+                              placeholder="Enter team member name"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="memberRole" className="text-foreground">Role</Label>
+                            <Input
+                              id="memberRole"
+                              value={newTeamMember.role}
+                              onChange={(e) => setNewTeamMember({ ...newTeamMember, role: e.target.value })}
+                              className="bg-gaming-dark border-gaming-border text-foreground"
+                              placeholder="Enter role (e.g., Server Owner, Admin, Developer)"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="memberBio" className="text-foreground">Bio (Optional)</Label>
+                            <Textarea
+                              id="memberBio"
+                              value={newTeamMember.bio}
+                              onChange={(e) => setNewTeamMember({ ...newTeamMember, bio: e.target.value })}
+                              className="bg-gaming-dark border-gaming-border text-foreground"
+                              placeholder="Enter a short bio"
+                              rows={3}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="memberImage" className="text-foreground">Image URL</Label>
+                            <Input
+                              id="memberImage"
+                              value={newTeamMember.image_url}
+                              onChange={(e) => setNewTeamMember({ ...newTeamMember, image_url: e.target.value })}
+                              className="bg-gaming-dark border-gaming-border text-foreground"
+                              placeholder="Enter image URL (e.g., https://example.com/avatar.jpg)"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="memberOrder" className="text-foreground">Display Order</Label>
+                            <Input
+                              id="memberOrder"
+                              type="number"
+                              value={newTeamMember.order_index}
+                              onChange={(e) => setNewTeamMember({ ...newTeamMember, order_index: parseInt(e.target.value) || 0 })}
+                              className="bg-gaming-dark border-gaming-border text-foreground"
+                              placeholder="Enter display order (0 = first)"
+                            />
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              onClick={async () => {
+                                if (!newTeamMember.name || !newTeamMember.role) {
+                                  toast({
+                                    title: "Error",
+                                    description: "Please fill in name and role",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                
+                                try {
+                                  if (editingTeamMember) {
+                                    const { error } = await supabase
+                                      .from('team_members')
+                                      .update(newTeamMember)
+                                      .eq('id', editingTeamMember.id);
+                                    
+                                    if (error) throw error;
+                                    
+                                    toast({
+                                      title: "Success",
+                                      description: "Team member updated successfully",
+                                    });
+                                  } else {
+                                    const { error } = await supabase
+                                      .from('team_members')
+                                      .insert([newTeamMember]);
+                                    
+                                    if (error) throw error;
+                                    
+                                    toast({
+                                      title: "Success",
+                                      description: "Team member added successfully",
+                                    });
+                                  }
+                                  
+                                  setNewTeamMember({ name: "", role: "", bio: "", image_url: "", order_index: 0 });
+                                  setEditingTeamMember(null);
+                                  setShowTeamMemberDialog(false);
+                                  fetchData();
+                                } catch (error) {
+                                  console.error('Error saving team member:', error);
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to save team member",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                              className="flex-1 bg-neon-purple hover:bg-neon-purple/80"
+                            >
+                              {editingTeamMember ? 'Update' : 'Add'} Team Member
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setNewTeamMember({ name: "", role: "", bio: "", image_url: "", order_index: 0 });
+                                setEditingTeamMember(null);
+                                setShowTeamMemberDialog(false);
+                              }}
+                              className="border-gaming-border text-foreground hover:bg-gaming-dark"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {teamMembers.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-8">
+                        No team members added yet. Add team members to display on the Our Team page.
+                      </p>
+                    ) : (
+                      teamMembers.map((member) => (
+                        <div key={member.id} className="flex items-center justify-between p-4 bg-gaming-dark rounded-lg">
+                          <div className="flex items-center space-x-4">
+                            <div className="h-12 w-12 rounded-full bg-neon-purple/20 flex items-center justify-center">
+                              {member.image_url ? (
+                                <img src={member.image_url} alt={member.name} className="h-12 w-12 rounded-full object-cover" />
+                              ) : (
+                                <span className="text-neon-purple font-semibold">
+                                  {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">{member.name}</p>
+                              <p className="text-sm text-muted-foreground">{member.role}</p>
+                              <p className="text-xs text-muted-foreground">Order: {member.order_index}</p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setNewTeamMember(member);
+                                setEditingTeamMember(member);
+                                setShowTeamMemberDialog(true);
+                              }}
+                              className="border-gaming-border text-foreground hover:bg-gaming-dark"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="border-red-500 text-red-500 hover:bg-red-500/10">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-foreground">Remove Team Member</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-muted-foreground">
+                                    Are you sure you want to remove {member.name} from the team? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel className="border-gaming-border text-foreground hover:bg-gaming-dark">
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={async () => {
+                                      try {
+                                        const { error } = await supabase
+                                          .from('team_members')
+                                          .delete()
+                                          .eq('id', member.id);
+                                        
+                                        if (error) throw error;
+                                        
+                                        toast({
+                                          title: "Success",
+                                          description: "Team member removed successfully",
+                                        });
+                                        
+                                        fetchData();
+                                      } catch (error) {
+                                        console.error('Error removing team member:', error);
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to remove team member",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                    className="bg-red-500 hover:bg-red-600"
+                                  >
+                                    Remove
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </Card>
