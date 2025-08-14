@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +27,7 @@ const Apply = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [existingApplication, setExistingApplication] = useState<any>(null);
+  const [allApplications, setAllApplications] = useState<any[]>([]);
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
   const [selectedApplicationType, setSelectedApplicationType] = useState<any>(null);
   const [error, setError] = useState("");
@@ -54,6 +57,7 @@ const Apply = () => {
 
     fetchApplicationTypes();
     checkExistingApplication();
+    fetchAllUserApplications();
   }, [user]);
 
   const checkExistingApplication = async () => {
@@ -76,6 +80,27 @@ const Apply = () => {
       if (data) {
         setExistingApplication(data);
       }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const fetchAllUserApplications = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching applications:', error);
+        return;
+      }
+
+      setAllApplications(data || []);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -159,6 +184,7 @@ const Apply = () => {
       }
 
       setExistingApplication(data);
+      fetchAllUserApplications(); // Refresh the applications list
       toast({
         title: "Application Submitted!",
         description: "Your whitelist application has been sent to our staff team. You'll receive an email notification when it's reviewed.",
@@ -215,7 +241,7 @@ const Apply = () => {
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
               Whitelist Application
@@ -224,6 +250,15 @@ const Apply = () => {
               Join Dreamlight RP - The premier FiveM roleplay experience
             </p>
           </div>
+
+          <Tabs defaultValue="apply" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="apply">Apply</TabsTrigger>
+              <TabsTrigger value="applications">My Applications</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="apply" className="space-y-6">
+              <div className="max-w-2xl mx-auto">
 
           {/* Show existing application status if exists */}
           {existingApplication && (
@@ -394,7 +429,57 @@ const Apply = () => {
                 </Button>
               </div>
             </Card>
-          )}
+           )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="applications" className="space-y-6">
+              <Card className="p-6 bg-gaming-card border-gaming-border">
+                <h3 className="text-xl font-semibold text-foreground mb-4">My Applications</h3>
+                {allApplications.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No applications found.</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Steam Name</TableHead>
+                        <TableHead>Discord Tag</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Submitted</TableHead>
+                        <TableHead>Notes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allApplications.map((application) => (
+                        <TableRow key={application.id}>
+                          <TableCell className="font-medium">{application.steam_name}</TableCell>
+                          <TableCell>{application.discord_tag}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              {getStatusIcon(application.status)}
+                              <span className={`px-2 py-1 rounded text-xs font-medium border ${getStatusColor(application.status)}`}>
+                                {application.status.replace('_', ' ').toUpperCase()}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{new Date(application.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {application.review_notes ? (
+                              <div className="max-w-xs truncate" title={application.review_notes}>
+                                {application.review_notes}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
