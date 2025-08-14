@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,9 +6,53 @@ import Navbar from "@/components/Navbar";
 import ServerStats from "@/components/ServerStats";
 import { Link } from "react-router-dom";
 import { PlayCircle, Users, Shield, Map, Clock, Star } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-image.jpg";
 
 const Index = () => {
+  const [serverJoinLink, setServerJoinLink] = useState('');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchServerJoinLink();
+  }, []);
+
+  const fetchServerJoinLink = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'server_join_link')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching join link:', error);
+        return;
+      }
+
+      if (data) {
+        setServerJoinLink(data.setting_value as string);
+      }
+    } catch (error) {
+      console.error('Error fetching join link:', error);
+    }
+  };
+
+  const handleConnectNow = () => {
+    if (!serverJoinLink) {
+      toast({
+        title: "Server Join Link Not Available",
+        description: "The server join link has not been configured yet. Please contact staff.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Try to open the FiveM link
+    window.location.href = serverJoinLink;
+  };
+
   const features = [
     {
       icon: Users,
@@ -65,7 +110,12 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button variant="hero" size="lg" className="text-lg px-8">
+            <Button 
+              variant="hero" 
+              size="lg" 
+              className="text-lg px-8"
+              onClick={handleConnectNow}
+            >
               <PlayCircle className="h-5 w-5 mr-2" />
               Connect Now
             </Button>
