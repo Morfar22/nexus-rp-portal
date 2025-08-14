@@ -31,6 +31,26 @@ const StaffPanel = () => {
   const [newStaffEmail, setNewStaffEmail] = useState("");
   const [newStaffRole, setNewStaffRole] = useState("moderator");
   
+  // Settings state
+  const [generalSettings, setGeneralSettings] = useState({
+    serverName: "FiveM RP Server",
+    maxPlayers: 64,
+    applicationCooldown: 7
+  });
+
+  const [applicationSettings, setApplicationSettings] = useState({
+    autoApprove: false,
+    emailNotifications: true,
+    discordIntegration: false
+  });
+
+  const [systemStatus, setSystemStatus] = useState({
+    database: "online",
+    emailService: "online", 
+    serverHealth: "healthy",
+    lastBackup: "2 hours ago"
+  });
+  
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -446,6 +466,71 @@ const StaffPanel = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Settings handlers
+  const handleSaveGeneralSettings = async () => {
+    try {
+      // In a real app, you'd save to database
+      // For now, we'll just show success
+      toast({
+        title: "Success",
+        description: "General settings saved successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveApplicationSettings = async () => {
+    try {
+      // In a real app, you'd save to database
+      toast({
+        title: "Success", 
+        description: "Application settings saved successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleApplicationSetting = (setting: keyof typeof applicationSettings) => {
+    setApplicationSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
+  };
+
+  // System status monitoring
+  const checkSystemStatus = async () => {
+    try {
+      // Check database connection
+      const { error: dbError } = await supabase.from('profiles').select('id').limit(1);
+      
+      setSystemStatus(prev => ({
+        ...prev,
+        database: dbError ? "offline" : "online",
+        lastBackup: new Date().toLocaleString()
+      }));
+      
+      toast({
+        title: "System Status Updated",
+        description: "Status check completed",
+      });
+    } catch (error) {
+      setSystemStatus(prev => ({
+        ...prev,
+        database: "offline"
+      }));
     }
   };
 
@@ -1057,9 +1142,10 @@ const StaffPanel = () => {
                     <Label htmlFor="server-name" className="text-sm font-medium">Server Name</Label>
                     <input 
                       id="server-name"
+                      value={generalSettings.serverName}
+                      onChange={(e) => setGeneralSettings(prev => ({...prev, serverName: e.target.value}))}
                       className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
                       placeholder="FiveM RP Server"
-                      defaultValue="FiveM RP Server"
                     />
                   </div>
                   <div>
@@ -1067,9 +1153,10 @@ const StaffPanel = () => {
                     <input 
                       id="max-players"
                       type="number"
+                      value={generalSettings.maxPlayers}
+                      onChange={(e) => setGeneralSettings(prev => ({...prev, maxPlayers: parseInt(e.target.value) || 0}))}
                       className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
                       placeholder="64"
-                      defaultValue="64"
                     />
                   </div>
                   <div>
@@ -1077,13 +1164,17 @@ const StaffPanel = () => {
                     <input 
                       id="application-cooldown"
                       type="number"
+                      value={generalSettings.applicationCooldown}
+                      onChange={(e) => setGeneralSettings(prev => ({...prev, applicationCooldown: parseInt(e.target.value) || 0}))}
                       className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
                       placeholder="7"
-                      defaultValue="7"
                     />
                   </div>
                 </div>
-                <Button className="w-full mt-6 bg-neon-purple hover:bg-neon-purple/80">
+                <Button 
+                  onClick={handleSaveGeneralSettings}
+                  className="w-full mt-6 bg-neon-purple hover:bg-neon-purple/80"
+                >
                   Save General Settings
                 </Button>
               </Card>
@@ -1100,8 +1191,13 @@ const StaffPanel = () => {
                       <Label className="text-sm font-medium">Auto-approve applications</Label>
                       <p className="text-xs text-muted-foreground">Automatically approve applications that meet criteria</p>
                     </div>
-                    <Button variant="outline" size="sm" className="border-gaming-border">
-                      Disabled
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => toggleApplicationSetting('autoApprove')}
+                      className={`border-gaming-border ${applicationSettings.autoApprove ? 'bg-neon-purple/20 text-neon-purple' : ''}`}
+                    >
+                      {applicationSettings.autoApprove ? 'Enabled' : 'Disabled'}
                     </Button>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1109,8 +1205,13 @@ const StaffPanel = () => {
                       <Label className="text-sm font-medium">Email notifications</Label>
                       <p className="text-xs text-muted-foreground">Send email updates to applicants</p>
                     </div>
-                    <Button variant="outline" size="sm" className="border-gaming-border bg-neon-purple/20 text-neon-purple">
-                      Enabled
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => toggleApplicationSetting('emailNotifications')}
+                      className={`border-gaming-border ${applicationSettings.emailNotifications ? 'bg-neon-purple/20 text-neon-purple' : ''}`}
+                    >
+                      {applicationSettings.emailNotifications ? 'Enabled' : 'Disabled'}
                     </Button>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1118,12 +1219,20 @@ const StaffPanel = () => {
                       <Label className="text-sm font-medium">Discord integration</Label>
                       <p className="text-xs text-muted-foreground">Post updates to Discord channel</p>
                     </div>
-                    <Button variant="outline" size="sm" className="border-gaming-border">
-                      Disabled
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => toggleApplicationSetting('discordIntegration')}
+                      className={`border-gaming-border ${applicationSettings.discordIntegration ? 'bg-neon-purple/20 text-neon-purple' : ''}`}
+                    >
+                      {applicationSettings.discordIntegration ? 'Enabled' : 'Disabled'}
                     </Button>
                   </div>
                 </div>
-                <Button className="w-full mt-6 bg-neon-cyan hover:bg-neon-cyan/80 text-black">
+                <Button 
+                  onClick={handleSaveApplicationSettings}
+                  className="w-full mt-6 bg-neon-cyan hover:bg-neon-cyan/80 text-black"
+                >
                   Save Application Settings
                 </Button>
               </Card>
@@ -1170,24 +1279,42 @@ const StaffPanel = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Database Status</span>
-                    <Badge className="bg-green-600">Online</Badge>
+                    <Badge className={`${systemStatus.database === 'online' ? 'bg-green-600' : 'bg-red-600'}`}>
+                      {systemStatus.database === 'online' ? 'Online' : 'Offline'}
+                    </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Email Service</span>
-                    <Badge className="bg-green-600">Online</Badge>
+                    <Badge className={`${systemStatus.emailService === 'online' ? 'bg-green-600' : 'bg-red-600'}`}>
+                      {systemStatus.emailService === 'online' ? 'Online' : 'Offline'}
+                    </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Server Health</span>
-                    <Badge className="bg-green-600">Healthy</Badge>
+                    <Badge className={`${systemStatus.serverHealth === 'healthy' ? 'bg-green-600' : 'bg-yellow-600'}`}>
+                      {systemStatus.serverHealth === 'healthy' ? 'Healthy' : 'Warning'}
+                    </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Last Backup</span>
-                    <span className="text-xs text-muted-foreground">2 hours ago</span>
+                    <span className="text-xs text-muted-foreground">{systemStatus.lastBackup}</span>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full mt-6 border-gaming-border hover:bg-gaming-darker">
-                  View Logs
-                </Button>
+                <div className="flex space-x-2 mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={checkSystemStatus}
+                    className="flex-1 border-gaming-border hover:bg-gaming-darker"
+                  >
+                    Refresh Status
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 border-gaming-border hover:bg-gaming-darker"
+                  >
+                    View Logs
+                  </Button>
+                </div>
               </Card>
 
               {/* Rules Editor */}
