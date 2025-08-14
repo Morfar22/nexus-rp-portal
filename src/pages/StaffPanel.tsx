@@ -473,12 +473,41 @@ const StaffPanel = () => {
 
   const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
-      const { error } = await supabase
+      // First, check if a setting with this key already exists
+      const { data: existingSetting, error: fetchError } = await supabase
         .from('server_settings')
-        .update({ [settingType]: value })
-        .eq('id', serverSettings.id);
+        .select('*')
+        .eq('setting_key', settingType)
+        .single();
 
-      if (error) throw error;
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      if (existingSetting) {
+        // Update existing setting
+        const { error } = await supabase
+          .from('server_settings')
+          .update({ 
+            setting_value: value,
+            updated_at: new Date().toISOString(),
+            created_by: user?.id
+          })
+          .eq('setting_key', settingType);
+
+        if (error) throw error;
+      } else {
+        // Create new setting
+        const { error } = await supabase
+          .from('server_settings')
+          .insert({
+            setting_key: settingType,
+            setting_value: value,
+            created_by: user?.id
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",
