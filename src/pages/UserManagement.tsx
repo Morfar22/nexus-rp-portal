@@ -148,19 +148,36 @@ export default function UserManagement() {
       if (error) throw error;
 
       // Send ban/unban notification email
-      try {
-        await supabase.functions.invoke('send-ban-notification', {
-          body: {
-            userEmail: userToBan.email,
-            userName: userToBan.full_name || userToBan.username || 'User',
-            isBanned: ban,
-            staffName: user?.email || 'Staff Member'
-          }
+      console.log('User to ban/unban:', { 
+        id: userToBan.id, 
+        email: userToBan.email, 
+        username: userToBan.username,
+        full_name: userToBan.full_name 
+      });
+      
+      if (!userToBan.email) {
+        console.error('User email is null, cannot send notification');
+        toast({
+          title: "Warning",
+          description: `User ${ban ? 'banned' : 'unbanned'} but no email notification sent - user has no email`,
+          variant: "destructive",
         });
-        console.log('Ban notification email sent successfully');
-      } catch (emailError) {
-        console.error('Failed to send ban notification email:', emailError);
-        // Don't fail the ban action if email fails
+      } else {
+        try {
+          const result = await supabase.functions.invoke('send-ban-notification', {
+            body: {
+              userEmail: userToBan.email,
+              userName: userToBan.full_name || userToBan.username || 'User',
+              isBanned: ban,
+              staffName: user?.email || 'Staff Member'
+            }
+          });
+          console.log('Ban notification result:', result);
+          console.log('Ban notification email sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send ban notification email:', emailError);
+          // Don't fail the ban action if email fails
+        }
       }
 
       toast({
