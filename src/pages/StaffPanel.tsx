@@ -26,22 +26,25 @@ const StaffPanel = () => {
   const { user } = useAuth();
 
   useEffect(() => {
+    console.log('StaffPanel useEffect - user:', user);
     fetchApplications();
     fetchRecentActions();
-  }, []);
+  }, [user]);
 
   const fetchApplications = async () => {
+    console.log('Fetching applications...');
     try {
       const { data, error } = await supabase
         .from('applications')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('Applications query result:', { data, error });
       if (error) throw error;
       setApplications(data || []);
     } catch (error: any) {
       console.error('Error fetching applications:', error);
-      setError('Failed to load applications');
+      setError('Failed to load applications: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -118,6 +121,8 @@ const StaffPanel = () => {
   };
 
   const pendingApplications = applications.filter(app => app.status === 'pending');
+  console.log('All applications:', applications);
+  console.log('Pending applications:', pendingApplications);
 
   if (isLoading) {
     return (
@@ -155,9 +160,12 @@ const StaffPanel = () => {
         )}
 
         <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gaming-card border-gaming-border">
+          <TabsList className="grid w-full grid-cols-5 bg-gaming-card border-gaming-border">
             <TabsTrigger value="applications" className="data-[state=active]:bg-neon-purple/20">
-              Applications
+              Pending ({pendingApplications.length})
+            </TabsTrigger>
+            <TabsTrigger value="all-applications" className="data-[state=active]:bg-neon-purple/20">
+              All Apps ({applications.length})
             </TabsTrigger>
             <TabsTrigger value="players" className="data-[state=active]:bg-neon-purple/20">
               Players
@@ -297,6 +305,174 @@ const StaffPanel = () => {
                                     Deny
                                   </Button>
                                 </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="all-applications" className="space-y-4">
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-neon-purple" />
+                  <span>All Applications</span>
+                </h2>
+                <Badge variant="secondary">{applications.length} total</Badge>
+              </div>
+
+              <div className="space-y-4">
+                {applications.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No applications found</p>
+                  </div>
+                ) : (
+                  applications.map((app) => (
+                    <Card key={app.id} className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-semibold text-foreground">
+                              {app.steam_name}
+                            </h3>
+                            <Badge 
+                              variant={
+                                app.status === 'approved' ? 'default' : 
+                                app.status === 'denied' ? 'destructive' : 
+                                'secondary'
+                              }
+                            >
+                              {app.status.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">Discord: {app.discord_tag}</p>
+                          <p className="text-sm text-muted-foreground">FiveM: {app.fivem_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Submitted: {new Date(app.created_at).toLocaleDateString()}
+                          </p>
+                          {app.review_notes && (
+                            <p className="text-xs text-muted-foreground">
+                              Notes: {app.review_notes}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="gaming" 
+                                size="sm"
+                                onClick={() => setSelectedApplication(app)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View Details
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-gaming-card border-gaming-border max-w-2xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="text-foreground">
+                                  Application Details - {app.steam_name}
+                                </DialogTitle>
+                                <DialogDescription>
+                                  Status: {app.status.toUpperCase()}
+                                </DialogDescription>
+                              </DialogHeader>
+                              
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label className="text-foreground">Steam Name</Label>
+                                    <p className="text-muted-foreground">{app.steam_name}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-foreground">Discord Tag</Label>
+                                    <p className="text-muted-foreground">{app.discord_tag}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-foreground">FiveM Name</Label>
+                                    <p className="text-muted-foreground">{app.fivem_name}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-foreground">Age</Label>
+                                    <p className="text-muted-foreground">{app.age} years old</p>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-foreground">Roleplay Experience</Label>
+                                  <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
+                                    <p className="text-muted-foreground whitespace-pre-wrap">{app.rp_experience}</p>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-foreground">Character Backstory</Label>
+                                  <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
+                                    <p className="text-muted-foreground whitespace-pre-wrap">{app.character_backstory}</p>
+                                  </div>
+                                </div>
+
+                                {app.review_notes && (
+                                  <div>
+                                    <Label className="text-foreground">Staff Notes</Label>
+                                    <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
+                                      <p className="text-muted-foreground whitespace-pre-wrap">{app.review_notes}</p>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {app.status === 'pending' && (
+                                  <>
+                                    <div>
+                                      <Label htmlFor="review-notes" className="text-foreground">Review Notes (Optional)</Label>
+                                      <Textarea
+                                        id="review-notes"
+                                        value={reviewNotes}
+                                        onChange={(e) => setReviewNotes(e.target.value)}
+                                        placeholder="Add notes for the applicant..."
+                                        className="mt-2 bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                                      />
+                                    </div>
+                                    
+                                    <div className="flex space-x-2 pt-4">
+                                      <Button 
+                                        variant="neon" 
+                                        onClick={() => handleApplicationAction(app.id, 'approved', reviewNotes)}
+                                        disabled={isSubmitting}
+                                        className="flex-1"
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-1" />
+                                        {isSubmitting ? "Processing..." : "Approve"}
+                                      </Button>
+                                      <Button 
+                                        variant="outline"
+                                        onClick={() => handleApplicationAction(app.id, 'under_review', reviewNotes)}
+                                        disabled={isSubmitting}
+                                        className="flex-1 hover:border-neon-blue/50"
+                                      >
+                                        <Clock className="h-4 w-4 mr-1" />
+                                        Under Review
+                                      </Button>
+                                      <Button 
+                                        variant="destructive" 
+                                        onClick={() => handleApplicationAction(app.id, 'denied', reviewNotes)}
+                                        disabled={isSubmitting}
+                                        className="flex-1"
+                                      >
+                                        <XCircle className="h-4 w-4 mr-1" />
+                                        Deny
+                                      </Button>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </DialogContent>
                           </Dialog>
