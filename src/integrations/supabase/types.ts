@@ -202,6 +202,7 @@ export type Database = {
           banned_by: string | null
           created_at: string | null
           discord_id: string | null
+          email: string | null
           full_name: string | null
           id: string
           role: string | null
@@ -217,6 +218,7 @@ export type Database = {
           banned_by?: string | null
           created_at?: string | null
           discord_id?: string | null
+          email?: string | null
           full_name?: string | null
           id: string
           role?: string | null
@@ -232,6 +234,7 @@ export type Database = {
           banned_by?: string | null
           created_at?: string | null
           discord_id?: string | null
+          email?: string | null
           full_name?: string | null
           id?: string
           role?: string | null

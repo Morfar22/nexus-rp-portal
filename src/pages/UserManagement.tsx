@@ -21,6 +21,7 @@ interface UserProfile {
   website: string | null;
   discord_id: string | null;
   steam_id: string | null;
+  email: string | null;
   banned: boolean;
   banned_at: string | null;
   banned_by: string | null;
@@ -37,7 +38,6 @@ interface UserRole {
 
 interface UserWithRole extends UserProfile {
   roles: UserRole[];
-  email?: string;
 }
 
 export default function UserManagement() {
@@ -74,24 +74,13 @@ export default function UserManagement() {
 
       if (rolesError) throw rolesError;
 
-      // Get auth users to get email addresses (staff only)
-      let authUsers: any = null;
-      try {
-        const result = await supabase.auth.admin.listUsers();
-        authUsers = result.data;
-      } catch (authError) {
-        console.warn('Could not fetch auth users (admin only):', authError);
-      }
-
-      // Combine the data
+      // Combine the data - email is now stored in profiles table
       const usersWithRoles: UserWithRole[] = (profiles || []).map(profile => {
         const userRoles = (roles || []).filter(role => role.user_id === profile.id);
-        const authUser = authUsers?.users?.find((au: any) => au.id === profile.id);
         
         return {
           ...profile,
-          roles: userRoles,
-          email: authUser?.email
+          roles: userRoles
         };
       });
 
