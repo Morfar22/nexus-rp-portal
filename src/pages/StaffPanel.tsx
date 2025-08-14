@@ -77,17 +77,31 @@ const StaffPanel = () => {
     try {
       setIsLoading(true);
       
-      const [applicationsRes, rulesRes, staffRes, typesRes, settingsRes] = await Promise.all([
+      // Fetch staff members by joining user_roles with profiles
+      const { data: staffData } = await supabase
+        .from('user_roles')
+        .select(`
+          id,
+          role,
+          created_at,
+          profiles!inner (
+            id,
+            username,
+            full_name
+          )
+        `)
+        .in('role', ['admin', 'moderator']);
+
+      const [applicationsRes, rulesRes, typesRes, settingsRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
         supabase.from('rules').select('*').order('category', { ascending: true }),
-        supabase.from('profiles').select('*'),
         supabase.from('application_types').select('*'),
         supabase.from('server_settings').select('*').single()
       ]);
 
       if (applicationsRes.data) setApplications(applicationsRes.data);
       if (rulesRes.data) setRules(rulesRes.data);
-      if (staffRes.data) setStaffMembers(staffRes.data);
+      if (staffData) setStaffMembers(staffData);
       if (typesRes.data) setApplicationTypes(typesRes.data);
       if (settingsRes.data) setServerSettings(settingsRes.data);
       
@@ -230,12 +244,29 @@ const StaffPanel = () => {
     try {
       setIsSubmitting(true);
 
+      // First, find the user by email from profiles (assuming username stores email)
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', newStaffEmail)
+        .single();
+
+      if (profileError || !userProfile) {
+        toast({
+          title: "Error",
+          description: "User not found. The user must have an account first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Add the role to user_roles table
       const { error } = await supabase
-        .from('staff_members')
-        .insert([{
-          email: newStaffEmail,
-          role: newStaffRole
-        }]);
+        .from('user_roles')
+        .insert({
+          user_id: userProfile.id,
+          role: newStaffRole as 'admin' | 'moderator' | 'user'
+        });
 
       if (error) throw error;
 
@@ -264,7 +295,7 @@ const StaffPanel = () => {
   const handleRemoveStaff = async (staffId: string) => {
     try {
       const { error } = await supabase
-        .from('staff_members')
+        .from('user_roles')
         .delete()
         .eq('id', staffId);
 
@@ -1036,7 +1067,6 @@ const StaffPanel = () => {
                         >
                           <option value="moderator">Moderator</option>
                           <option value="admin">Admin</option>
-                          <option value="developer">Developer</option>
                         </select>
                       </div>
                     </div>
@@ -1078,14 +1108,14 @@ const StaffPanel = () => {
                     <Card key={staff.id} className="p-4 bg-gaming-dark border-gaming-border">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{staff.email}</h3>
+                          <h3 className="font-semibold text-foreground">
+                            {staff.profiles?.full_name || staff.profiles?.username || 'Unknown User'}
+                          </h3>
                           <Badge
                             variant="outline"
                             className={
                               staff.role === 'admin'
                                 ? "border-red-500 text-red-500"
-                                : staff.role === 'developer'
-                                ? "border-blue-500 text-blue-500"
                                 : "border-green-500 text-green-500"
                             }
                           >
@@ -1106,7 +1136,7 @@ const StaffPanel = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle className="text-foreground">Remove Staff Member</AlertDialogTitle>
                               <AlertDialogDescription className="text-muted-foreground">
-                                Are you sure you want to remove {staff.email} from the staff team?
+                                Are you sure you want to remove {staff.profiles?.full_name || staff.profiles?.username} from the staff team?
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
