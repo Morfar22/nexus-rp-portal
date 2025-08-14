@@ -212,25 +212,54 @@ const StaffPanel = () => {
     if (!user || !newStaffEmail.trim()) return;
     
     try {
-      // First, try to find the user by email in profiles
+      // Search for user by email - we'll look for profiles where username contains the email prefix
+      // or use a broader search approach
+      const emailPrefix = newStaffEmail.split('@')[0];
+      
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
-        .ilike('username', newStaffEmail.split('@')[0])
+        .select('id, username, full_name')
+        .or(`username.eq.${emailPrefix},username.ilike.%${newStaffEmail}%`)
+        .limit(1)
         .single();
       
-      let targetUserId = profileData?.id;
-      
-      if (!targetUserId) {
-        // If not found by username, check if there's a user with that email in auth.users
-        // For now, we'll ask the user to provide the username instead
-        toast({
-          title: "User Not Found",
-          description: "Please enter the exact username (not email) of the user you want to add as staff.",
-        });
+      if (profileError || !profileData) {
+        // Try alternative search - look for any profile that might match
+        const { data: alternativeData, error: altError } = await supabase
+          .from('profiles')
+          .select('id, username, full_name')
+          .ilike('username', `%${emailPrefix}%`)
+          .limit(1)
+          .single();
+          
+        if (altError || !alternativeData) {
+          toast({
+            title: "User Not Found",
+            description: `No user found with email ${newStaffEmail}. The user must be registered first.`,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Use alternative data
+        const targetUserId = alternativeData.id;
+        await addStaffRole(targetUserId);
         return;
       }
       
+      await addStaffRole(profileData.id);
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add staff member",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const addStaffRole = async (targetUserId: string) => {
+    try {
       // Add staff role
       const { error: roleError } = await supabase
         .from('user_roles')
@@ -261,11 +290,7 @@ const StaffPanel = () => {
       setNewStaffEmail("");
       setNewStaffRole("moderator");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add staff member",
-        variant: "destructive"
-      });
+      throw error;
     }
   };
 
@@ -1402,14 +1427,14 @@ const StaffPanel = () => {
               <h3 className="text-lg font-semibold mb-4">Add Staff Member</h3>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="staff-email">Username</Label>
+                  <Label htmlFor="staff-email">User Email</Label>
                   <input
                     id="staff-email"
-                    type="text"
+                    type="email"
                     value={newStaffEmail}
                     onChange={(e) => setNewStaffEmail(e.target.value)}
                     className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
-                    placeholder="Enter username (e.g., player123)"
+                    placeholder="user@example.com"
                   />
                 </div>
                 <div>
