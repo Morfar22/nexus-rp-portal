@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isBanned: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBanned, setIsBanned] = useState(false);
 
   const cleanupAuthState = () => {
     Object.keys(localStorage).forEach((key) => {
@@ -52,29 +54,74 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const checkBanStatus = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('banned')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking ban status:', error);
+        return false;
+      }
+      
+      return data?.banned || false;
+    } catch (error) {
+      console.error('Error checking ban status:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         
-        // Defer any additional data fetching
-        if (event === 'SIGNED_IN' && session?.user) {
-          setTimeout(() => {
-            // You can add profile loading here if needed
-          }, 0);
+        // Check ban status if user is signed in
+        if (session?.user) {
+          const banned = await checkBanStatus(session.user.id);
+          setIsBanned(banned);
+          
+          // If user is banned, sign them out immediately
+          if (banned) {
+            await signOut();
+            return;
+          }
+        } else {
+          setIsBanned(false);
         }
+        
+        setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const banned = await checkBanStatus(session.user.id);
+        setIsBanned(banned);
+        
+        // If user is banned, sign them out immediately
+        if (banned) {
+          await signOut();
+          return;
+        }
+      } else {
+        setIsBanned(false);
+      }
+      
       setLoading(false);
-    });
+    };
+    
+    initAuth();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -83,6 +130,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     loading,
+    isBanned,
     signOut,
   };
 
