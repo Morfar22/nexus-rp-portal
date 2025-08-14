@@ -385,6 +385,37 @@ const StaffPanel = () => {
     }
   };
 
+  const handleDeleteApplication = async (applicationId: string) => {
+    if (!user) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', applicationId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Application deleted successfully",
+      });
+      
+      setSelectedApplication(null);
+      fetchApplications();
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete application",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleApplicationAction = async (applicationId: string, action: 'approved' | 'denied' | 'under_review') => {
     if (!user) return;
     
@@ -597,35 +628,68 @@ const StaffPanel = () => {
                                 />
                               </div>
                               
-                              <div className="flex space-x-2 pt-4">
-                                <Button 
-                                  variant="neon" 
-                                  onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'approved')}
-                                  disabled={isSubmitting}
-                                  className="flex-1"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  {isSubmitting ? "Processing..." : "Approve"}
-                                </Button>
-                                <Button 
-                                  variant="outline"
-                                  onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'under_review')}
-                                  disabled={isSubmitting}
-                                  className="flex-1 hover:border-neon-blue/50"
-                                >
-                                  <Clock className="h-4 w-4 mr-1" />
-                                  Under Review
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'denied')}
-                                  disabled={isSubmitting}
-                                  className="flex-1"
-                                >
-                                  <XCircle className="h-4 w-4 mr-1" />
-                                  Deny
-                                </Button>
-                              </div>
+                                <div className="flex space-x-2 pt-4">
+                                  <Button 
+                                    variant="neon" 
+                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'approved')}
+                                    disabled={isSubmitting}
+                                    className="flex-1"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    {isSubmitting ? "Processing..." : "Approve"}
+                                  </Button>
+                                  <Button 
+                                    variant="outline"
+                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'under_review')}
+                                    disabled={isSubmitting}
+                                    className="flex-1 hover:border-neon-blue/50"
+                                  >
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    Under Review
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'denied')}
+                                    disabled={isSubmitting}
+                                    className="flex-1"
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Deny
+                                  </Button>
+                                </div>
+                                <div className="flex justify-center pt-2">
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="outline"
+                                        size="sm"
+                                        className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Delete Application
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-foreground">Delete Application</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to permanently delete this application? This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel className="bg-gaming-dark border-gaming-border hover:bg-gaming-darker">
+                                          Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => selectedApplication && handleDeleteApplication(selectedApplication.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                             </div>
                           </DialogContent>
                         </Dialog>
@@ -865,6 +929,39 @@ const StaffPanel = () => {
                                     <XCircle className="h-4 w-4 mr-1" />
                                     Deny
                                   </Button>
+                                </div>
+                                <div className="flex justify-center pt-2">
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="outline"
+                                        size="sm"
+                                        className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Delete Application
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-foreground">Delete Application</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to permanently delete this application? This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel className="bg-gaming-dark border-gaming-border hover:bg-gaming-darker">
+                                          Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => selectedApplication && handleDeleteApplication(selectedApplication.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               </div>
                             </DialogContent>
