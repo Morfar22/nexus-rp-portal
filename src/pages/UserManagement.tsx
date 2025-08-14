@@ -131,6 +131,11 @@ export default function UserManagement() {
 
   const banUser = async (userId: string, ban: boolean) => {
     try {
+      const userToBan = users.find(u => u.id === userId);
+      if (!userToBan) {
+        throw new Error('User not found');
+      }
+
       const updateData = ban 
         ? { banned: true, banned_at: new Date().toISOString(), banned_by: user?.id }
         : { banned: false, banned_at: null, banned_by: null };
@@ -142,9 +147,25 @@ export default function UserManagement() {
 
       if (error) throw error;
 
+      // Send ban/unban notification email
+      try {
+        await supabase.functions.invoke('send-ban-notification', {
+          body: {
+            userEmail: userToBan.email,
+            userName: userToBan.full_name || userToBan.username || 'User',
+            isBanned: ban,
+            staffName: user?.email || 'Staff Member'
+          }
+        });
+        console.log('Ban notification email sent successfully');
+      } catch (emailError) {
+        console.error('Failed to send ban notification email:', emailError);
+        // Don't fail the ban action if email fails
+      }
+
       toast({
         title: "Success",
-        description: `User ${ban ? 'banned' : 'unbanned'} successfully`,
+        description: `User ${ban ? 'banned' : 'unbanned'} successfully${ban ? ' and notified via email' : ' and notified via email'}`,
       });
 
       fetchUsers(); // Refresh the list
