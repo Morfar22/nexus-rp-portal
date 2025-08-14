@@ -47,21 +47,7 @@ const StaffPanel = () => {
   const [newStaffEmail, setNewStaffEmail] = useState("");
   const [newStaffRole, setNewStaffRole] = useState("moderator");
   
-  // Application Editing
-  const [editingApplication, setEditingApplication] = useState<any>(null);
-  const [editApplicationData, setEditApplicationData] = useState({
-    steam_name: "",
-    discord_tag: "",
-    discord_name: "",
-    fivem_name: "",
-    age: 18,
-    rp_experience: "",
-    character_backstory: ""
-  });
-  
   // Application Type Management
-  const [showApplicationTypeDialog, setShowApplicationTypeDialog] = useState(false);
-  const [editingApplicationType, setEditingApplicationType] = useState<any>(null);
   const [newApplicationType, setNewApplicationType] = useState({
     name: "",
     description: "",
@@ -73,254 +59,279 @@ const StaffPanel = () => {
       { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
     ]
   });
-  
-  // Create Application State
-  const [showCreateApplicationDialog, setShowCreateApplicationDialog] = useState(false);
-  const [newApplicationData, setNewApplicationData] = useState({
-    application_type_id: "",
-    steam_name: "",
-    discord_tag: "",
-    discord_name: "",
-    fivem_name: "",
-    age: 18,
-    rp_experience: "",
-    character_backstory: "",
-    user_id: ""
-  });
+  const [showApplicationTypeDialog, setShowApplicationTypeDialog] = useState(false);
+  const [editingApplicationType, setEditingApplicationType] = useState<any>(null);
 
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    console.log('StaffPanel useEffect - user:', user);
-    fetchApplications();
-    fetchRecentActions();
-    fetchRules();
-    fetchStaffMembers();
-    fetchPlayers();
-    fetchApplicationTypes();
-    fetchServerSettings();
-  }, [user]);
+    if (!authLoading && user) {
+      fetchData();
+    }
+  }, [user, authLoading]);
 
-  const fetchApplications = async () => {
-    console.log('Fetching applications...');
+  const fetchData = async () => {
+    if (!user) return;
+    
     try {
-      const { data, error } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          application_types(name)
-        `)
-        .order('created_at', { ascending: false });
+      setIsLoading(true);
+      
+      const [applicationsRes, rulesRes, staffRes, typesRes, settingsRes] = await Promise.all([
+        supabase.from('applications').select('*').order('created_at', { ascending: false }),
+        supabase.from('rules').select('*').order('category', { ascending: true }),
+        supabase.from('profiles').select('*'),
+        supabase.from('application_types').select('*'),
+        supabase.from('server_settings').select('*').single()
+      ]);
 
-      console.log('Applications query result:', { data, error });
-      if (error) throw error;
-      setApplications(data || []);
-    } catch (error: any) {
-      console.error('Error fetching applications:', error);
-      setError('Failed to load applications: ' + error.message);
+      if (applicationsRes.data) setApplications(applicationsRes.data);
+      if (rulesRes.data) setRules(rulesRes.data);
+      if (staffRes.data) setStaffMembers(staffRes.data);
+      if (typesRes.data) setApplicationTypes(typesRes.data);
+      if (settingsRes.data) setServerSettings(settingsRes.data);
+      
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to load data');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchRecentActions = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('application_actions')
-        .select(`
-          *,
-          applications(steam_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-      setRecentActions(data || []);
-    } catch (error: any) {
-      console.error('Error fetching recent actions:', error);
-    }
-  };
-
-  const fetchRules = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('rules')
-        .select('*')
-        .order('category', { ascending: true })
-        .order('order_index', { ascending: true });
-
-      if (error) throw error;
-      setRules(data || []);
-    } catch (error: any) {
-      console.error('Error fetching rules:', error);
-    }
-  };
-
-  const fetchStaffMembers = async () => {
-    try {
-      // First get user_roles for staff
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('id, role, created_at, user_id')
-        .in('role', ['admin', 'moderator'])
-        .order('created_at', { ascending: false });
-
-      if (rolesError) throw rolesError;
-
-      // Then get profiles for those users
-      if (userRoles && userRoles.length > 0) {
-        const userIds = userRoles.map(role => role.user_id);
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, full_name')
-          .in('id', userIds);
-
-        if (profilesError) throw profilesError;
-
-        // Combine the data
-        const staffMembersData = userRoles.map(role => ({
-          ...role,
-          profiles: profiles?.find(profile => profile.id === role.user_id) || null
-        }));
-
-        setStaffMembers(staffMembersData);
-      } else {
-        setStaffMembers([]);
-      }
-    } catch (error: any) {
-      console.error('Error fetching staff members:', error);
-      setStaffMembers([]);
-    }
-  };
-
-  const fetchPlayers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          username,
-          full_name,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      setPlayers(data || []);
-    } catch (error: any) {
-      console.error('Error fetching players:', error);
-    }
-  };
-
-  const fetchApplicationTypes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('application_types')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setApplicationTypes(data || []);
-    } catch (error: any) {
-      console.error('Error fetching application types:', error);
-    }
-  };
-
-  const fetchServerSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('server_settings')
-        .select('*');
-
-      if (error) throw error;
-      
-      const settings: Record<string, any> = {};
-      data?.forEach(setting => {
-        settings[setting.setting_key] = setting.setting_value;
-      });
-      setServerSettings(settings);
-    } catch (error: any) {
-      console.error('Error fetching server settings:', error);
-    }
-  };
-
-  const handleSettingUpdate = async (settingKey: string, newValue: any) => {
+  const handleApplicationAction = async (applicationId: string, action: string) => {
     if (!user) return;
-
+    
     try {
+      setIsSubmitting(true);
+      
       const { error } = await supabase
-        .from('server_settings')
-        .upsert({
-          setting_key: settingKey,
-          setting_value: newValue,
-          created_by: user.id
-        });
+        .from('applications')
+        .update({ 
+          status: action,
+          review_notes: reviewNotes,
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', applicationId);
 
       if (error) throw error;
-
-      setServerSettings({
-        ...serverSettings,
-        [settingKey]: newValue
-      });
 
       toast({
         title: "Success",
-        description: "Settings updated successfully",
+        description: `Application ${action} successfully`,
       });
-    } catch (error: any) {
+
+      setSelectedApplication(null);
+      setReviewNotes("");
+      fetchData();
+      
+    } catch (error) {
+      console.error('Error updating application:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update settings",
-        variant: "destructive"
+        description: "Failed to update application",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteRule = async (ruleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('rules')
+        .delete()
+        .eq('id', ruleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Rule deleted successfully",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting rule:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete rule",
+        variant: "destructive",
       });
     }
+  };
+
+  const handleSaveRule = async () => {
+    if (!newRule.title || !newRule.description || !newRule.category) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      if (editingRule) {
+        const { error } = await supabase
+          .from('rules')
+          .update(newRule)
+          .eq('id', editingRule.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Rule updated successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('rules')
+          .insert([newRule]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Rule created successfully",
+        });
+      }
+
+      setNewRule({ category: "", title: "", description: "" });
+      setEditingRule(null);
+      fetchData();
+      
+    } catch (error) {
+      console.error('Error saving rule:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save rule",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!newStaffEmail) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const { error } = await supabase
+        .from('staff_members')
+        .insert([{
+          email: newStaffEmail,
+          role: newStaffRole
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Staff member added successfully",
+      });
+
+      setNewStaffEmail("");
+      setNewStaffRole("moderator");
+      setShowStaffDialog(false);
+      fetchData();
+      
+    } catch (error) {
+      console.error('Error adding staff:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add staff member",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRemoveStaff = async (staffId: string) => {
+    try {
+      const { error } = await supabase
+        .from('staff_members')
+        .delete()
+        .eq('id', staffId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Staff member removed successfully",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error removing staff:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove staff member",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSaveApplicationType = async () => {
-    if (!user) return;
-    
-    setIsSubmitting(true);
+    if (!newApplicationType.name || !newApplicationType.description) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
+
       if (editingApplicationType) {
-        // Update existing application type
         const { error } = await supabase
           .from('application_types')
           .update({
             name: newApplicationType.name,
             description: newApplicationType.description,
-            form_fields: newApplicationType.formFields,
-            is_active: true
+            form_fields: newApplicationType.formFields
           })
           .eq('id', editingApplicationType.id);
-        
+
         if (error) throw error;
-        
+
         toast({
           title: "Success",
           description: "Application type updated successfully",
         });
       } else {
-        // Create new application type
         const { error } = await supabase
           .from('application_types')
-          .insert({
+          .insert([{
             name: newApplicationType.name,
             description: newApplicationType.description,
-            form_fields: newApplicationType.formFields,
-            is_active: true,
-            created_by: user.id
-          });
-        
+            form_fields: newApplicationType.formFields
+          }]);
+
         if (error) throw error;
-        
+
         toast({
           title: "Success",
           description: "Application type created successfully",
         });
       }
-      
-      // Reset form and close dialog
+
       setNewApplicationType({
         name: "",
         description: "",
@@ -332,17 +343,16 @@ const StaffPanel = () => {
           { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
         ]
       });
-      setShowApplicationTypeDialog(false);
       setEditingApplicationType(null);
+      setShowApplicationTypeDialog(false);
+      fetchData();
       
-      // Refresh application types
-      fetchApplicationTypes();
-      
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error saving application type:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save application type",
-        variant: "destructive"
+        description: "Failed to save application type",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -350,174 +360,51 @@ const StaffPanel = () => {
   };
 
   const handleDeleteApplicationType = async (typeId: string) => {
-    if (!user) return;
-    
     try {
       const { error } = await supabase
         .from('application_types')
         .delete()
         .eq('id', typeId);
-      
+
       if (error) throw error;
-      
+
       toast({
         title: "Success",
         description: "Application type deleted successfully",
       });
-      
-      fetchApplicationTypes();
-    } catch (error: any) {
+
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting application type:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete application type",
-        variant: "destructive"
+        description: "Failed to delete application type",
+        variant: "destructive",
       });
     }
   };
 
-  const handleCreateApplication = async () => {
-    if (!newApplicationData.application_type_id || !newApplicationData.user_id) {
-      toast({
-        title: "Error",
-        description: "Please select an application type and enter a user ID",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
+  const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
       const { error } = await supabase
-        .from('applications')
-        .insert({
-          application_type_id: newApplicationData.application_type_id,
-          user_id: newApplicationData.user_id,
-          steam_name: newApplicationData.steam_name,
-          discord_tag: newApplicationData.discord_tag,
-          discord_name: newApplicationData.discord_name,
-          fivem_name: newApplicationData.fivem_name,
-          age: newApplicationData.age,
-          rp_experience: newApplicationData.rp_experience,
-          character_backstory: newApplicationData.character_backstory,
-          status: 'pending'
-        });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Application created successfully",
-      });
-      
-      // Reset form and close dialog
-      setNewApplicationData({
-        application_type_id: "",
-        steam_name: "",
-        discord_tag: "",
-        discord_name: "",
-        fivem_name: "",
-        age: 18,
-        rp_experience: "",
-        character_backstory: "",
-        user_id: ""
-      });
-      setShowCreateApplicationDialog(false);
-      
-      // Refresh applications
-      fetchApplications();
-      
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create application",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        .from('server_settings')
+        .update({ [settingType]: value })
+        .eq('id', serverSettings.id);
 
-  const handleDeleteApplication = async (applicationId: string) => {
-    if (!user) return;
-    
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from('applications')
-        .delete()
-        .eq('id', applicationId);
-      
       if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Application deleted successfully",
-      });
-      
-      setSelectedApplication(null);
-      fetchApplications();
-      
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete application",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
-  const handleApplicationAction = async (applicationId: string, action: 'approved' | 'denied' | 'under_review') => {
-    if (!user) return;
-    
-    setIsSubmitting(true);
-    try {
-      // Update application status
-      const { error: updateError } = await supabase
-        .from('applications')
-        .update({
-          status: action,
-          reviewed_by: user.id,
-          review_notes: reviewNotes || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', applicationId);
-      
-      if (updateError) throw updateError;
-      
-      // Log the action
-      const { error: logError } = await supabase
-        .from('application_actions')
-        .insert({
-          application_id: applicationId,
-          staff_id: user.id,
-          action: action,
-          notes: reviewNotes || null
-        });
-      
-      if (logError) throw logError;
-      
       toast({
         title: "Success",
-        description: `Application ${action.replace('_', ' ')} successfully`,
+        description: "Setting updated successfully",
       });
       
-      // Reset review notes
-      setReviewNotes("");
-      setSelectedApplication(null);
-      
-      // Refresh applications
-      fetchApplications();
-      
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error updating setting:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update application",
-        variant: "destructive"
+        description: "Failed to update setting",
+        variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -549,7 +436,7 @@ const StaffPanel = () => {
             Staff Management Panel
           </h1>
           <p className="text-muted-foreground text-lg">
-            Manage applications, users, and server settings
+            Manage applications, rules, and server settings
           </p>
         </div>
 
@@ -572,561 +459,527 @@ const StaffPanel = () => {
               <TabsTrigger value="app-types" className="data-[state=active]:bg-gaming-dark">
                 Application Types
               </TabsTrigger>
-              <TabsTrigger value="players" className="data-[state=active]:bg-gaming-dark">
-                Player Management
-              </TabsTrigger>
               <TabsTrigger value="rules" className="data-[state=active]:bg-gaming-dark">
                 Rules Management
+              </TabsTrigger>
+              <TabsTrigger value="staff" className="data-[state=active]:bg-gaming-dark">
+                Staff Management
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-gaming-dark">
+                Settings
               </TabsTrigger>
             </TabsList>
           </div>
 
+          {/* Pending Applications Tab */}
           <TabsContent value="pending" className="space-y-4">
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
-                  <Clock className="h-5 w-5 text-yellow-500" />
-                  <span>Pending Applications</span>
-                </h2>
-                <Badge variant="secondary">{pendingApplications.length} pending</Badge>
-              </div>
-
-              <div className="space-y-4">
-                {pendingApplications.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No pending applications</p>
-                  </div>
-                ) : (
-                  pendingApplications.map((app) => (
-                    <Card key={app.id} className="p-4 bg-gaming-dark border-gaming-border">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <h3 className="font-semibold text-foreground">
-                            {app.steam_name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">Discord: {app.discord_tag}</p>
-                          <p className="text-sm text-muted-foreground">FiveM: {app.fivem_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Submitted: {new Date(app.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="gaming" 
-                              size="sm"
-                              onClick={() => setSelectedApplication(app)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Review Application
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="bg-gaming-card border-gaming-border max-w-2xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="text-foreground">
-                                Application Review - {app.steam_name}
-                              </DialogTitle>
-                              <DialogDescription>
-                                Review and take action on this application
-                              </DialogDescription>
-                            </DialogHeader>
-                            
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <Label className="text-foreground">Steam Name</Label>
-                                  <p className="text-muted-foreground">{app.steam_name}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-foreground">Discord Tag</Label>
-                                  <p className="text-muted-foreground">{app.discord_tag}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-foreground">FiveM Name</Label>
-                                  <p className="text-muted-foreground">{app.fivem_name}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-foreground">Age</Label>
-                                  <p className="text-muted-foreground">{app.age} years old</p>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <Label className="text-foreground">Roleplay Experience</Label>
-                                <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
-                                  <p className="text-muted-foreground whitespace-pre-wrap">{app.rp_experience}</p>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <Label className="text-foreground">Character Backstory</Label>
-                                <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
-                                  <p className="text-muted-foreground whitespace-pre-wrap">{app.character_backstory}</p>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor="review-notes" className="text-foreground">
-                                  Review Notes (Optional)
-                                </Label>
-                                <Textarea
-                                  id="review-notes"
-                                  value={reviewNotes}
-                                  onChange={(e) => setReviewNotes(e.target.value)}
-                                  placeholder="Add notes for the applicant..."
-                                  className="mt-2 bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                                />
-                              </div>
-                              
-                                <div className="flex space-x-2 pt-4">
-                                  <Button 
-                                    variant="neon" 
-                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'approved')}
-                                    disabled={isSubmitting}
-                                    className="flex-1"
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    {isSubmitting ? "Processing..." : "Approve"}
-                                  </Button>
-                                  <Button 
-                                    variant="outline"
-                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'under_review')}
-                                    disabled={isSubmitting}
-                                    className="flex-1 hover:border-neon-blue/50"
-                                  >
-                                    <Clock className="h-4 w-4 mr-1" />
-                                    Under Review
-                                  </Button>
-                                  <Button 
-                                    variant="destructive" 
-                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'denied')}
-                                    disabled={isSubmitting}
-                                    className="flex-1"
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Deny
-                                  </Button>
-                                </div>
-                                <div className="flex justify-center pt-2">
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button 
-                                        variant="outline"
-                                        size="sm"
-                                        className="border-red-500/50 text-red-500 hover:bg-red-500/10"
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-1" />
-                                        Delete Application
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="bg-gaming-card border-gaming-border">
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle className="text-foreground">Delete Application</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Are you sure you want to permanently delete this application? This action cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel className="bg-gaming-dark border-gaming-border hover:bg-gaming-darker">
-                                          Cancel
-                                        </AlertDialogCancel>
-                                        <AlertDialogAction 
-                                          onClick={() => selectedApplication && handleDeleteApplication(selectedApplication.id)}
-                                          className="bg-red-600 hover:bg-red-700"
-                                        >
-                                          Delete
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+            {pendingApplications.length === 0 ? (
+              <Card className="p-8 text-center bg-gaming-card border-gaming-border shadow-gaming">
+                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Pending Applications</h3>
+                <p className="text-muted-foreground">All applications have been reviewed!</p>
+              </Card>
+            ) : (
+              pendingApplications.map((application) => (
+                <Card key={application.id} className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold text-foreground">{application.steam_name}</h3>
+                        <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+                          Pending Review
+                        </Badge>
                       </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </Card>
+                      <p className="text-muted-foreground text-sm">
+                        Submitted {new Date(application.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedApplication(application)}
+                      className="border-gaming-border hover:border-neon-purple/50"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Review
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Discord:</span>
+                      <p className="text-foreground">{application.discord_tag}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Age:</span>
+                      <p className="text-foreground">{application.age}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">FiveM:</span>
+                      <p className="text-foreground">{application.fivem_name}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Type:</span>
+                      <p className="text-foreground">{application.application_type}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
           </TabsContent>
 
+          {/* All Applications Tab */}
           <TabsContent value="all-applications" className="space-y-4">
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-neon-purple" />
-                  <span>All Applications</span>
-                </h2>
-                <div className="flex items-center space-x-3">
-                  <Badge variant="secondary">{applications.length} total</Badge>
-                  <Dialog open={showCreateApplicationDialog} onOpenChange={setShowCreateApplicationDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="neon" size="sm">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Create Application
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-gaming-card border-gaming-border max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-foreground">Create New Application</DialogTitle>
-                        <DialogDescription>
-                          Create a test application for staff purposes
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-foreground">Application Type</Label>
-                            <select
-                              value={newApplicationData.application_type_id}
-                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, application_type_id: e.target.value }))}
-                              className="w-full mt-1 p-2 bg-gaming-dark border border-gaming-border rounded text-foreground"
-                            >
-                              <option value="">Select Type</option>
-                              {applicationTypes.map((type) => (
-                                <option key={type.id} value={type.id}>{type.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <Label className="text-foreground">User ID</Label>
-                            <Input
-                              value={newApplicationData.user_id}
-                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, user_id: e.target.value }))}
-                              placeholder="Enter user UUID"
-                              className="bg-gaming-dark border-gaming-border"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="flex space-x-2 pt-4">
-                          <Button 
-                            variant="neon" 
-                            onClick={handleCreateApplication}
-                            disabled={isSubmitting}
-                            className="flex-1"
-                          >
-                            {isSubmitting ? "Creating..." : "Create Application"}
-                          </Button>
-                          <Button 
-                            variant="outline"
-                            onClick={() => setShowCreateApplicationDialog(false)}
-                            disabled={isSubmitting}
-                            className="flex-1"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">All Applications</h2>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="border-green-500 text-green-500">
+                  Approved: {applications.filter(app => app.status === 'approved').length}
+                </Badge>
+                <Badge variant="outline" className="border-red-500 text-red-500">
+                  Rejected: {applications.filter(app => app.status === 'rejected').length}
+                </Badge>
+                <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+                  Pending: {applications.filter(app => app.status === 'pending').length}
+                </Badge>
               </div>
-
-              <div className="space-y-4">
-                {applications.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No applications found</p>
+            </div>
+            
+            {applications.length === 0 ? (
+              <Card className="p-8 text-center bg-gaming-card border-gaming-border shadow-gaming">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Applications</h3>
+                <p className="text-muted-foreground">No applications have been submitted yet.</p>
+              </Card>
+            ) : (
+              applications.map((application) => (
+                <Card key={application.id} className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold text-foreground">{application.steam_name}</h3>
+                        <Badge 
+                          variant="outline" 
+                          className={
+                            application.status === 'approved' 
+                              ? "border-green-500 text-green-500" 
+                              : application.status === 'rejected'
+                              ? "border-red-500 text-red-500"
+                              : "border-yellow-500 text-yellow-500"
+                          }
+                        >
+                          {application.status === 'approved' && <CheckCircle className="h-3 w-3 mr-1" />}
+                          {application.status === 'rejected' && <XCircle className="h-3 w-3 mr-1" />}
+                          {application.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                          {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                        </Badge>
+                      </div>
+                      <p className="text-muted-foreground text-sm">
+                        Submitted {new Date(application.created_at).toLocaleDateString()}
+                        {application.reviewed_at && (
+                          <span> • Reviewed {new Date(application.reviewed_at).toLocaleDateString()}</span>
+                        )}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedApplication(application)}
+                      className="border-gaming-border hover:border-neon-purple/50"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
                   </div>
-                ) : (
-                  applications.map((app) => (
-                    <Card key={app.id} className="p-4 bg-gaming-dark border-gaming-border">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-semibold text-foreground">
-                              {app.steam_name}
-                            </h3>
-                            <Badge 
-                              variant={
-                                app.status === 'approved' ? 'default' : 
-                                app.status === 'denied' ? 'destructive' : 
-                                'secondary'
-                              }
-                            >
-                              {app.status.toUpperCase()}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">Discord: {app.discord_tag}</p>
-                          <p className="text-sm text-muted-foreground">FiveM: {app.fivem_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Submitted: {new Date(app.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="gaming" 
-                                size="sm"
-                                onClick={() => setSelectedApplication(app)}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                View Details
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-gaming-card border-gaming-border max-w-2xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle className="text-foreground">
-                                  Application Details - {app.steam_name}
-                                </DialogTitle>
-                                <DialogDescription>
-                                  Review and manage this application
-                                </DialogDescription>
-                              </DialogHeader>
-                              
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-foreground">Steam Name</Label>
-                                    <p className="text-muted-foreground">{app.steam_name}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-foreground">Discord Tag</Label>
-                                    <p className="text-muted-foreground">{app.discord_tag}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-foreground">FiveM Name</Label>
-                                    <p className="text-muted-foreground">{app.fivem_name}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-foreground">Age</Label>
-                                    <p className="text-muted-foreground">{app.age} years old</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-foreground">Status</Label>
-                                    <Badge 
-                                      variant={
-                                        app.status === 'approved' ? 'default' : 
-                                        app.status === 'denied' ? 'destructive' : 
-                                        'secondary'
-                                      }
-                                    >
-                                      {app.status.toUpperCase()}
-                                    </Badge>
-                                  </div>
-                                  <div>
-                                    <Label className="text-foreground">Application Type</Label>
-                                    <p className="text-muted-foreground">{app.application_types?.name || 'Unknown'}</p>
-                                  </div>
-                                </div>
-                                
-                                <div>
-                                  <Label className="text-foreground">Roleplay Experience</Label>
-                                  <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
-                                    <p className="text-muted-foreground whitespace-pre-wrap">{app.rp_experience}</p>
-                                  </div>
-                                </div>
-                                
-                                <div>
-                                  <Label className="text-foreground">Character Backstory</Label>
-                                  <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
-                                    <p className="text-muted-foreground whitespace-pre-wrap">{app.character_backstory}</p>
-                                  </div>
-                                </div>
-
-                                {app.review_notes && (
-                                  <div>
-                                    <Label className="text-foreground">Previous Review Notes</Label>
-                                    <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
-                                      <p className="text-muted-foreground whitespace-pre-wrap">{app.review_notes}</p>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                <div>
-                                  <Label htmlFor="review-notes-all" className="text-foreground">
-                                    Review Notes (Optional)
-                                  </Label>
-                                  <Textarea
-                                    id="review-notes-all"
-                                    value={reviewNotes}
-                                    onChange={(e) => setReviewNotes(e.target.value)}
-                                    placeholder="Add notes for the applicant..."
-                                    className="mt-2 bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                                  />
-                                </div>
-                                
-                                <div className="flex space-x-2 pt-4">
-                                  <Button 
-                                    variant="neon" 
-                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'approved')}
-                                    disabled={isSubmitting}
-                                    className="flex-1"
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    {isSubmitting ? "Processing..." : "Approve"}
-                                  </Button>
-                                  <Button 
-                                    variant="outline"
-                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'under_review')}
-                                    disabled={isSubmitting}
-                                    className="flex-1 hover:border-neon-blue/50"
-                                  >
-                                    <Clock className="h-4 w-4 mr-1" />
-                                    Under Review
-                                  </Button>
-                                  <Button 
-                                    variant="destructive" 
-                                    onClick={() => selectedApplication && handleApplicationAction(selectedApplication.id, 'denied')}
-                                    disabled={isSubmitting}
-                                    className="flex-1"
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Deny
-                                  </Button>
-                                </div>
-                                <div className="flex justify-center pt-2">
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button 
-                                        variant="outline"
-                                        size="sm"
-                                        className="border-red-500/50 text-red-500 hover:bg-red-500/10"
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-1" />
-                                        Delete Application
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="bg-gaming-card border-gaming-border">
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle className="text-foreground">Delete Application</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Are you sure you want to permanently delete this application? This action cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel className="bg-gaming-dark border-gaming-border hover:bg-gaming-darker">
-                                          Cancel
-                                        </AlertDialogCancel>
-                                        <AlertDialogAction 
-                                          onClick={() => selectedApplication && handleDeleteApplication(selectedApplication.id)}
-                                          className="bg-red-600 hover:bg-red-700"
-                                        >
-                                          Delete
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </Card>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Discord:</span>
+                      <p className="text-foreground">{application.discord_tag}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Age:</span>
+                      <p className="text-foreground">{application.age}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">FiveM:</span>
+                      <p className="text-foreground">{application.fivem_name}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Type:</span>
+                      <p className="text-foreground">{application.application_type}</p>
+                    </div>
+                  </div>
+                  
+                  {application.review_notes && (
+                    <div className="mt-4 p-3 bg-gaming-dark rounded-lg">
+                      <span className="text-muted-foreground text-sm">Review Notes:</span>
+                      <p className="text-foreground text-sm mt-1">{application.review_notes}</p>
+                    </div>
+                  )}
+                </Card>
+              ))
+            )}
           </TabsContent>
 
+          {/* Application Types Tab */}
           <TabsContent value="app-types" className="space-y-4">
             <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-neon-cyan" />
-                  <span>Application Types</span>
-                </h2>
-                <Button 
-                  onClick={() => {
-                    setEditingApplicationType(null);
-                    setNewApplicationType({
-                      name: "",
-                      description: "",
-                      formFields: [
-                        { name: "steam_name", label: "Steam Name", type: "text", required: true, placeholder: "" },
-                        { name: "discord_tag", label: "Discord Tag", type: "text", required: true, placeholder: "username#1234" },
-                        { name: "discord_name", label: "Discord User ID", type: "text", required: true, placeholder: "123456789012345678" },
-                        { name: "fivem_name", label: "FiveM Name", type: "text", required: true, placeholder: "" },
-                        { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
-                      ]
-                    });
-                    setShowApplicationTypeDialog(true);
-                  }}
-                  className="bg-neon-cyan hover:bg-neon-cyan/80 text-gaming-darker"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Application Type
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {applicationTypes.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No application types created yet</p>
-                  </div>
-                ) : (
-                  applicationTypes.map((appType) => (
-                    <Card key={appType.id} className="p-4 bg-gaming-dark border-gaming-border">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <h3 className="font-semibold text-foreground flex items-center space-x-2">
-                            {appType.name}
-                            <Badge variant={appType.is_active ? "default" : "secondary"}>
-                              {appType.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                          </h3>
-                          <p className="text-sm text-muted-foreground">{appType.description}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Fields: {appType.form_fields?.length || 0} • Created: {new Date(appType.created_at).toLocaleDateString()}
-                          </p>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Application Types</h2>
+                <Dialog open={showApplicationTypeDialog} onOpenChange={setShowApplicationTypeDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="neon">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Type
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-gaming-card border-gaming-border">
+                    <DialogHeader>
+                      <DialogTitle className="text-foreground">
+                        {editingApplicationType ? "Edit Application Type" : "Create Application Type"}
+                      </DialogTitle>
+                      <DialogDescription className="text-muted-foreground">
+                        Define the application type and form fields
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-foreground">Type Name</Label>
+                        <Input
+                          value={newApplicationType.name}
+                          onChange={(e) => setNewApplicationType(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="e.g., Police Officer, EMS, etc."
+                          className="bg-gaming-dark border-gaming-border text-foreground"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-foreground">Description</Label>
+                        <Textarea
+                          value={newApplicationType.description}
+                          onChange={(e) => setNewApplicationType(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Description of this application type..."
+                          className="bg-gaming-dark border-gaming-border text-foreground"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-foreground">Form Fields</Label>
+                        <div className="space-y-2">
+                          {newApplicationType.formFields.map((field, index) => (
+                            <div key={index} className="flex gap-2 items-center p-3 bg-gaming-dark rounded-lg">
+                              <div className="flex-1">
+                                <Input
+                                  value={field.label}
+                                  onChange={(e) => {
+                                    const updatedFields = [...newApplicationType.formFields];
+                                    updatedFields[index].label = e.target.value;
+                                    setNewApplicationType(prev => ({ ...prev, formFields: updatedFields }));
+                                  }}
+                                  placeholder="Field Label"
+                                  className="mb-2"
+                                />
+                                <div className="flex gap-2">
+                                  <Input
+                                    value={field.name}
+                                    onChange={(e) => {
+                                      const updatedFields = [...newApplicationType.formFields];
+                                      updatedFields[index].name = e.target.value;
+                                      setNewApplicationType(prev => ({ ...prev, formFields: updatedFields }));
+                                    }}
+                                    placeholder="Field Name"
+                                    className="flex-1"
+                                  />
+                                  <select
+                                    value={field.type}
+                                    onChange={(e) => {
+                                      const updatedFields = [...newApplicationType.formFields];
+                                      updatedFields[index].type = e.target.value;
+                                      setNewApplicationType(prev => ({ ...prev, formFields: updatedFields }));
+                                    }}
+                                    className="px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground"
+                                  >
+                                    <option value="text">Text</option>
+                                    <option value="email">Email</option>
+                                    <option value="number">Number</option>
+                                    <option value="textarea">Textarea</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const updatedFields = newApplicationType.formFields.filter((_, i) => i !== index);
+                                  setNewApplicationType(prev => ({ ...prev, formFields: updatedFields }));
+                                }}
+                                className="border-red-500 text-red-500 hover:bg-red-500/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
                         </div>
                         
-                        <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setNewApplicationType(prev => ({
+                              ...prev,
+                              formFields: [
+                                ...prev.formFields,
+                                { name: "", label: "", type: "text", required: true, placeholder: "" }
+                              ]
+                            }));
+                          }}
+                          className="w-full mt-2 border-gaming-border hover:border-neon-purple/50"
+                        >
+                          Add Form Field
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 pt-4">
+                      <Button 
+                        variant="neon" 
+                        onClick={handleSaveApplicationType}
+                        disabled={isSubmitting || !newApplicationType.name}
+                        className="flex-1"
+                      >
+                        {isSubmitting ? "Saving..." : (editingApplicationType ? "Update" : "Create")}
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setShowApplicationTypeDialog(false);
+                          setEditingApplicationType(null);
+                          setNewApplicationType({
+                            name: "",
+                            description: "",
+                            formFields: [
+                              { name: "steam_name", label: "Steam Name", type: "text", required: true, placeholder: "" },
+                              { name: "discord_tag", label: "Discord Tag", type: "text", required: true, placeholder: "username#1234" },
+                              { name: "discord_name", label: "Discord User ID", type: "text", required: true, placeholder: "123456789012345678" },
+                              { name: "fivem_name", label: "FiveM Name", type: "text", required: true, placeholder: "" },
+                              { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
+                            ]
+                          });
+                        }}
+                        disabled={isSubmitting}
+                        className="flex-1 border-gaming-border hover:border-neon-purple/50"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {applicationTypes.length === 0 ? (
+                  <div className="col-span-full text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No application types created yet.</p>
+                  </div>
+                ) : (
+                  applicationTypes.map((type) => (
+                    <Card key={type.id} className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="font-semibold text-foreground">{type.name}</h3>
+                        <div className="flex gap-1">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              setEditingApplicationType(appType);
+                              setEditingApplicationType(type);
                               setNewApplicationType({
-                                name: appType.name,
-                                description: appType.description || "",
-                                formFields: (appType.form_fields || []).map((field: any) => ({
-                                  ...field,
-                                  placeholder: field.placeholder || ""
-                                }))
+                                name: type.name,
+                                description: type.description,
+                                formFields: type.form_fields || []
                               });
                               setShowApplicationTypeDialog(true);
                             }}
-                            className="border-gaming-border"
+                            className="h-8 w-8 p-0 border-gaming-border hover:border-neon-purple/50"
                           >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <Edit className="h-3 w-3" />
                           </Button>
-                          
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                                className="h-8 w-8 p-0 border-red-500 text-red-500 hover:bg-red-500/10"
                               >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-gaming-card border-gaming-border">
                               <AlertDialogHeader>
                                 <AlertDialogTitle className="text-foreground">Delete Application Type</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{appType.name}"? This action cannot be undone and may affect existing applications.
+                                <AlertDialogDescription className="text-muted-foreground">
+                                  Are you sure you want to delete "{type.name}"? This action cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-gaming-dark border-gaming-border hover:bg-gaming-darker">
+                                <AlertDialogCancel className="border-gaming-border hover:border-neon-purple/50">
                                   Cancel
                                 </AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteApplicationType(appType.id)}
-                                  className="bg-red-600 hover:bg-red-700"
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteApplicationType(type.id)}
+                                  className="bg-red-500 hover:bg-red-600"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground text-sm mb-3">{type.description}</p>
+                      <div className="text-xs text-muted-foreground">
+                        {(type.form_fields || []).length} form fields
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Rules Management Tab */}
+          <TabsContent value="rules" className="space-y-4">
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Rules Management</h2>
+                <Button
+                  variant="neon"
+                  onClick={() => {
+                    setEditingRule(null);
+                    setNewRule({ category: "", title: "", description: "" });
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Rule
+                </Button>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-foreground">Category</Label>
+                    <Input
+                      value={newRule.category}
+                      onChange={(e) => setNewRule(prev => ({ ...prev, category: e.target.value }))}
+                      placeholder="e.g., General, RP Rules"
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-foreground">Title</Label>
+                    <Input
+                      value={newRule.title}
+                      onChange={(e) => setNewRule(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Rule title"
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-foreground">Description</Label>
+                  <Textarea
+                    value={newRule.description}
+                    onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Detailed rule description..."
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="neon"
+                    onClick={handleSaveRule}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Saving..." : (editingRule ? "Update Rule" : "Add Rule")}
+                  </Button>
+                  {editingRule && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditingRule(null);
+                        setNewRule({ category: "", title: "", description: "" });
+                      }}
+                      className="border-gaming-border hover:border-neon-purple/50"
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {rules.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No rules created yet.</p>
+                  </div>
+                ) : (
+                  rules.map((rule) => (
+                    <Card key={rule.id} className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="border-neon-purple text-neon-purple">
+                              {rule.category}
+                            </Badge>
+                            <h3 className="font-semibold text-foreground">{rule.title}</h3>
+                          </div>
+                          <p className="text-muted-foreground text-sm">{rule.description}</p>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingRule(rule);
+                              setNewRule({
+                                category: rule.category,
+                                title: rule.title,
+                                description: rule.description
+                              });
+                            }}
+                            className="border-gaming-border hover:border-neon-purple/50"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-red-500 text-red-500 hover:bg-red-500/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-foreground">Delete Rule</AlertDialogTitle>
+                                <AlertDialogDescription className="text-muted-foreground">
+                                  Are you sure you want to delete this rule? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="border-gaming-border hover:border-neon-purple/50">
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteRule(rule.id)}
+                                  className="bg-red-500 hover:bg-red-600"
                                 >
                                   Delete
                                 </AlertDialogAction>
@@ -1142,6 +995,145 @@ const StaffPanel = () => {
             </Card>
           </TabsContent>
 
+          {/* Staff Management Tab */}
+          <TabsContent value="staff" className="space-y-4">
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Staff Management</h2>
+                <Dialog open={showStaffDialog} onOpenChange={setShowStaffDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="neon">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Staff
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-gaming-card border-gaming-border">
+                    <DialogHeader>
+                      <DialogTitle className="text-foreground">Add Staff Member</DialogTitle>
+                      <DialogDescription className="text-muted-foreground">
+                        Add a new staff member to the team
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-foreground">Email Address</Label>
+                        <Input
+                          type="email"
+                          value={newStaffEmail}
+                          onChange={(e) => setNewStaffEmail(e.target.value)}
+                          placeholder="staff@example.com"
+                          className="bg-gaming-dark border-gaming-border text-foreground"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-foreground">Role</Label>
+                        <select
+                          value={newStaffRole}
+                          onChange={(e) => setNewStaffRole(e.target.value)}
+                          className="w-full px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground"
+                        >
+                          <option value="moderator">Moderator</option>
+                          <option value="admin">Admin</option>
+                          <option value="developer">Developer</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 pt-4">
+                      <Button
+                        variant="neon"
+                        onClick={handleAddStaff}
+                        disabled={isSubmitting || !newStaffEmail}
+                        className="flex-1"
+                      >
+                        {isSubmitting ? "Adding..." : "Add Staff"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowStaffDialog(false);
+                          setNewStaffEmail("");
+                          setNewStaffRole("moderator");
+                        }}
+                        disabled={isSubmitting}
+                        className="flex-1 border-gaming-border hover:border-neon-purple/50"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {staffMembers.length === 0 ? (
+                  <div className="col-span-full text-center py-8">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No staff members added yet.</p>
+                  </div>
+                ) : (
+                  staffMembers.map((staff) => (
+                    <Card key={staff.id} className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground">{staff.email}</h3>
+                          <Badge
+                            variant="outline"
+                            className={
+                              staff.role === 'admin'
+                                ? "border-red-500 text-red-500"
+                                : staff.role === 'developer'
+                                ? "border-blue-500 text-blue-500"
+                                : "border-green-500 text-green-500"
+                            }
+                          >
+                            {staff.role}
+                          </Badge>
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-red-500 text-red-500 hover:bg-red-500/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-foreground">Remove Staff Member</AlertDialogTitle>
+                              <AlertDialogDescription className="text-muted-foreground">
+                                Are you sure you want to remove {staff.email} from the staff team?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="border-gaming-border hover:border-neon-purple/50">
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleRemoveStaff(staff.id)}
+                                className="bg-red-500 hover:bg-red-600"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                      <p className="text-muted-foreground text-xs">
+                        Added {new Date(staff.created_at).toLocaleDateString()}
+                      </p>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* General Settings */}
@@ -1168,20 +1160,21 @@ const StaffPanel = () => {
                       }}
                       onBlur={() => handleSettingUpdate('general_settings', {
                         ...serverSettings.general_settings,
+                        server_name: serverSettings.general_settings?.server_name || ''
                       })}
-                      className="bg-gaming-dark border-gaming-border"
+                      placeholder="Enter server name..."
+                      className="bg-gaming-dark border-gaming-border text-foreground"
                     />
                   </div>
-                  
+
                   <div>
-                    <Label className="text-foreground">Max Players</Label>
-                    <Input
-                      type="number"
-                      value={serverSettings.general_settings?.max_players || 64}
+                    <Label className="text-foreground">Welcome Message</Label>
+                    <Textarea
+                      value={serverSettings.general_settings?.welcome_message || ''}
                       onChange={(e) => {
                         const newSettings = {
                           ...serverSettings.general_settings,
-                          max_players: parseInt(e.target.value) || 64
+                          welcome_message: e.target.value
                         };
                         setServerSettings({
                           ...serverSettings,
@@ -1190,508 +1183,232 @@ const StaffPanel = () => {
                       }}
                       onBlur={() => handleSettingUpdate('general_settings', {
                         ...serverSettings.general_settings,
+                        welcome_message: serverSettings.general_settings?.welcome_message || ''
                       })}
-                      className="bg-gaming-dark border-gaming-border"
+                      placeholder="Welcome message for new users..."
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                      rows={3}
                     />
                   </div>
-                  
-                  <div>
-                    <Label className="text-foreground">Application Cooldown (days)</Label>
-                    <Input
-                      type="number"
-                      value={serverSettings.general_settings?.application_cooldown_days || 0}
-                      onChange={(e) => {
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Maintenance Mode</Label>
+                    <Switch
+                      checked={serverSettings.general_settings?.maintenance_mode || false}
+                      onCheckedChange={(checked) => {
                         const newSettings = {
                           ...serverSettings.general_settings,
-                          application_cooldown_days: parseInt(e.target.value) || 0
+                          maintenance_mode: checked
                         };
                         setServerSettings({
                           ...serverSettings,
                           general_settings: newSettings
                         });
+                        handleSettingUpdate('general_settings', newSettings);
                       }}
-                      onBlur={() => handleSettingUpdate('general_settings', {
-                        ...serverSettings.general_settings,
-                      })}
-                      className="bg-gaming-dark border-gaming-border"
                     />
                   </div>
-                  
-                  <Button 
-                    variant="gaming" 
-                    className="w-full bg-neon-purple hover:bg-neon-purple/80"
-                    onClick={() => handleSettingUpdate('general_settings', serverSettings.general_settings)}
-                  >
-                    Save General Settings
-                  </Button>
                 </div>
               </Card>
 
               {/* Application Settings */}
               <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
                 <div className="flex items-center space-x-2 mb-6">
-                  <FileText className="h-5 w-5 text-neon-cyan" />
+                  <FileText className="h-5 w-5 text-neon-purple" />
                   <h2 className="text-xl font-semibold text-foreground">Application Settings</h2>
                 </div>
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-foreground">Auto-approve applications</Label>
-                      <p className="text-sm text-muted-foreground">Automatically approve applications that meet criteria</p>
-                    </div>
+                    <Label className="text-foreground">Accept New Applications</Label>
                     <Switch
-                      checked={serverSettings.application_settings?.auto_approve || false}
+                      checked={serverSettings.application_settings?.accept_applications !== false}
                       onCheckedChange={(checked) => {
                         const newSettings = {
                           ...serverSettings.application_settings,
-                          auto_approve: checked
+                          accept_applications: checked
                         };
+                        setServerSettings({
+                          ...serverSettings,
+                          application_settings: newSettings
+                        });
                         handleSettingUpdate('application_settings', newSettings);
                       }}
                     />
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-foreground">Email notifications</Label>
-                      <p className="text-sm text-muted-foreground">Send email updates to applicants</p>
-                    </div>
-                    <Switch
-                      checked={serverSettings.application_settings?.email_notifications ?? true}
-                      onCheckedChange={(checked) => {
-                        const newSettings = {
-                          ...serverSettings.application_settings,
-                          email_notifications: checked
-                        };
-                        handleSettingUpdate('application_settings', newSettings);
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-foreground">Allow multiple applications</Label>
-                      <p className="text-sm text-muted-foreground">Allow users to submit multiple applications</p>
-                    </div>
-                    <Switch
-                      checked={serverSettings.application_settings?.multiple_applications_allowed ?? true}
-                      onCheckedChange={(checked) => {
-                        const newSettings = {
-                          ...serverSettings.application_settings,
-                          multiple_applications_allowed: checked
-                        };
-                        handleSettingUpdate('application_settings', newSettings);
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-foreground">Discord integration</Label>
-                      <p className="text-sm text-muted-foreground">Post updates to Discord channel</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" className="border-gaming-border">
-                        Configure
-                      </Button>
-                      <Switch
-                        checked={serverSettings.application_settings?.discord_integration || false}
-                        onCheckedChange={(checked) => {
-                          const newSettings = {
-                            ...serverSettings.application_settings,
-                            discord_integration: checked
-                          };
-                          handleSettingUpdate('application_settings', newSettings);
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    variant="gaming" 
-                    className="w-full bg-neon-cyan hover:bg-neon-cyan/80 text-gaming-darker"
-                    onClick={() => handleSettingUpdate('application_settings', serverSettings.application_settings)}
-                  >
-                    Save Application Settings
-                  </Button>
-                </div>
-              </Card>
 
-              {/* System Status */}
-              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-                <div className="flex items-center space-x-2 mb-6">
-                  <AlertCircle className="h-5 w-5 text-neon-orange" />
-                  <h2 className="text-xl font-semibold text-foreground">System Status</h2>
-                </div>
-                
-                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-foreground">Database Status</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
-                      <span className="text-neon-green text-sm">Online</span>
-                    </div>
+                    <Label className="text-foreground">Allow Multiple Applications</Label>
+                    <Switch
+                      checked={serverSettings.application_settings?.allow_multiple_applications || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          allow_multiple_applications: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          application_settings: newSettings
+                        });
+                        handleSettingUpdate('application_settings', newSettings);
+                      }}
+                    />
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-foreground">Email Service</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
-                      <span className="text-neon-green text-sm">Online</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-foreground">Server Health</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
-                      <span className="text-neon-green text-sm">Healthy</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-foreground">Last Backup</span>
-                    <span className="text-muted-foreground text-sm">2 hours ago</span>
-                  </div>
-                  
-                  <div className="flex space-x-2 pt-4">
-                    <Button variant="outline" className="flex-1 border-gaming-border">
-                      Refresh Status
-                    </Button>
-                    <Button variant="outline" className="flex-1 border-gaming-border">
-                      View Logs
-                    </Button>
-                  </div>
-                </div>
-              </Card>
 
-              {/* User Management */}
-              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-                <div className="flex items-center space-x-2 mb-6">
-                  <Users className="h-5 w-5 text-neon-green" />
-                  <h2 className="text-xl font-semibold text-foreground">User Management</h2>
-                </div>
-                
-                <div className="space-y-4">
                   <div>
-                    <Label className="text-foreground mb-3 block">Staff Roles</Label>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
-                        <span className="text-foreground">Admin</span>
-                        <Badge variant="destructive">Full Access</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
-                        <span className="text-foreground">Moderator</span>
-                        <Badge variant="secondary">Limited Access</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
-                        <span className="text-foreground">Helper</span>
-                        <Badge variant="outline">View Only</Badge>
-                      </div>
-                    </div>
+                    <Label className="text-foreground">Application Cooldown (days)</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.application_settings?.application_cooldown_days || 7}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          application_cooldown_days: parseInt(e.target.value) || 7
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          application_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('application_settings', {
+                        ...serverSettings.application_settings,
+                        application_cooldown_days: serverSettings.application_settings?.application_cooldown_days || 7
+                      })}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
                   </div>
-                  
-                  <Button 
-                    variant="gaming" 
-                    className="w-full bg-neon-green hover:bg-neon-green/80 text-gaming-darker"
-                  >
-                    Manage Staff
-                  </Button>
+
+                  <div>
+                    <Label className="text-foreground">Auto-Reject After (days)</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.application_settings?.auto_reject_days || 30}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          auto_reject_days: parseInt(e.target.value) || 30
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          application_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('application_settings', {
+                        ...serverSettings.application_settings,
+                        auto_reject_days: serverSettings.application_settings?.auto_reject_days || 30
+                      })}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
                 </div>
               </Card>
             </div>
-            </TabsContent>
-
-
-          <TabsContent value="players" className="space-y-4">
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-neon-green" />
-                  <span>Player Management</span>
-                </h2>
-                <Badge variant="secondary">{players.length} total players</Badge>
-              </div>
-              
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {players.map((player: any) => (
-                  <div key={player.id} className="flex items-center justify-between p-4 bg-gaming-dark rounded border border-gaming-border">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-foreground">
-                        {player.full_name || player.username || 'Unknown Player'}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        ID: {player.id.slice(0, 8)}... • Joined: {new Date(player.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Button variant="outline" size="sm" className="border-gaming-border hover:bg-gaming-darker">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                
-                {players.length === 0 && (
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No players found</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="rules" className="space-y-4">
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
-                  <Settings className="h-5 w-5 text-neon-orange" />
-                  <span>Rules Management</span>
-                </h2>
-                <Button variant="gaming" className="bg-neon-orange hover:bg-neon-orange/80">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Rule
-                </Button>
-              </div>
-              
-              <div className="space-y-6">
-                {Object.entries(
-                  rules.reduce((acc: any, rule: any) => {
-                    if (!acc[rule.category]) acc[rule.category] = [];
-                    acc[rule.category].push(rule);
-                    return acc;
-                  }, {})
-                ).map(([category, categoryRules]: [string, any]) => (
-                  <div key={category}>
-                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center space-x-2">
-                      <span>{category}</span>
-                      <Badge variant="secondary">{(categoryRules as any[]).length}</Badge>
-                    </h3>
-                    <div className="space-y-3">
-                      {(categoryRules as any[]).map((rule: any) => (
-                        <div key={rule.id} className="p-4 bg-gaming-dark rounded border border-gaming-border">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-foreground">{rule.title}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">{rule.description}</p>
-                            </div>
-                            <div className="flex items-center space-x-2 ml-4">
-                              <Button variant="outline" size="sm" className="border-gaming-border">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="outline" size="sm" className="border-red-500/50 text-red-500 hover:bg-red-500/10">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
           </TabsContent>
         </Tabs>
-      </div>
 
-      {/* Application Type Management Dialog */}
-      <Dialog open={showApplicationTypeDialog} onOpenChange={setShowApplicationTypeDialog}>
-        <DialogContent className="bg-gaming-card border-gaming-border max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">
-              {editingApplicationType ? 'Edit Application Type' : 'Create Application Type'}
-            </DialogTitle>
-            <DialogDescription>
-              {editingApplicationType ? 'Modify the application type details' : 'Create a new application type for your server'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label htmlFor="app-type-name" className="text-foreground">Name</Label>
-                <Input
-                  id="app-type-name"
-                  value={newApplicationType.name}
-                  onChange={(e) => setNewApplicationType({...newApplicationType, name: e.target.value})}
-                  placeholder="e.g., Whitelist Application"
-                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                />
-              </div>
-              <div>
-                <Label htmlFor="app-type-description" className="text-foreground">Description</Label>
-                <Textarea
-                  id="app-type-description"
-                  value={newApplicationType.description}
-                  onChange={(e) => setNewApplicationType({...newApplicationType, description: e.target.value})}
-                  placeholder="Brief description of this application type"
-                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                  rows={3}
-                />
-              </div>
-            </div>
+        {/* Application Review Dialog */}
+        <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
+          <DialogContent className="max-w-2xl bg-gaming-card border-gaming-border">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Application Review</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Review and take action on this application
+              </DialogDescription>
+            </DialogHeader>
             
-            <div>
-              <Label className="text-foreground">Form Fields</Label>
-              <div className="mt-2 space-y-3">
-                {newApplicationType.formFields.map((field, index) => (
-                  <div key={index} className="p-4 bg-gaming-dark border border-gaming-border rounded">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div>
-                        <Label className="text-sm text-foreground">Field Name</Label>
-                        <Input
-                          value={field.name}
-                          onChange={(e) => {
-                            const updatedFields = [...newApplicationType.formFields];
-                            updatedFields[index] = { ...field, name: e.target.value };
-                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
-                          }}
-                          placeholder="field_name"
-                          className="bg-gaming-darker border-gaming-border text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm text-foreground">Label</Label>
-                        <Input
-                          value={field.label}
-                          onChange={(e) => {
-                            const updatedFields = [...newApplicationType.formFields];
-                            updatedFields[index] = { ...field, label: e.target.value };
-                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
-                          }}
-                          placeholder="Display Label"
-                          className="bg-gaming-darker border-gaming-border text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm text-foreground">Type</Label>
-                        <select
-                          value={field.type}
-                          onChange={(e) => {
-                            const updatedFields = [...newApplicationType.formFields];
-                            updatedFields[index] = { ...field, type: e.target.value };
-                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
-                          }}
-                          className="w-full bg-gaming-darker border border-gaming-border rounded px-3 py-2 text-sm text-foreground"
-                        >
-                          <option value="text">Text</option>
-                          <option value="textarea">Textarea</option>
-                          <option value="number">Number</option>
-                          <option value="email">Email</option>
-                          <option value="tel">Phone</option>
-                        </select>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="flex items-center space-x-1">
-                          <input
-                            type="checkbox"
-                            checked={field.required}
-                            onChange={(e) => {
-                              const updatedFields = [...newApplicationType.formFields];
-                              updatedFields[index] = { ...field, required: e.target.checked };
-                              setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
-                            }}
-                            className="rounded border-gaming-border"
-                          />
-                          <Label className="text-xs text-foreground">Required</Label>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const updatedFields = newApplicationType.formFields.filter((_, i) => i !== index);
-                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
-                          }}
-                          className="border-red-500/50 text-red-500 hover:bg-red-500/10 h-8"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    {field.placeholder && (
-                      <div className="mt-2">
-                        <Label className="text-sm text-foreground">Placeholder</Label>
-                        <Input
-                          value={field.placeholder || ""}
-                          onChange={(e) => {
-                            const updatedFields = [...newApplicationType.formFields];
-                            updatedFields[index] = { ...field, placeholder: e.target.value };
-                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
-                          }}
-                          placeholder="Placeholder text"
-                          className="bg-gaming-darker border-gaming-border text-sm"
-                        />
-                      </div>
-                    )}
+            {selectedApplication && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">Steam Name</Label>
+                    <p className="text-foreground">{selectedApplication.steam_name}</p>
                   </div>
-                ))}
+                  <div>
+                    <Label className="text-muted-foreground">Discord Tag</Label>
+                    <p className="text-foreground">{selectedApplication.discord_tag}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Discord User ID</Label>
+                    <p className="text-foreground">{selectedApplication.discord_name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">FiveM Name</Label>
+                    <p className="text-foreground">{selectedApplication.fivem_name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Age</Label>
+                    <p className="text-foreground">{selectedApplication.age}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Application Type</Label>
+                    <p className="text-foreground">{selectedApplication.application_type}</p>
+                  </div>
+                </div>
                 
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const newField = {
-                      name: `custom_field_${newApplicationType.formFields.length + 1}`,
-                      label: "New Field",
-                      type: "text",
-                      required: false,
-                      placeholder: ""
-                    };
-                    setNewApplicationType({
-                      ...newApplicationType,
-                      formFields: [...newApplicationType.formFields, newField]
-                    });
-                  }}
-                  className="w-full border-gaming-border hover:border-neon-cyan/50"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Form Field
-                </Button>
+                {selectedApplication.previous_experience && (
+                  <div>
+                    <Label className="text-muted-foreground">Previous Experience</Label>
+                    <p className="text-foreground">{selectedApplication.previous_experience}</p>
+                  </div>
+                )}
+                
+                {selectedApplication.why_interested && (
+                  <div>
+                    <Label className="text-muted-foreground">Why Interested</Label>
+                    <p className="text-foreground">{selectedApplication.why_interested}</p>
+                  </div>
+                )}
+                
+                {selectedApplication.additional_info && (
+                  <div>
+                    <Label className="text-muted-foreground">Additional Information</Label>
+                    <p className="text-foreground">{selectedApplication.additional_info}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <Label className="text-muted-foreground">Submitted</Label>
+                  <p className="text-foreground">{new Date(selectedApplication.created_at).toLocaleString()}</p>
+                </div>
+                
+                <div>
+                  <Label className="text-foreground">Review Notes</Label>
+                  <Textarea
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    placeholder="Add your review notes here..."
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleApplicationAction(selectedApplication.id, 'approved')}
+                    disabled={isSubmitting}
+                    className="flex-1 border-green-500 text-green-500 hover:bg-green-500/10"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {isSubmitting ? "Processing..." : "Approve"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleApplicationAction(selectedApplication.id, 'rejected')}
+                    disabled={isSubmitting}
+                    className="flex-1 border-red-500 text-red-500 hover:bg-red-500/10"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    {isSubmitting ? "Processing..." : "Reject"}
+                  </Button>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex space-x-2 pt-4">
-              <Button 
-                variant="neon" 
-                onClick={handleSaveApplicationType}
-                disabled={isSubmitting || !newApplicationType.name}
-                className="flex-1"
-              >
-                {isSubmitting ? "Saving..." : (editingApplicationType ? "Update" : "Create")}
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  setShowApplicationTypeDialog(false);
-                  setEditingApplicationType(null);
-                  setNewApplicationType({
-                    name: "",
-                    description: "",
-                    formFields: [
-                      { name: "steam_name", label: "Steam Name", type: "text", required: true, placeholder: "" },
-                      { name: "discord_tag", label: "Discord Tag", type: "text", required: true, placeholder: "username#1234" },
-                      { name: "discord_name", label: "Discord User ID", type: "text", required: true, placeholder: "123456789012345678" },
-                      { name: "fivem_name", label: "FiveM Name", type: "text", required: true, placeholder: "" },
-                      { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
-                    ]
-                  });
-                }}
-                disabled={isSubmitting}
-                className="flex-1 border-gaming-border hover:border-neon-purple/50"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
 };
-
-export default StaffPanel;
 
 export default StaffPanel;
