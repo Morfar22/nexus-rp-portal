@@ -16,8 +16,6 @@ const supabaseAdmin = createClient(
   }
 );
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -175,31 +173,40 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log('=== EMAIL FUNCTION START ===');
     const { type, userEmail, userId, applicationData, staffEmail }: EmailRequest = await req.json();
 
-    console.log(`Processing ${type} email request for user:`, userId || userEmail);
+    console.log('Request data:', { type, userEmail, userId, applicationData, staffEmail });
+    console.log('RESEND_API_KEY exists:', !!Deno.env.get("RESEND_API_KEY"));
+    console.log('SUPABASE_URL:', Deno.env.get('SUPABASE_URL'));
+    console.log('SUPABASE_SERVICE_ROLE_KEY exists:', !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
 
     let recipientEmail = userEmail;
     
     // If no email provided but userId is available, fetch from auth
     if (!recipientEmail && userId) {
+      console.log('Fetching user email for userId:', userId);
       try {
         const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+        console.log('User fetch result:', { userData: !!userData?.user, error: userError });
         if (userError) {
           console.error('Error fetching user:', userError);
-          throw new Error('Failed to fetch user email');
+          throw new Error('Failed to fetch user email: ' + userError.message);
         }
         recipientEmail = userData.user?.email;
-        console.log('Fetched user email from auth:', recipientEmail);
+        console.log('Fetched user email:', recipientEmail);
       } catch (authError) {
         console.error('Error with admin auth:', authError);
-        throw new Error('Unable to access user email');
+        throw new Error('Unable to access user email: ' + authError.message);
       }
     }
 
     if (!recipientEmail) {
+      console.error('No recipient email available');
       throw new Error('No recipient email available');
     }
+
+    console.log('Final recipient email:', recipientEmail);
 
     const subject = {
       submission: "Application Submitted - FiveM Server",
@@ -209,8 +216,13 @@ const handler = async (req: Request): Promise<Response> => {
       staff_notification: "New Application Requires Review"
     }[type];
 
+    console.log('Email subject:', subject);
+
     const html = getEmailTemplate(type, applicationData);
     const toEmail = type === 'staff_notification' ? (staffEmail || 'staff@yourdomain.com') : recipientEmail;
+
+    console.log('About to send email to:', toEmail);
+    console.log('Email HTML length:', html.length);
 
     const emailResponse = await resend.emails.send({
       from: "FiveM Server <onboarding@resend.dev>",
@@ -219,7 +231,7 @@ const handler = async (req: Request): Promise<Response> => {
       html,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email sent successfully via Resend:", emailResponse);
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
@@ -229,9 +241,12 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error in send-application-email function:", error);
+    console.error("=== EMAIL FUNCTION ERROR ===");
+    console.error("Error details:", error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, details: error.toString() }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
