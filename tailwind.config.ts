@@ -52,6 +52,17 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				gaming: {
+					'dark': 'hsl(var(--gaming-dark))',
+					'darker': 'hsl(var(--gaming-darker))',
+					'card': 'hsl(var(--gaming-card))',
+					'border': 'hsl(var(--gaming-border))'
+				},
+				neon: {
+					'purple': 'hsl(var(--neon-purple))',
+					'blue': 'hsl(var(--neon-blue))',
+					'green': 'hsl(var(--neon-green))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -67,6 +78,16 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-hero': 'var(--gradient-hero)'
+			},
+			boxShadow: {
+				'gaming': 'var(--shadow-gaming)',
+				'glow-primary': 'var(--glow-primary)',
+				'glow-blue': 'var(--glow-blue)'
 			},
 			keyframes: {
 				'accordion-down': {
