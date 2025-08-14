@@ -77,28 +77,33 @@ const StaffPanel = () => {
     try {
       setIsLoading(true);
       
-      // Fetch staff members by getting user_roles and then profiles separately
-      const { data: staffRolesData, error: staffError } = await supabase
+      // Fetch staff members with proper profile data using a direct query
+      const { data: staffMembersWithProfiles, error: staffError } = await supabase
         .from('user_roles')
-        .select('id, role, created_at, user_id')
+        .select(`
+          id,
+          role,
+          created_at,
+          user_id,
+          profiles (
+            id,
+            username,
+            full_name
+          )
+        `)
         .in('role', ['admin', 'moderator']);
 
-      // Get profile data for staff members
-      let staffMembersWithProfiles = [];
-      if (staffRolesData && staffRolesData.length > 0) {
-        const userIds = staffRolesData.map(role => role.user_id);
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, username, full_name')
-          .in('id', userIds);
+      // Handle cases where profiles might be missing
+      const processedStaffMembers = staffMembersWithProfiles?.map(staff => ({
+        ...staff,
+        profiles: staff.profiles || {
+          id: staff.user_id,
+          username: `User ${staff.user_id.slice(0, 8)}`,
+          full_name: null
+        }
+      })) || [];
 
-        staffMembersWithProfiles = staffRolesData.map(role => ({
-          ...role,
-          profiles: profilesData?.find(profile => profile.id === role.user_id)
-        }));
-      }
-
-      console.log('Staff members with profiles:', staffMembersWithProfiles);
+      console.log('Processed staff members:', processedStaffMembers);
 
       const [applicationsRes, rulesRes, typesRes, settingsRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
@@ -109,9 +114,9 @@ const StaffPanel = () => {
 
       if (applicationsRes.data) setApplications(applicationsRes.data);
       if (rulesRes.data) setRules(rulesRes.data);
-      if (staffMembersWithProfiles) {
-        console.log('Staff members loaded:', staffMembersWithProfiles);
-        setStaffMembers(staffMembersWithProfiles);
+      if (processedStaffMembers) {
+        console.log('Staff members loaded:', processedStaffMembers);
+        setStaffMembers(processedStaffMembers);
       }
       if (typesRes.data) setApplicationTypes(typesRes.data);
       if (settingsRes.data) setServerSettings(settingsRes.data);
