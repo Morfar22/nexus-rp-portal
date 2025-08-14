@@ -471,6 +471,31 @@ const StaffPanel = () => {
     }
   };
 
+  const handleDeleteApplication = async (applicationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Application deleted successfully",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete application",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
       // First, check if a setting with this key already exists
@@ -703,15 +728,47 @@ const StaffPanel = () => {
                         )}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedApplication(application)}
-                      className="border-gaming-border hover:border-neon-purple/50"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedApplication(application)}
+                        className="border-gaming-border hover:border-neon-purple/50"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-red-500 text-red-500 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-foreground">Delete Application</AlertDialogTitle>
+                            <AlertDialogDescription className="text-muted-foreground">
+                              Are you sure you want to delete this application from {application.steam_name}? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="border-gaming-border hover:border-neon-purple/50">
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteApplication(application.id)}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
