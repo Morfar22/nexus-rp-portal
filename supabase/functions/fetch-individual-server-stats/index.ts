@@ -99,7 +99,7 @@ serve(async (req) => {
     const statsData = {
       server_id: serverId,
       players_online: playersOnline,
-      max_players: maxPlayers,
+      max_players: parseInt(maxPlayers.toString()) || 300,
       queue_count: queueCount,
       uptime_percentage: Math.round(uptimePercentage * 10) / 10,
       ping_ms: pingMs,
