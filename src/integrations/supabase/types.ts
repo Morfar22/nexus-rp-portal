@@ -197,6 +197,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          banned: boolean
+          banned_at: string | null
+          banned_by: string | null
           created_at: string | null
           discord_id: string | null
           full_name: string | null
@@ -209,6 +212,9 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          banned?: boolean
+          banned_at?: string | null
+          banned_by?: string | null
           created_at?: string | null
           discord_id?: string | null
           full_name?: string | null
@@ -221,6 +227,9 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          banned?: boolean
+          banned_at?: string | null
+          banned_by?: string | null
           created_at?: string | null
           discord_id?: string | null
           full_name?: string | null
