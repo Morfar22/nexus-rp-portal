@@ -109,7 +109,10 @@ const StaffPanel = () => {
 
       if (applicationsRes.data) setApplications(applicationsRes.data);
       if (rulesRes.data) setRules(rulesRes.data);
-      if (staffMembersWithProfiles) setStaffMembers(staffMembersWithProfiles);
+      if (staffMembersWithProfiles) {
+        console.log('Staff members loaded:', staffMembersWithProfiles);
+        setStaffMembers(staffMembersWithProfiles);
+      }
       if (typesRes.data) setApplicationTypes(typesRes.data);
       if (settingsRes.data) setServerSettings(settingsRes.data);
       
@@ -308,17 +311,31 @@ const StaffPanel = () => {
     try {
       setIsSubmitting(true);
 
-      // First, find the user by email from profiles (assuming username stores email)
-      const { data: userProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', newStaffEmail)
-        .single();
+      // First, get the user ID by email using our database function
+      const { data: userId, error: userError } = await supabase
+        .rpc('get_user_id_by_email', { _email: newStaffEmail });
 
-      if (profileError || !userProfile) {
+      if (userError || !userId) {
         toast({
           title: "Error",
           description: "User not found. The user must have an account first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if user already has a staff role
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .in('role', ['admin', 'moderator'])
+        .maybeSingle();
+
+      if (existingRole) {
+        toast({
+          title: "Error",
+          description: "This user is already a staff member",
           variant: "destructive",
         });
         return;
@@ -328,7 +345,7 @@ const StaffPanel = () => {
       const { error } = await supabase
         .from('user_roles')
         .insert({
-          user_id: userProfile.id,
+          user_id: userId,
           role: newStaffRole as 'admin' | 'moderator' | 'user'
         });
 
