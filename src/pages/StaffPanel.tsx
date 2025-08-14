@@ -567,10 +567,13 @@ const StaffPanel = () => {
                   Approved: {applications.filter(app => app.status === 'approved').length}
                 </Badge>
                 <Badge variant="outline" className="border-red-500 text-red-500">
-                  Rejected: {applications.filter(app => app.status === 'rejected').length}
+                  Denied: {applications.filter(app => app.status === 'denied').length}
                 </Badge>
                 <Badge variant="outline" className="border-yellow-500 text-yellow-500">
                   Pending: {applications.filter(app => app.status === 'pending').length}
+                </Badge>
+                <Badge variant="outline" className="border-blue-500 text-blue-500">
+                  Under Review: {applications.filter(app => app.status === 'under_review').length}
                 </Badge>
               </div>
             </div>
@@ -593,15 +596,18 @@ const StaffPanel = () => {
                           className={
                             application.status === 'approved' 
                               ? "border-green-500 text-green-500" 
-                              : application.status === 'rejected'
+                              : application.status === 'denied'
                               ? "border-red-500 text-red-500"
+                              : application.status === 'under_review'
+                              ? "border-blue-500 text-blue-500"
                               : "border-yellow-500 text-yellow-500"
                           }
                         >
                           {application.status === 'approved' && <CheckCircle className="h-3 w-3 mr-1" />}
-                          {application.status === 'rejected' && <XCircle className="h-3 w-3 mr-1" />}
+                          {application.status === 'denied' && <XCircle className="h-3 w-3 mr-1" />}
+                          {application.status === 'under_review' && <Eye className="h-3 w-3 mr-1" />}
                           {application.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                          {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                          {application.status.charAt(0).toUpperCase() + application.status.slice(1).replace('_', ' ')}
                         </Badge>
                       </div>
                       <p className="text-muted-foreground text-sm">
@@ -1828,12 +1834,21 @@ const StaffPanel = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => handleApplicationAction(selectedApplication.id, 'rejected')}
+                    onClick={() => handleApplicationAction(selectedApplication.id, 'under_review')}
+                    disabled={isSubmitting}
+                    className="flex-1 border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    {isSubmitting ? "Processing..." : "Under Review"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleApplicationAction(selectedApplication.id, 'denied')}
                     disabled={isSubmitting}
                     className="flex-1 border-red-500 text-red-500 hover:bg-red-500/10"
                   >
                     <XCircle className="h-4 w-4 mr-2" />
-                    {isSubmitting ? "Processing..." : "Reject"}
+                    {isSubmitting ? "Processing..." : "Deny"}
                   </Button>
                 </div>
               </div>
