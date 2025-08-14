@@ -78,7 +78,7 @@ const StaffPanel = () => {
       setIsLoading(true);
       
       // Fetch staff members by joining user_roles with profiles
-      const { data: staffData } = await supabase
+      const { data: staffData, error: staffError } = await supabase
         .from('user_roles')
         .select(`
           id,
@@ -91,6 +91,8 @@ const StaffPanel = () => {
           )
         `)
         .in('role', ['admin', 'moderator']);
+
+      console.log('Staff data fetch result:', { staffData, staffError });
 
       const [applicationsRes, rulesRes, typesRes, settingsRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
