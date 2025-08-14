@@ -73,3 +73,6 @@ gcp_jwt_path = "supabase/gcp.json"
 
 [functions.send-application-email]
 verify_jwt = false
+
+[functions.discord-logger]
+verify_jwt = false

@@ -107,6 +107,30 @@ const Apply = () => {
         // Don't fail the whole operation if email fails
       }
 
+      // Send Discord notification for new application
+      try {
+        // Try to send Discord notification - it will handle its own webhook validation
+        await supabase.functions.invoke('discord-logger', {
+          body: {
+            type: 'application_submitted',
+            data: {
+              steam_name: formData.steamName,
+              discord_tag: formData.discordTag,
+              fivem_name: formData.fivemName,
+              age: parseInt(formData.age)
+            },
+            settings: {
+              // The Discord function will check if webhook is configured
+              discordWebhookUrl: null
+            }
+          }
+        });
+        console.log('Discord notification attempted');
+      } catch (discordError) {
+        console.error('Discord notification failed:', discordError);
+        // Don't fail the whole operation if Discord fails
+      }
+
       setExistingApplication(data);
       toast({
         title: "Application Submitted!",

@@ -406,6 +406,30 @@ const StaffPanel = () => {
         // Don't fail the whole operation if email fails
       }
 
+      // Send Discord notification if enabled
+      if (applicationSettings.discordIntegration && applicationSettings.discordWebhook) {
+        try {
+          await supabase.functions.invoke('discord-logger', {
+            body: {
+              type: `application_${action}`,
+              data: {
+                steam_name: appData.steam_name,
+                discord_tag: appData.discord_tag,
+                fivem_name: appData.fivem_name,
+                review_notes: notes
+              },
+              settings: {
+                discordWebhookUrl: applicationSettings.discordWebhook
+              }
+            }
+          });
+          console.log('Discord notification sent successfully');
+        } catch (discordError) {
+          console.error('Discord notification failed:', discordError);
+          // Don't fail the whole operation if Discord fails
+        }
+      }
+
       toast({
         title: "Action Completed",
         description: `Application has been ${action}`,
