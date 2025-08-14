@@ -2078,13 +2078,144 @@ const StaffPanel = () => {
                   </div>
                 </div>
               </Card>
-              
-              {/* Server Stats Management */}
+
+              {/* Server IP Configuration */}
               <Card className="bg-gaming-card border-gaming-border">
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-foreground mb-4">
-                    Server Statistics
+                    FiveM Server Configuration
                   </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="serverIp" className="text-foreground">
+                        Server IP:Port
+                      </Label>
+                      <div className="flex space-x-2 mt-2">
+                        <Input
+                          id="serverIp"
+                          value={serverSettings.server_ip || ''}
+                          onChange={(e) => setServerSettings({ 
+                            ...serverSettings, 
+                            server_ip: e.target.value 
+                          })}
+                          placeholder="Enter server IP:port (e.g., 127.0.0.1:30120)"
+                          className="bg-gaming-dark border-gaming-border text-foreground"
+                        />
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const { error } = await supabase
+                                .from('server_settings')
+                                .upsert({
+                                  setting_key: 'server_ip',
+                                  setting_value: serverSettings.server_ip || ''
+                                });
+                              
+                              if (error) throw error;
+                              
+                              toast({
+                                title: "Success",
+                                description: "Server IP updated successfully",
+                              });
+                            } catch (error) {
+                              console.error('Error updating server IP:', error);
+                              toast({
+                                title: "Error",
+                                description: "Failed to update server IP",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="bg-neon-purple hover:bg-neon-purple/80"
+                        >
+                          Save
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Enter your FiveM server's IP and port for live stats fetching
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            
+            {/* Server Stats Management */}
+            <div className="space-y-6">
+              <Card className="bg-gaming-card border-gaming-border">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Live Server Statistics
+                    </h3>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          setIsSubmitting(true);
+                          
+                          const { data, error } = await supabase.functions.invoke('fetch-server-stats');
+                          
+                          if (error) throw error;
+                          
+                          toast({
+                            title: "Success",
+                            description: "Live server stats fetched successfully!",
+                          });
+                          
+                          // Refresh the data
+                          fetchData();
+                        } catch (error) {
+                          console.error('Error fetching live stats:', error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to fetch live server stats. Check server IP configuration.",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      disabled={isSubmitting}
+                      className="bg-neon-green hover:bg-neon-green/80"
+                    >
+                      {isSubmitting ? "Fetching..." : "Fetch Live Stats"}
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <Card className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-neon-green">
+                          {serverStats.players_online}/{serverStats.max_players}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Players Online</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-neon-blue">
+                          {serverStats.uptime_percentage}%
+                        </p>
+                        <p className="text-sm text-muted-foreground">Uptime</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-neon-purple">
+                          {serverStats.queue_count}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Queue</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-neon-green">
+                          {serverStats.ping_ms}ms
+                        </p>
+                        <p className="text-sm text-muted-foreground">Ping</p>
+                      </div>
+                    </Card>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="playersOnline" className="text-foreground">
@@ -2193,9 +2324,108 @@ const StaffPanel = () => {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-4">
-                    These stats will be displayed in real-time on the homepage and update instantly for all users.
-                  </p>
+                  <div className="space-y-4">
+                    <div className="bg-gaming-dark p-4 rounded-lg">
+                      <h4 className="text-foreground font-semibold mb-2">Automatic Updates</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Configure automatic fetching of live server stats every few minutes.
+                      </p>
+                      <Button
+                        onClick={async () => {
+                          toast({
+                            title: "Coming Soon",
+                            description: "Automatic stats fetching will be available soon!",
+                          });
+                        }}
+                        variant="outline"
+                        className="border-gaming-border text-foreground hover:bg-gaming-dark"
+                      >
+                        Enable Auto-Fetch (Coming Soon)
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-gaming-dark p-4 rounded-lg">
+                      <h4 className="text-foreground font-semibold mb-2">Manual Override</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        If needed, you can still manually update stats below.
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="playersOnline" className="text-foreground">
+                            Players Online
+                          </Label>
+                          <Input
+                            id="playersOnline"
+                            type="number"
+                            value={serverStats.players_online}
+                            onChange={(e) => setServerStats({ ...serverStats, players_online: parseInt(e.target.value) || 0 })}
+                            className="bg-gaming-darker border-gaming-border text-foreground"
+                            min="0"
+                            max={serverStats.max_players}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="maxPlayers" className="text-foreground">
+                            Max Players
+                          </Label>
+                          <Input
+                            id="maxPlayers"
+                            type="number"
+                            value={serverStats.max_players}
+                            onChange={(e) => setServerStats({ ...serverStats, max_players: parseInt(e.target.value) || 300 })}
+                            className="bg-gaming-darker border-gaming-border text-foreground"
+                            min="1"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <Button
+                            onClick={async () => {
+                              try {
+                                const { error } = await supabase
+                                  .from('server_stats')
+                                  .update({
+                                    players_online: serverStats.players_online,
+                                    max_players: serverStats.max_players,
+                                    queue_count: serverStats.queue_count,
+                                    uptime_percentage: serverStats.uptime_percentage,
+                                    ping_ms: serverStats.ping_ms,
+                                    last_updated: new Date().toISOString()
+                                  })
+                                  .eq('id', serverStats.id);
+                                
+                                if (error) throw error;
+                                
+                                toast({
+                                  title: "Success",
+                                  description: "Server stats updated manually",
+                                });
+                                
+                                fetchData();
+                              } catch (error) {
+                                console.error('Error updating server stats:', error);
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to update server stats",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            variant="outline"
+                            className="w-full border-gaming-border text-foreground hover:bg-gaming-dark"
+                          >
+                            Manual Update
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-neon-purple/10 border border-neon-purple/30 rounded-lg">
+                    <p className="text-sm text-foreground">
+                      <strong>Live Stats:</strong> The system now fetches real player count and server data directly from your FiveM server.
+                      Configure your server IP above and click "Fetch Live Stats" to get real-time data!
+                    </p>
+                  </div>
                 </div>
               </Card>
             </div>
