@@ -40,6 +40,8 @@ export default function ServerManagement() {
   const [serverStats, setServerStats] = useState<{ [key: string]: ServerStats }>({});
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
+  const [checkingStaff, setCheckingStaff] = useState(true);
   const [newServer, setNewServer] = useState({
     name: '',
     ip_address: '',
@@ -47,6 +49,32 @@ export default function ServerManagement() {
   });
 
   useEffect(() => {
+    const checkStaffRole = async () => {
+      if (!user) {
+        setIsStaff(false);
+        setCheckingStaff(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .rpc('is_staff', { _user_id: user.id });
+
+        if (error) {
+          console.error('Error checking staff role:', error);
+          setIsStaff(false);
+        } else {
+          setIsStaff(data);
+        }
+      } catch (error) {
+        console.error('Error checking staff role:', error);
+        setIsStaff(false);
+      } finally {
+        setCheckingStaff(false);
+      }
+    };
+
+    checkStaffRole();
     fetchServers();
     fetchServerStats();
     
@@ -69,7 +97,7 @@ export default function ServerManagement() {
       supabase.removeChannel(serverChannel);
       supabase.removeChannel(statsChannel);
     };
-  }, []);
+  }, [user]);
 
   const fetchServers = async () => {
     try {
@@ -111,6 +139,15 @@ export default function ServerManagement() {
   };
 
   const addServer = async () => {
+    if (!isStaff) {
+      toast({
+        title: "Access Denied",
+        description: "Only staff members can add servers",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!newServer.name || !newServer.ip_address) {
       toast({
         title: "Error",
@@ -150,6 +187,15 @@ export default function ServerManagement() {
   };
 
   const deleteServer = async (serverId: string) => {
+    if (!isStaff) {
+      toast({
+        title: "Access Denied",
+        description: "Only staff members can delete servers",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('servers')
@@ -226,16 +272,19 @@ export default function ServerManagement() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Server Management</h1>
-            <p className="text-muted-foreground">Monitor and manage your game servers</p>
-            <div className="flex items-center mt-2">
-              <Badge variant="secondary" className="bg-neon-purple/20 text-neon-purple border-neon-purple/50">
-                Staff Only
-              </Badge>
-            </div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Server Status</h1>
+            <p className="text-muted-foreground">Monitor live server statistics</p>
+            {isStaff && (
+              <div className="flex items-center mt-2">
+                <Badge variant="secondary" className="bg-neon-purple/20 text-neon-purple border-neon-purple/50">
+                  Staff Access: Full Management
+                </Badge>
+              </div>
+            )}
           </div>
           
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          {isStaff && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-neon-purple hover:bg-neon-purple/80">
                 <Plus className="w-4 h-4 mr-2" />
@@ -285,7 +334,8 @@ export default function ServerManagement() {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -309,14 +359,16 @@ export default function ServerManagement() {
                         <Activity className={`w-3 h-3 mr-1 ${getStatusColor(isOnline)}`} />
                         {isOnline ? "Online" : "Offline"}
                       </Badge>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => deleteServer(server.id)}
-                        className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {isStaff && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteServer(server.id)}
+                          className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <CardDescription className="text-muted-foreground">
@@ -406,8 +458,11 @@ export default function ServerManagement() {
           <div className="text-center py-12">
             <Server className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="text-xl font-semibold text-foreground mb-2">No servers added yet</h3>
-            <p className="text-muted-foreground mb-4">Add your first server to start monitoring its status</p>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <p className="text-muted-foreground mb-4">
+              {isStaff ? "Add your first server to start monitoring its status" : "No servers are currently being monitored"}
+            </p>
+            {isStaff && (
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-neon-purple hover:bg-neon-purple/80">
                   <Plus className="w-4 h-4 mr-2" />
@@ -458,6 +513,7 @@ export default function ServerManagement() {
                 </div>
               </DialogContent>
             </Dialog>
+            )}
           </div>
         )}
       </div>

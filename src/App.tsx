@@ -40,11 +40,7 @@ const App = () => (
                 <StaffPanel />
               </StaffProtectedRoute>
             } />
-            <Route path="/servers" element={
-              <StaffProtectedRoute>
-                <ServerManagement />
-              </StaffProtectedRoute>
-            } />
+            <Route path="/servers" element={<ServerManagement />} />
             <Route path="/team" element={<OurTeam />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
