@@ -429,50 +429,48 @@ const StaffPanel = () => {
                                   </div>
                                 )}
                                 
-                                {app.status === 'pending' && (
-                                  <>
-                                    <div>
-                                      <Label htmlFor="review-notes" className="text-foreground">Review Notes (Optional)</Label>
-                                      <Textarea
-                                        id="review-notes"
-                                        value={reviewNotes}
-                                        onChange={(e) => setReviewNotes(e.target.value)}
-                                        placeholder="Add notes for the applicant..."
-                                        className="mt-2 bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                                      />
-                                    </div>
-                                    
-                                    <div className="flex space-x-2 pt-4">
-                                      <Button 
-                                        variant="neon" 
-                                        onClick={() => handleApplicationAction(app.id, 'approved', reviewNotes)}
-                                        disabled={isSubmitting}
-                                        className="flex-1"
-                                      >
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        {isSubmitting ? "Processing..." : "Approve"}
-                                      </Button>
-                                      <Button 
-                                        variant="outline"
-                                        onClick={() => handleApplicationAction(app.id, 'under_review', reviewNotes)}
-                                        disabled={isSubmitting}
-                                        className="flex-1 hover:border-neon-blue/50"
-                                      >
-                                        <Clock className="h-4 w-4 mr-1" />
-                                        Under Review
-                                      </Button>
-                                      <Button 
-                                        variant="destructive" 
-                                        onClick={() => handleApplicationAction(app.id, 'denied', reviewNotes)}
-                                        disabled={isSubmitting}
-                                        className="flex-1"
-                                      >
-                                        <XCircle className="h-4 w-4 mr-1" />
-                                        Deny
-                                      </Button>
-                                    </div>
-                                  </>
-                                )}
+                                <div>
+                                  <Label htmlFor="review-notes" className="text-foreground">
+                                    {app.status === 'pending' ? 'Review Notes (Optional)' : 'Update Notes (Optional)'}
+                                  </Label>
+                                  <Textarea
+                                    id="review-notes"
+                                    value={reviewNotes}
+                                    onChange={(e) => setReviewNotes(e.target.value)}
+                                    placeholder={app.status === 'pending' ? 'Add notes for the applicant...' : 'Update application notes...'}
+                                    className="mt-2 bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                                  />
+                                </div>
+                                
+                                <div className="flex space-x-2 pt-4">
+                                  <Button 
+                                    variant="neon" 
+                                    onClick={() => handleApplicationAction(app.id, 'approved', reviewNotes)}
+                                    disabled={isSubmitting}
+                                    className="flex-1"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    {isSubmitting ? "Processing..." : app.status === 'approved' ? 'Re-approve' : 'Approve'}
+                                  </Button>
+                                  <Button 
+                                    variant="outline"
+                                    onClick={() => handleApplicationAction(app.id, 'under_review', reviewNotes)}
+                                    disabled={isSubmitting}
+                                    className="flex-1 hover:border-neon-blue/50"
+                                  >
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    Under Review
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    onClick={() => handleApplicationAction(app.id, 'denied', reviewNotes)}
+                                    disabled={isSubmitting}
+                                    className="flex-1"
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    {app.status === 'denied' ? 'Re-deny' : 'Deny'}
+                                  </Button>
+                                </div>
                               </div>
                             </DialogContent>
                           </Dialog>
