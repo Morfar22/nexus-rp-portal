@@ -12,6 +12,20 @@ import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  AlertCircle, 
+  FileText, 
+  Eye, 
+  CheckCircle, 
+  Clock, 
+  XCircle, 
+  Trash2, 
+  Users, 
+  Plus, 
+  Edit, 
+  Settings 
+} from "lucide-react";
 
 const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
