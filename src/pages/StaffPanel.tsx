@@ -2,44 +2,143 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
-import { CheckCircle, XCircle, Clock, Users, FileText, Settings } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { CheckCircle, XCircle, Clock, Users, FileText, Settings, Eye, AlertCircle } from "lucide-react";
 
 const StaffPanel = () => {
-  // Mock data - in real implementation, this would come from your backend
-  const pendingApplications = [
-    {
-      id: 1,
-      playerName: "John_Doe",
-      discordTag: "JohnDoe#1234",
-      submitDate: "2024-01-15",
-      status: "pending"
-    },
-    {
-      id: 2,
-      playerName: "Jane_Smith",
-      discordTag: "JaneSmith#5678",
-      submitDate: "2024-01-14",
-      status: "pending"
-    }
-  ];
+  const [applications, setApplications] = useState<any[]>([]);
+  const [recentActions, setRecentActions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const recentActions = [
-    {
-      id: 1,
-      action: "Application Approved",
-      player: "Mike_Johnson",
-      staff: "Admin_Alex",
-      timestamp: "2 hours ago"
-    },
-    {
-      id: 2,
-      action: "Player Warned",
-      player: "Bad_Player",
-      staff: "Mod_Sarah",
-      timestamp: "4 hours ago"
+  useEffect(() => {
+    fetchApplications();
+    fetchRecentActions();
+  }, []);
+
+  const fetchApplications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          profiles!applications_user_id_fkey(username, full_name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setApplications(data || []);
+    } catch (error: any) {
+      console.error('Error fetching applications:', error);
+      setError('Failed to load applications');
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  const fetchRecentActions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('application_actions')
+        .select(`
+          *,
+          applications!application_actions_application_id_fkey(
+            steam_name,
+            profiles!applications_user_id_fkey(username)
+          ),
+          staff_profiles:profiles!application_actions_staff_id_fkey(username)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setRecentActions(data || []);
+    } catch (error: any) {
+      console.error('Error fetching recent actions:', error);
+    }
+  };
+
+  const handleApplicationAction = async (applicationId: string, action: string, notes?: string) => {
+    if (!user) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Update application status
+      const { error: updateError } = await supabase
+        .from('applications')
+        .update({
+          status: action,
+          reviewed_by: user.id,
+          review_notes: notes || null
+        })
+        .eq('id', applicationId);
+
+      if (updateError) throw updateError;
+
+      // Log the action
+      const { error: logError } = await supabase
+        .from('application_actions')
+        .insert({
+          application_id: applicationId,
+          staff_id: user.id,
+          action,
+          notes: notes || null
+        });
+
+      if (logError) throw logError;
+
+      toast({
+        title: "Action Completed",
+        description: `Application has been ${action}`,
+      });
+
+      // Refresh data
+      fetchApplications();
+      fetchRecentActions();
+      setSelectedApplication(null);
+      setReviewNotes("");
+      
+    } catch (error: any) {
+      console.error('Error processing application:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to process application",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const pendingApplications = applications.filter(app => app.status === 'pending');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neon-purple mx-auto"></div>
+            <p className="text-muted-foreground mt-4">Loading staff panel...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -54,6 +153,13 @@ const StaffPanel = () => {
             Manage server applications, players, and settings
           </p>
         </div>
+
+        {error && (
+          <Alert className="mb-6 border-destructive/50 bg-destructive/10">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="applications" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 bg-gaming-card border-gaming-border">
@@ -82,32 +188,130 @@ const StaffPanel = () => {
               </div>
 
               <div className="space-y-4">
-                {pendingApplications.map((app) => (
-                  <Card key={app.id} className="p-4 bg-gaming-dark border-gaming-border">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-semibold text-foreground">{app.playerName}</h3>
-                        <p className="text-sm text-muted-foreground">{app.discordTag}</p>
-                        <p className="text-xs text-muted-foreground">Submitted: {app.submitDate}</p>
+                {pendingApplications.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No pending applications</p>
+                  </div>
+                ) : (
+                  pendingApplications.map((app) => (
+                    <Card key={app.id} className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h3 className="font-semibold text-foreground">
+                            {app.profiles?.full_name || app.profiles?.username || app.steam_name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">Discord: {app.discord_tag}</p>
+                          <p className="text-sm text-muted-foreground">Steam: {app.steam_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Submitted: {new Date(app.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="gaming" 
+                                size="sm"
+                                onClick={() => setSelectedApplication(app)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Review
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-gaming-card border-gaming-border max-w-2xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="text-foreground">
+                                  Application Review - {app.steam_name}
+                                </DialogTitle>
+                                <DialogDescription>
+                                  Review the application details and take action
+                                </DialogDescription>
+                              </DialogHeader>
+                              
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label className="text-foreground">Steam Name</Label>
+                                    <p className="text-muted-foreground">{app.steam_name}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-foreground">Discord Tag</Label>
+                                    <p className="text-muted-foreground">{app.discord_tag}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-foreground">FiveM Name</Label>
+                                    <p className="text-muted-foreground">{app.fivem_name}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-foreground">Age</Label>
+                                    <p className="text-muted-foreground">{app.age} years old</p>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-foreground">Roleplay Experience</Label>
+                                  <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
+                                    <p className="text-muted-foreground whitespace-pre-wrap">{app.rp_experience}</p>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-foreground">Character Backstory</Label>
+                                  <div className="mt-2 p-3 bg-gaming-dark rounded border border-gaming-border">
+                                    <p className="text-muted-foreground whitespace-pre-wrap">{app.character_backstory}</p>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <Label htmlFor="review-notes" className="text-foreground">Review Notes (Optional)</Label>
+                                  <Textarea
+                                    id="review-notes"
+                                    value={reviewNotes}
+                                    onChange={(e) => setReviewNotes(e.target.value)}
+                                    placeholder="Add notes for the applicant..."
+                                    className="mt-2 bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                                  />
+                                </div>
+                                
+                                <div className="flex space-x-2 pt-4">
+                                  <Button 
+                                    variant="neon" 
+                                    onClick={() => handleApplicationAction(app.id, 'approved', reviewNotes)}
+                                    disabled={isSubmitting}
+                                    className="flex-1"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    {isSubmitting ? "Processing..." : "Approve"}
+                                  </Button>
+                                  <Button 
+                                    variant="outline"
+                                    onClick={() => handleApplicationAction(app.id, 'under_review', reviewNotes)}
+                                    disabled={isSubmitting}
+                                    className="flex-1 hover:border-neon-blue/50"
+                                  >
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    Under Review
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    onClick={() => handleApplicationAction(app.id, 'denied', reviewNotes)}
+                                    disabled={isSubmitting}
+                                    className="flex-1"
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Deny
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Button variant="gaming" size="sm">
-                          <FileText className="h-4 w-4 mr-1" />
-                          Review
-                        </Button>
-                        <Button variant="neon" size="sm">
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button variant="destructive" size="sm">
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Deny
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))
+                )}
               </div>
             </Card>
           </TabsContent>
@@ -130,17 +334,30 @@ const StaffPanel = () => {
               </h2>
               
               <div className="space-y-3">
-                {recentActions.map((action) => (
-                  <div key={action.id} className="flex items-center justify-between p-3 bg-gaming-dark rounded-lg border border-gaming-border">
-                    <div>
-                      <p className="font-medium text-foreground">{action.action}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Player: {action.player} | Staff: {action.staff}
-                      </p>
-                    </div>
-                    <Badge variant="outline">{action.timestamp}</Badge>
+                {recentActions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No recent actions</p>
                   </div>
-                ))}
+                ) : (
+                  recentActions.map((action) => (
+                    <div key={action.id} className="flex items-center justify-between p-3 bg-gaming-dark rounded-lg border border-gaming-border">
+                      <div>
+                        <p className="font-medium text-foreground">{action.action.replace('_', ' ').toUpperCase()}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Player: {action.applications?.steam_name || 'Unknown'} | 
+                          Staff: {action.staff_profiles?.username || 'Unknown'}
+                        </p>
+                        {action.notes && (
+                          <p className="text-xs text-muted-foreground mt-1">Notes: {action.notes}</p>
+                        )}
+                      </div>
+                      <Badge variant="outline">
+                        {new Date(action.created_at).toLocaleDateString()}
+                      </Badge>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
           </TabsContent>
