@@ -37,17 +37,21 @@ const Apply = () => {
           .eq('is_active', true);
 
         if (error) throw error;
+        console.log('Application types fetched:', data);
         setApplicationTypes(data || []);
         
         // Auto-select first type if only one exists
         if (data && data.length === 1) {
+          console.log('Auto-selecting single application type:', data[0]);
           setSelectedApplicationType(data[0]);
           // Initialize form data based on the application type fields
           const initialFormData: Record<string, any> = {};
           const formFields = data[0].form_fields as any[];
+          console.log('Initializing form fields:', formFields);
           formFields?.forEach((field: any) => {
             initialFormData[field.name] = field.type === 'number' ? 0 : '';
           });
+          console.log('Initial form data:', initialFormData);
           setFormData(initialFormData);
         }
       } catch (error) {
@@ -107,15 +111,19 @@ const Apply = () => {
   };
 
   const handleApplicationTypeChange = (applicationTypeId: string) => {
+    console.log('Selected application type ID:', applicationTypeId);
     const selectedType = applicationTypes.find(type => type.id === applicationTypeId);
+    console.log('Found application type:', selectedType);
     if (selectedType) {
       setSelectedApplicationType(selectedType);
       // Reset form data based on new application type
       const newFormData: Record<string, any> = {};
       const formFields = selectedType.form_fields as any[];
+      console.log('Form fields:', formFields);
       formFields?.forEach((field: any) => {
         newFormData[field.name] = field.type === 'number' ? 0 : '';
       });
+      console.log('New form data:', newFormData);
       setFormData(newFormData);
     }
   };
@@ -354,7 +362,9 @@ const Apply = () => {
 
                     {selectedApplicationType && (
                       <form onSubmit={handleSubmit} className="space-y-6">
-                        {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => (
+                        {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => {
+                          console.log('Rendering field:', field, 'Current value:', formData[field.name]);
+                          return (
                           <div key={field.name} className="space-y-2">
                             <Label htmlFor={field.name} className="text-foreground">
                               {field.label}
@@ -365,7 +375,10 @@ const Apply = () => {
                               <Textarea
                                 id={field.name}
                                 value={formData[field.name] || ''}
-                                onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                                onChange={(e) => {
+                                  console.log('Textarea change:', field.name, e.target.value);
+                                  setFormData({...formData, [field.name]: e.target.value});
+                                }}
                                 placeholder={field.placeholder || ''}
                                 className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
                                 required={field.required}
@@ -375,7 +388,10 @@ const Apply = () => {
                                 id={field.name}
                                 type={field.type}
                                 value={formData[field.name] || ''}
-                                onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                                onChange={(e) => {
+                                  console.log('Input change:', field.name, e.target.value);
+                                  setFormData({...formData, [field.name]: e.target.value});
+                                }}
                                 placeholder={field.placeholder || ''}
                                 className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
                                 required={field.required}
@@ -383,7 +399,8 @@ const Apply = () => {
                               />
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
 
                         <div className="flex items-center space-x-2">
                           <input
