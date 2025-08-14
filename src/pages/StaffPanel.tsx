@@ -119,6 +119,16 @@ const StaffPanel = () => {
     try {
       setIsSubmitting(true);
       
+      // Get the application data first
+      const { data: applicationData, error: fetchError } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('id', applicationId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Update the application status
       const { error } = await supabase
         .from('applications')
         .update({ 
@@ -130,9 +140,56 @@ const StaffPanel = () => {
 
       if (error) throw error;
 
+      // Send email notification for status change
+      if (action === 'approved' || action === 'denied' || action === 'under_review') {
+        try {
+          // Send email notification
+          const { error: emailError } = await supabase.functions.invoke('send-application-email', {
+            body: {
+              type: action,
+              userId: applicationData.user_id,
+              applicationData: {
+                steam_name: applicationData.steam_name,
+                discord_tag: applicationData.discord_tag,
+                fivem_name: applicationData.fivem_name,
+                review_notes: reviewNotes
+              }
+            }
+          });
+
+          if (emailError) {
+            console.error('Email sending failed:', emailError);
+          } else {
+            console.log('Email notification sent successfully');
+          }
+
+          // Send Discord notification
+          const { error: discordError } = await supabase.functions.invoke('discord-logger', {
+            body: {
+              type: `application_${action}`,
+              data: {
+                steam_name: applicationData.steam_name,
+                discord_tag: applicationData.discord_tag,
+                discord_name: applicationData.discord_name,
+                fivem_name: applicationData.fivem_name,
+                review_notes: reviewNotes
+              }
+            }
+          });
+
+          if (discordError) {
+            console.error('Discord notification failed:', discordError);
+          } else {
+            console.log('Discord notification sent successfully');
+          }
+        } catch (notificationError) {
+          console.error('Error sending notifications:', notificationError);
+        }
+      }
+
       toast({
         title: "Success",
-        description: `Application ${action} successfully`,
+        description: `Application ${action} successfully. Email and Discord notifications sent.`,
       });
 
       setSelectedApplication(null);
@@ -1411,6 +1468,29 @@ const StaffPanel = () => {
                   </div>
 
                   <div>
+                    <Label className="text-foreground">Discord Webhook URL</Label>
+                    <Input
+                      value={serverSettings.discord_settings?.webhook_url || ''}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.discord_settings,
+                          webhook_url: e.target.value
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('discord_settings', {
+                        ...serverSettings.discord_settings,
+                        webhook_url: serverSettings.discord_settings?.webhook_url || ''
+                      })}
+                      placeholder="https://discord.com/api/webhooks/..."
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div>
                     <Label className="text-foreground">Application Notification Channel</Label>
                     <Input
                       value={serverSettings.discord_settings?.application_channel || ''}
@@ -1459,6 +1539,47 @@ const StaffPanel = () => {
                         const newSettings = {
                           ...serverSettings.discord_settings,
                           sync_roles: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_settings: newSettings
+                        });
+                        handleSettingUpdate('discord_settings', newSettings);
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-foreground">Approved Role ID</Label>
+                    <Input
+                      value={serverSettings.discord_settings?.approved_role_id || ''}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.discord_settings,
+                          approved_role_id: e.target.value
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('discord_settings', {
+                        ...serverSettings.discord_settings,
+                        approved_role_id: serverSettings.discord_settings?.approved_role_id || ''
+                      })}
+                      placeholder="Role ID to assign to approved members..."
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Send Application Notifications</Label>
+                    <Switch
+                      checked={serverSettings.discord_settings?.send_notifications || true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.discord_settings,
+                          send_notifications: checked
                         };
                         setServerSettings({
                           ...serverSettings,

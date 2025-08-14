@@ -6,6 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Initialize Supabase client
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
 serve(async (req) => {
   console.log("=== DISCORD LOGGER FUNCTION START ===")
   
@@ -18,11 +30,27 @@ serve(async (req) => {
     const { type, data, settings } = await req.json()
     console.log("Discord logger request:", { type, data: !!data, settings: !!settings })
 
-    // If no webhook URL provided, try to get it from the request or fail silently
-    let webhookUrl = settings?.discordWebhookUrl;
+    // Get webhook URL from database settings
+    let webhookUrl = Deno.env.get('DISCORD_WEBHOOK_URL');
     
-    // For now, if no webhook URL is provided, just return success (silent fail)
-    // In production, you might want to store this in a database table
+    // Try to get from database discord settings if not in env
+    if (!webhookUrl) {
+      try {
+        const { data: settingsData, error } = await supabaseAdmin
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'discord_settings')
+          .single();
+
+        if (!error && settingsData?.setting_value?.webhook_url) {
+          webhookUrl = settingsData.setting_value.webhook_url;
+        }
+      } catch (dbError) {
+        console.error("Error fetching Discord settings from database:", dbError);
+      }
+    }
+    
+    // If no webhook URL is available, skip notification
     if (!webhookUrl) {
       console.log("No Discord webhook URL configured - skipping Discord notification")
       return new Response(
@@ -69,9 +97,9 @@ serve(async (req) => {
         content = `🎉 **Application approved** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}! Welcome to the server!`
         break
 
-      case 'application_rejected':
+      case 'application_denied':
         embed = {
-          title: "❌ Application Rejected",
+          title: "❌ Application Denied",
           color: 0xe74c3c, // Red
           fields: [
             { name: "Steam Name", value: data.steam_name || "N/A", inline: true },
@@ -82,7 +110,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `🚫 **Application rejected** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
+        content = `🚫 **Application denied** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
       case 'application_under_review':
