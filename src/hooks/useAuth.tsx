@@ -57,24 +57,64 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setIsBanned(false); // Reset ban status, will be checked separately
+        
+        if (session?.user) {
+          // Check if user is banned when they sign in
+          await checkBanStatus(session.user.id);
+        } else {
+          setIsBanned(false);
+        }
+        
         setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setIsBanned(false); // Reset ban status
+      
+      if (session?.user) {
+        // Check if user is banned for existing session
+        await checkBanStatus(session.user.id);
+      } else {
+        setIsBanned(false);
+      }
+      
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkBanStatus = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('banned')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error checking ban status:', error);
+        return;
+      }
+
+      if (profile?.banned) {
+        setIsBanned(true);
+        // Force sign out banned users
+        console.log('User is banned, signing out...');
+        await signOut();
+      } else {
+        setIsBanned(false);
+      }
+    } catch (error) {
+      console.error('Error checking ban status:', error);
+    }
+  };
 
   const value = {
     user,
