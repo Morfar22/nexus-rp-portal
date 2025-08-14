@@ -88,7 +88,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           // If user is banned, sign them out immediately
           if (banned) {
-            await signOut();
+            setTimeout(async () => {
+              await signOut();
+            }, 0);
             return;
           }
         } else {
@@ -101,24 +103,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // THEN check for existing session
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const banned = await checkBanStatus(session.user.id);
-        setIsBanned(banned);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
         
-        // If user is banned, sign them out immediately
-        if (banned) {
-          await signOut();
-          return;
+        if (session?.user) {
+          const banned = await checkBanStatus(session.user.id);
+          setIsBanned(banned);
+          
+          // If user is banned, sign them out immediately
+          if (banned) {
+            setTimeout(async () => {
+              await signOut();
+            }, 0);
+            return;
+          }
+        } else {
+          setIsBanned(false);
         }
-      } else {
-        setIsBanned(false);
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error during auth initialization:', error);
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     initAuth();
