@@ -25,15 +25,17 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
-      }
-    };
-    checkUser();
-  }, [navigate]);
+    // Check if user is already logged in - but not if we're showing banned screen
+    if (!showBannedScreen) {
+      const checkUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          navigate("/");
+        }
+      };
+      checkUser();
+    }
+  }, [navigate, showBannedScreen]);
 
   const cleanupAuthState = () => {
     Object.keys(localStorage).forEach((key) => {
@@ -100,14 +102,13 @@ const Auth = () => {
 
         if (profile?.banned) {
           // User is banned - show banned screen
+          console.log('🚨 User is banned, showing banned screen');
           setBannedUserInfo({
             username: profile.username || 'User',
             email: data.user.email || email
           });
           setShowBannedScreen(true);
-          // Sign out the user immediately
-          await supabase.auth.signOut({ scope: 'global' });
-          cleanupAuthState();
+          // Don't sign out here - let the banned screen handle it
           return;
         }
 
@@ -251,7 +252,10 @@ const Auth = () => {
               
               <div className="pt-4 space-y-3">
                 <Button 
-                  onClick={() => {
+                  onClick={async () => {
+                    // Sign out and clean up when user wants to try different account
+                    await supabase.auth.signOut({ scope: 'global' });
+                    cleanupAuthState();
                     setShowBannedScreen(false);
                     setBannedUserInfo(null);
                     setEmail("");
