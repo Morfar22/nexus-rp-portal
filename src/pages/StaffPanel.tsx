@@ -72,6 +72,20 @@ const StaffPanel = () => {
     ]
   });
   
+  // Create Application State
+  const [showCreateApplicationDialog, setShowCreateApplicationDialog] = useState(false);
+  const [newApplicationData, setNewApplicationData] = useState({
+    application_type_id: "",
+    steam_name: "",
+    discord_tag: "",
+    discord_name: "",
+    fivem_name: "",
+    age: 18,
+    rp_experience: "",
+    character_backstory: "",
+    user_id: ""
+  });
+  
   // Settings state
   const [generalSettings, setGeneralSettings] = useState({
     serverName: "FiveM RP Server",
@@ -641,6 +655,68 @@ const StaffPanel = () => {
     }
   };
 
+  const handleCreateApplication = async () => {
+    if (!newApplicationData.application_type_id || !newApplicationData.user_id) {
+      toast({
+        title: "Error",
+        description: "Please select an application type and enter a user ID",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .insert({
+          application_type_id: newApplicationData.application_type_id,
+          user_id: newApplicationData.user_id,
+          steam_name: newApplicationData.steam_name,
+          discord_tag: newApplicationData.discord_tag,
+          discord_name: newApplicationData.discord_name,
+          fivem_name: newApplicationData.fivem_name,
+          age: newApplicationData.age,
+          rp_experience: newApplicationData.rp_experience,
+          character_backstory: newApplicationData.character_backstory,
+          status: 'pending'
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Application created successfully",
+      });
+      
+      // Reset form and close dialog
+      setNewApplicationData({
+        application_type_id: "",
+        steam_name: "",
+        discord_tag: "",
+        discord_name: "",
+        fivem_name: "",
+        age: 18,
+        rp_experience: "",
+        character_backstory: "",
+        user_id: ""
+      });
+      setShowCreateApplicationDialog(false);
+      
+      // Refresh applications
+      fetchApplications();
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create application",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // System status monitoring
   const checkSystemStatus = async () => {
     try {
@@ -1138,7 +1214,145 @@ const StaffPanel = () => {
                   <FileText className="h-5 w-5 text-neon-purple" />
                   <span>All Applications</span>
                 </h2>
-                <Badge variant="secondary">{applications.length} total</Badge>
+                <div className="flex items-center space-x-3">
+                  <Badge variant="secondary">{applications.length} total</Badge>
+                  <Dialog open={showCreateApplicationDialog} onOpenChange={setShowCreateApplicationDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="neon" size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Create Application
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-gaming-card border-gaming-border max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-foreground">Create New Application</DialogTitle>
+                        <DialogDescription>
+                          Create a test application for staff purposes
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-foreground">Application Type</Label>
+                            <select
+                              value={newApplicationData.application_type_id}
+                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, application_type_id: e.target.value }))}
+                              className="w-full mt-1 p-2 bg-gaming-dark border border-gaming-border rounded text-foreground"
+                            >
+                              <option value="">Select Type</option>
+                              {applicationTypes.map((type) => (
+                                <option key={type.id} value={type.id}>{type.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <Label className="text-foreground">User ID</Label>
+                            <Input
+                              value={newApplicationData.user_id}
+                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, user_id: e.target.value }))}
+                              placeholder="Enter user UUID"
+                              className="bg-gaming-dark border-gaming-border"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-foreground">Steam Name</Label>
+                            <Input
+                              value={newApplicationData.steam_name}
+                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, steam_name: e.target.value }))}
+                              className="bg-gaming-dark border-gaming-border"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-foreground">Discord Tag</Label>
+                            <Input
+                              value={newApplicationData.discord_tag}
+                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, discord_tag: e.target.value }))}
+                              className="bg-gaming-dark border-gaming-border"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-foreground">Discord Name</Label>
+                            <Input
+                              value={newApplicationData.discord_name}
+                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, discord_name: e.target.value }))}
+                              className="bg-gaming-dark border-gaming-border"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-foreground">FiveM Name</Label>
+                            <Input
+                              value={newApplicationData.fivem_name}
+                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, fivem_name: e.target.value }))}
+                              className="bg-gaming-dark border-gaming-border"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-foreground">Age</Label>
+                            <Input
+                              type="number"
+                              value={newApplicationData.age}
+                              onChange={(e) => setNewApplicationData(prev => ({ ...prev, age: parseInt(e.target.value) || 18 }))}
+                              className="bg-gaming-dark border-gaming-border"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-foreground">RP Experience</Label>
+                          <Textarea
+                            value={newApplicationData.rp_experience}
+                            onChange={(e) => setNewApplicationData(prev => ({ ...prev, rp_experience: e.target.value }))}
+                            placeholder="Previous roleplay experience..."
+                            className="mt-2 bg-gaming-dark border-gaming-border"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label className="text-foreground">Character Backstory</Label>
+                          <Textarea
+                            value={newApplicationData.character_backstory}
+                            onChange={(e) => setNewApplicationData(prev => ({ ...prev, character_backstory: e.target.value }))}
+                            placeholder="Character background story..."
+                            className="mt-2 bg-gaming-dark border-gaming-border"
+                          />
+                        </div>
+                        
+                        <div className="flex space-x-2 pt-4">
+                          <Button 
+                            variant="neon" 
+                            onClick={handleCreateApplication}
+                            disabled={isSubmitting}
+                            className="flex-1"
+                          >
+                            {isSubmitting ? "Creating..." : "Create Application"}
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            onClick={() => {
+                              setShowCreateApplicationDialog(false);
+                              setNewApplicationData({
+                                application_type_id: "",
+                                steam_name: "",
+                                discord_tag: "",
+                                discord_name: "",
+                                fivem_name: "",
+                                age: 18,
+                                rp_experience: "",
+                                character_backstory: "",
+                                user_id: ""
+                              });
+                            }}
+                            disabled={isSubmitting}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
 
               <div className="space-y-4">
