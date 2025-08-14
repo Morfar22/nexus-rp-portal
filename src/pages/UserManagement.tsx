@@ -130,8 +130,12 @@ export default function UserManagement() {
   };
 
   const banUser = async (userId: string, ban: boolean) => {
+    console.log('🚨 BAN FUNCTION CALLED:', { userId, ban });
+    
     try {
       const userToBan = users.find(u => u.id === userId);
+      console.log('🔍 Found user to ban:', userToBan);
+      
       if (!userToBan) {
         throw new Error('User not found');
       }
