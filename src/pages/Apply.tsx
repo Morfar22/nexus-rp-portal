@@ -376,6 +376,31 @@ const Apply = () => {
                       </div>
                     )}
 
+                    {/* SIMPLE TEST FORM - Remove after testing */}
+                    <div className="bg-red-500/20 border border-red-500 p-4 rounded-lg mb-4">
+                      <h3 className="text-white font-bold mb-4">TEST FORM (This should work)</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-white block mb-2">Test Input 1:</label>
+                          <input 
+                            type="text" 
+                            placeholder="Type here..." 
+                            className="w-full p-2 bg-white text-black border rounded"
+                            onChange={(e) => console.log('Input 1:', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-white block mb-2">Test Input 2:</label>
+                          <input 
+                            type="text" 
+                            placeholder="Type here too..." 
+                            className="w-full p-2 bg-white text-black border rounded"
+                            onChange={(e) => console.log('Input 2:', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     {selectedApplicationType && (
                       <>
                         <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg mb-4">
