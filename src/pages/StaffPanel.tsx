@@ -64,11 +64,11 @@ const StaffPanel = () => {
     name: "",
     description: "",
     formFields: [
-      { name: "steam_name", label: "Steam Name", type: "text", required: true },
-      { name: "discord_tag", label: "Discord Tag", type: "text", required: true },
-      { name: "discord_name", label: "Discord User ID", type: "text", required: true },
-      { name: "fivem_name", label: "FiveM Name", type: "text", required: true },
-      { name: "age", label: "Age", type: "number", required: true }
+      { name: "steam_name", label: "Steam Name", type: "text", required: true, placeholder: "" },
+      { name: "discord_tag", label: "Discord Tag", type: "text", required: true, placeholder: "username#1234" },
+      { name: "discord_name", label: "Discord User ID", type: "text", required: true, placeholder: "123456789012345678" },
+      { name: "fivem_name", label: "FiveM Name", type: "text", required: true, placeholder: "" },
+      { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
     ]
   });
   
@@ -273,11 +273,11 @@ const StaffPanel = () => {
         name: "",
         description: "",
         formFields: [
-          { name: "steam_name", label: "Steam Name", type: "text", required: true },
-          { name: "discord_tag", label: "Discord Tag", type: "text", required: true },
-          { name: "discord_name", label: "Discord User ID", type: "text", required: true },
-          { name: "fivem_name", label: "FiveM Name", type: "text", required: true },
-          { name: "age", label: "Age", type: "number", required: true }
+          { name: "steam_name", label: "Steam Name", type: "text", required: true, placeholder: "" },
+          { name: "discord_tag", label: "Discord Tag", type: "text", required: true, placeholder: "username#1234" },
+          { name: "discord_name", label: "Discord User ID", type: "text", required: true, placeholder: "123456789012345678" },
+          { name: "fivem_name", label: "FiveM Name", type: "text", required: true, placeholder: "" },
+          { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
         ]
       });
       setShowApplicationTypeDialog(false);
@@ -989,11 +989,11 @@ const StaffPanel = () => {
                       name: "",
                       description: "",
                       formFields: [
-                        { name: "steam_name", label: "Steam Name", type: "text", required: true },
-                        { name: "discord_tag", label: "Discord Tag", type: "text", required: true },
-                        { name: "discord_name", label: "Discord User ID", type: "text", required: true },
-                        { name: "fivem_name", label: "FiveM Name", type: "text", required: true },
-                        { name: "age", label: "Age", type: "number", required: true }
+                        { name: "steam_name", label: "Steam Name", type: "text", required: true, placeholder: "" },
+                        { name: "discord_tag", label: "Discord Tag", type: "text", required: true, placeholder: "username#1234" },
+                        { name: "discord_name", label: "Discord User ID", type: "text", required: true, placeholder: "123456789012345678" },
+                        { name: "fivem_name", label: "FiveM Name", type: "text", required: true, placeholder: "" },
+                        { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
                       ]
                     });
                     setShowApplicationTypeDialog(true);
@@ -1037,7 +1037,10 @@ const StaffPanel = () => {
                               setNewApplicationType({
                                 name: appType.name,
                                 description: appType.description || "",
-                                formFields: appType.form_fields || []
+                                formFields: (appType.form_fields || []).map((field: any) => ({
+                                  ...field,
+                                  placeholder: field.placeholder || ""
+                                }))
                               });
                               setShowApplicationTypeDialog(true);
                             }}
@@ -1217,6 +1220,124 @@ const StaffPanel = () => {
               </div>
             </div>
             
+            <div>
+              <Label className="text-foreground">Form Fields</Label>
+              <div className="mt-2 space-y-3">
+                {newApplicationType.formFields.map((field, index) => (
+                  <div key={index} className="p-4 bg-gaming-dark border border-gaming-border rounded">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <Label className="text-sm text-foreground">Field Name</Label>
+                        <Input
+                          value={field.name}
+                          onChange={(e) => {
+                            const updatedFields = [...newApplicationType.formFields];
+                            updatedFields[index] = { ...field, name: e.target.value };
+                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
+                          }}
+                          placeholder="field_name"
+                          className="bg-gaming-darker border-gaming-border text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm text-foreground">Label</Label>
+                        <Input
+                          value={field.label}
+                          onChange={(e) => {
+                            const updatedFields = [...newApplicationType.formFields];
+                            updatedFields[index] = { ...field, label: e.target.value };
+                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
+                          }}
+                          placeholder="Display Label"
+                          className="bg-gaming-darker border-gaming-border text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm text-foreground">Type</Label>
+                        <select
+                          value={field.type}
+                          onChange={(e) => {
+                            const updatedFields = [...newApplicationType.formFields];
+                            updatedFields[index] = { ...field, type: e.target.value };
+                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
+                          }}
+                          className="w-full bg-gaming-darker border border-gaming-border rounded px-3 py-2 text-sm text-foreground"
+                        >
+                          <option value="text">Text</option>
+                          <option value="textarea">Textarea</option>
+                          <option value="number">Number</option>
+                          <option value="email">Email</option>
+                          <option value="tel">Phone</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
+                          <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) => {
+                              const updatedFields = [...newApplicationType.formFields];
+                              updatedFields[index] = { ...field, required: e.target.checked };
+                              setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
+                            }}
+                            className="rounded border-gaming-border"
+                          />
+                          <Label className="text-xs text-foreground">Required</Label>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const updatedFields = newApplicationType.formFields.filter((_, i) => i !== index);
+                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
+                          }}
+                          className="border-red-500/50 text-red-500 hover:bg-red-500/10 h-8"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    {field.placeholder && (
+                      <div className="mt-2">
+                        <Label className="text-sm text-foreground">Placeholder</Label>
+                        <Input
+                          value={field.placeholder || ""}
+                          onChange={(e) => {
+                            const updatedFields = [...newApplicationType.formFields];
+                            updatedFields[index] = { ...field, placeholder: e.target.value };
+                            setNewApplicationType({ ...newApplicationType, formFields: updatedFields });
+                          }}
+                          placeholder="Placeholder text"
+                          className="bg-gaming-darker border-gaming-border text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newField = {
+                      name: `custom_field_${newApplicationType.formFields.length + 1}`,
+                      label: "New Field",
+                      type: "text",
+                      required: false,
+                      placeholder: ""
+                    };
+                    setNewApplicationType({
+                      ...newApplicationType,
+                      formFields: [...newApplicationType.formFields, newField]
+                    });
+                  }}
+                  className="w-full border-gaming-border hover:border-neon-cyan/50"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Form Field
+                </Button>
+              </div>
+            </div>
+            
             <div className="flex space-x-2 pt-4">
               <Button 
                 variant="neon" 
@@ -1235,11 +1356,11 @@ const StaffPanel = () => {
                     name: "",
                     description: "",
                     formFields: [
-                      { name: "steam_name", label: "Steam Name", type: "text", required: true },
-                      { name: "discord_tag", label: "Discord Tag", type: "text", required: true },
-                      { name: "discord_name", label: "Discord User ID", type: "text", required: true },
-                      { name: "fivem_name", label: "FiveM Name", type: "text", required: true },
-                      { name: "age", label: "Age", type: "number", required: true }
+                      { name: "steam_name", label: "Steam Name", type: "text", required: true, placeholder: "" },
+                      { name: "discord_tag", label: "Discord Tag", type: "text", required: true, placeholder: "username#1234" },
+                      { name: "discord_name", label: "Discord User ID", type: "text", required: true, placeholder: "123456789012345678" },
+                      { name: "fivem_name", label: "FiveM Name", type: "text", required: true, placeholder: "" },
+                      { name: "age", label: "Age", type: "number", required: true, placeholder: "" }
                     ]
                   });
                 }}
