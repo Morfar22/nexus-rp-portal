@@ -77,22 +77,28 @@ const StaffPanel = () => {
     try {
       setIsLoading(true);
       
-      // Fetch staff members by joining user_roles with profiles
-      const { data: staffData, error: staffError } = await supabase
+      // Fetch staff members by getting user_roles and then profiles separately
+      const { data: staffRolesData, error: staffError } = await supabase
         .from('user_roles')
-        .select(`
-          id,
-          role,
-          created_at,
-          profiles!inner (
-            id,
-            username,
-            full_name
-          )
-        `)
+        .select('id, role, created_at, user_id')
         .in('role', ['admin', 'moderator']);
 
-      console.log('Staff data fetch result:', { staffData, staffError });
+      console.log('Staff roles fetch result:', { staffRolesData, staffError });
+
+      // Get profile data for staff members
+      let staffMembersWithProfiles = [];
+      if (staffRolesData && staffRolesData.length > 0) {
+        const userIds = staffRolesData.map(role => role.user_id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, username, full_name')
+          .in('id', userIds);
+
+        staffMembersWithProfiles = staffRolesData.map(role => ({
+          ...role,
+          profiles: profilesData?.find(profile => profile.id === role.user_id)
+        }));
+      }
 
       const [applicationsRes, rulesRes, typesRes, settingsRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
@@ -103,7 +109,7 @@ const StaffPanel = () => {
 
       if (applicationsRes.data) setApplications(applicationsRes.data);
       if (rulesRes.data) setRules(rulesRes.data);
-      if (staffData) setStaffMembers(staffData);
+      if (staffMembersWithProfiles) setStaffMembers(staffMembersWithProfiles);
       if (typesRes.data) setApplicationTypes(typesRes.data);
       if (settingsRes.data) setServerSettings(settingsRes.data);
       
