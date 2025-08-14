@@ -34,10 +34,7 @@ const StaffPanel = () => {
     try {
       const { data, error } = await supabase
         .from('applications')
-        .select(`
-          *,
-          profiles!applications_user_id_fkey(username, full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -56,11 +53,7 @@ const StaffPanel = () => {
         .from('application_actions')
         .select(`
           *,
-          applications!application_actions_application_id_fkey(
-            steam_name,
-            profiles!applications_user_id_fkey(username)
-          ),
-          staff_profiles:profiles!application_actions_staff_id_fkey(username)
+          applications(steam_name)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -199,7 +192,7 @@ const StaffPanel = () => {
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <h3 className="font-semibold text-foreground">
-                            {app.profiles?.full_name || app.profiles?.username || app.steam_name}
+                            {app.steam_name}
                           </h3>
                           <p className="text-sm text-muted-foreground">Discord: {app.discord_tag}</p>
                           <p className="text-sm text-muted-foreground">Steam: {app.steam_name}</p>
@@ -345,8 +338,7 @@ const StaffPanel = () => {
                       <div>
                         <p className="font-medium text-foreground">{action.action.replace('_', ' ').toUpperCase()}</p>
                         <p className="text-sm text-muted-foreground">
-                          Player: {action.applications?.steam_name || 'Unknown'} | 
-                          Staff: {action.staff_profiles?.username || 'Unknown'}
+                          Player: {action.applications?.steam_name || 'Unknown'}
                         </p>
                         {action.notes && (
                           <p className="text-xs text-muted-foreground mt-1">Notes: {action.notes}</p>
