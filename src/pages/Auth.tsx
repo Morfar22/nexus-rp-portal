@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Server, Mail, Lock, User, AlertCircle } from "lucide-react";
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +17,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -43,6 +46,12 @@ const Auth = () => {
     setIsLoading(true);
     setError("");
 
+    if (!captchaToken) {
+      setError("Please complete the captcha verification");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       cleanupAuthState();
       
@@ -55,6 +64,9 @@ const Auth = () => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          captchaToken
+        }
       });
 
       if (error) {
@@ -75,8 +87,15 @@ const Auth = () => {
         });
         window.location.href = '/';
       }
+      
+      // Reset captcha
+      setCaptchaToken(null);
+      captchaRef.current?.resetCaptcha();
     } catch (error: any) {
       setError(error.message || "An unexpected error occurred");
+      // Reset captcha on error
+      setCaptchaToken(null);
+      captchaRef.current?.resetCaptcha();
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +105,12 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    if (!captchaToken) {
+      setError("Please complete the captcha verification");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       cleanupAuthState();
@@ -103,6 +128,7 @@ const Auth = () => {
         password,
         options: {
           emailRedirectTo: redirectUrl,
+          captchaToken,
           data: {
             username: username,
           }
@@ -126,8 +152,15 @@ const Auth = () => {
           description: "Please check your email for a confirmation link.",
         });
       }
+      
+      // Reset captcha
+      setCaptchaToken(null);
+      captchaRef.current?.resetCaptcha();
     } catch (error: any) {
       setError(error.message || "An unexpected error occurred");
+      // Reset captcha on error
+      setCaptchaToken(null);
+      captchaRef.current?.resetCaptcha();
     } finally {
       setIsLoading(false);
     }
@@ -208,11 +241,22 @@ const Auth = () => {
                     </div>
                   </div>
                   
+                  <div className="mb-4">
+                    <HCaptcha
+                      ref={captchaRef}
+                      sitekey="daba5502-dfbc-40c8-9b56-0bc676d83b98"
+                      onVerify={(token) => setCaptchaToken(token)}
+                      onExpire={() => setCaptchaToken(null)}
+                      onError={() => setCaptchaToken(null)}
+                      theme="dark"
+                    />
+                  </div>
+                  
                   <Button 
                     type="submit" 
                     variant="hero" 
                     className="w-full" 
-                    disabled={isLoading}
+                    disabled={isLoading || !captchaToken}
                   >
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
@@ -275,11 +319,22 @@ const Auth = () => {
                     </div>
                   </div>
                   
+                  <div className="mb-4">
+                    <HCaptcha
+                      ref={captchaRef}
+                      sitekey="daba5502-dfbc-40c8-9b56-0bc676d83b98"
+                      onVerify={(token) => setCaptchaToken(token)}
+                      onExpire={() => setCaptchaToken(null)}
+                      onError={() => setCaptchaToken(null)}
+                      theme="dark"
+                    />
+                  </div>
+                  
                   <Button 
                     type="submit" 
                     variant="neon" 
                     className="w-full" 
-                    disabled={isLoading}
+                    disabled={isLoading || !captchaToken}
                   >
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
