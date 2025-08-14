@@ -16,6 +16,7 @@ interface BanNotificationRequest {
   isBanned: boolean;
   banReason?: string;
   staffName?: string;
+  originalUserEmail?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -32,23 +33,28 @@ const handler = async (req: Request): Promise<Response> => {
     }
     console.log('API key exists:', apiKey.substring(0, 10) + '...');
 
-    const { userEmail, userName, isBanned, banReason, staffName }: BanNotificationRequest = await req.json();
+    const { userEmail, userName, isBanned, banReason, staffName, originalUserEmail }: BanNotificationRequest = await req.json();
 
     console.log(`Processing ${isBanned ? 'ban' : 'unban'} notification for user: ${userEmail}`);
-    console.log('Request data:', { userEmail, userName, isBanned, banReason, staffName });
+    console.log('Request data:', { userEmail, userName, isBanned, banReason, staffName, originalUserEmail });
 
     if (!userEmail) {
       throw new Error('User email is required');
     }
 
-    const subject = isBanned ? "Account Suspended" : "Account Reinstated";
+    const subject = isBanned ? `[ADMIN] Account Suspended - ${userName}` : `[ADMIN] Account Reinstated - ${userName}`;
     
     const banEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 30px; border-radius: 10px; color: white;">
           <h1 style="color: #ff6b6b; margin: 0 0 20px 0;">${subject}</h1>
+          ${originalUserEmail ? `
+            <p style="font-size: 14px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin: 0 0 20px 0;">
+              <strong>Note:</strong> This notification was sent to you (admin) because domain verification is required to send to the user's email: ${originalUserEmail}
+            </p>
+          ` : ''}
           <p style="font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-            Dear ${userName},
+            User: <strong>${userName}</strong> ${originalUserEmail ? `(${originalUserEmail})` : ''}
           </p>
           ${isBanned ? `
             <p style="font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">

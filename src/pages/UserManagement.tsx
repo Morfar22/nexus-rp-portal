@@ -171,10 +171,11 @@ export default function UserManagement() {
           console.log('🚀 Calling send-ban-notification function...');
           const result = await supabase.functions.invoke('send-ban-notification', {
             body: {
-              userEmail: userToBan.email,
+              userEmail: user?.email || 'emilfrobergww@gmail.com', // Use your email for testing
               userName: userToBan.full_name || userToBan.username || 'User',
               isBanned: ban,
-              staffName: user?.email || 'Staff Member'
+              staffName: user?.email || 'Staff Member',
+              originalUserEmail: userToBan.email // Include original email in message
             }
           });
           
