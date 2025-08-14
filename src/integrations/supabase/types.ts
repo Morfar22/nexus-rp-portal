@@ -144,6 +144,56 @@ export type Database = {
           },
         ]
       }
+      individual_server_stats: {
+        Row: {
+          created_at: string
+          id: string
+          last_updated: string
+          max_players: number
+          ping_ms: number
+          players_online: number
+          queue_count: number
+          server_id: string
+          server_online: boolean
+          updated_at: string
+          uptime_percentage: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_updated?: string
+          max_players?: number
+          ping_ms?: number
+          players_online?: number
+          queue_count?: number
+          server_id: string
+          server_online?: boolean
+          updated_at?: string
+          uptime_percentage?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_updated?: string
+          max_players?: number
+          ping_ms?: number
+          players_online?: number
+          queue_count?: number
+          server_id?: string
+          server_online?: boolean
+          updated_at?: string
+          uptime_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "individual_server_stats_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -279,6 +329,39 @@ export type Database = {
           queue_count?: number
           updated_at?: string
           uptime_percentage?: number
+        }
+        Relationships: []
+      }
+      servers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          ip_address: string
+          is_active: boolean
+          name: string
+          port: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_address: string
+          is_active?: boolean
+          name: string
+          port?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_address?: string
+          is_active?: boolean
+          name?: string
+          port?: number
+          updated_at?: string
         }
         Relationships: []
       }

@@ -82,3 +82,9 @@ verify_jwt = false
 
 [functions.auto-fetch-server-stats]
 verify_jwt = false
+
+[functions.stats-scheduler]
+verify_jwt = false
+
+[functions.fetch-individual-server-stats]
+verify_jwt = false

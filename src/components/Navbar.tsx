@@ -35,6 +35,9 @@ const Navbar = () => {
           <Link to="/staff" className="text-foreground hover:text-neon-purple transition-colors">
             Staff Panel
           </Link>
+          <Link to="/servers" className="text-foreground hover:text-neon-purple transition-colors">
+            Servers
+          </Link>
         </div>
         
         <div className="flex items-center space-x-4">
