@@ -25,6 +25,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Check if API key exists
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set');
+    }
+    console.log('API key exists:', apiKey.substring(0, 10) + '...');
+
     const { userEmail, userName, isBanned, banReason, staffName }: BanNotificationRequest = await req.json();
 
     console.log(`Processing ${isBanned ? 'ban' : 'unban'} notification for user: ${userEmail}`);
