@@ -25,39 +25,61 @@ const Apply = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [existingApplication, setExistingApplication] = useState<any>(null);
+  const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
+  const [selectedApplicationType, setSelectedApplicationType] = useState<any>(null);
   const [error, setError] = useState("");
   
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
-    const checkExistingApplication = async () => {
-      if (!user) return;
-      
+    const fetchApplicationTypes = async () => {
       try {
         const { data, error } = await supabase
-          .from('applications')
+          .from('application_types')
           .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .eq('is_active', true);
 
-        if (error) {
-          console.error('Error checking application:', error);
-          return;
-        }
-
-        if (data) {
-          setExistingApplication(data);
+        if (error) throw error;
+        setApplicationTypes(data || []);
+        
+        // Auto-select first type if only one exists
+        if (data && data.length === 1) {
+          setSelectedApplicationType(data[0]);
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching application types:', error);
       }
     };
 
+    fetchApplicationTypes();
     checkExistingApplication();
   }, [user]);
+
+  const checkExistingApplication = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking application:', error);
+        return;
+      }
+
+      if (data) {
+        setExistingApplication(data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +97,7 @@ const Apply = () => {
         .from('applications')
         .insert({
           user_id: user.id,
+          application_type_id: selectedApplicationType.id,
           steam_name: formData.steamName,
           discord_tag: formData.discordTag,
           discord_name: formData.discordName,

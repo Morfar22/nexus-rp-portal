@@ -7,12 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Clock, Users, FileText, Settings, Eye, AlertCircle, Trash2, Plus, Edit } from "lucide-react";
 
 const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
@@ -20,6 +19,7 @@ const StaffPanel = () => {
   const [rules, setRules] = useState<any[]>([]);
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
+  const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -30,6 +30,21 @@ const StaffPanel = () => {
   const [showStaffDialog, setShowStaffDialog] = useState(false);
   const [newStaffEmail, setNewStaffEmail] = useState("");
   const [newStaffRole, setNewStaffRole] = useState("moderator");
+  
+  // Application Type Management
+  const [showApplicationTypeDialog, setShowApplicationTypeDialog] = useState(false);
+  const [editingApplicationType, setEditingApplicationType] = useState<any>(null);
+  const [newApplicationType, setNewApplicationType] = useState({
+    name: "",
+    description: "",
+    formFields: [
+      { name: "steam_name", label: "Steam Name", type: "text", required: true },
+      { name: "discord_tag", label: "Discord Tag", type: "text", required: true },
+      { name: "discord_name", label: "Discord User ID", type: "text", required: true },
+      { name: "fivem_name", label: "FiveM Name", type: "text", required: true },
+      { name: "age", label: "Age", type: "number", required: true }
+    ]
+  });
   
   // Settings state
   const [generalSettings, setGeneralSettings] = useState({
@@ -68,6 +83,7 @@ const StaffPanel = () => {
     fetchRules();
     fetchStaffMembers();
     fetchPlayers();
+    fetchApplicationTypes();
   }, [user]);
 
   const fetchApplications = async () => {
@@ -75,7 +91,10 @@ const StaffPanel = () => {
     try {
       const { data, error } = await supabase
         .from('applications')
-        .select('*')
+        .select(`
+          *,
+          application_types(name)
+        `)
         .order('created_at', { ascending: false });
 
       console.log('Applications query result:', { data, error });
@@ -232,6 +251,20 @@ const StaffPanel = () => {
       setPlayers(data || []);
     } catch (error: any) {
       console.error('Error fetching players:', error);
+    }
+  };
+
+  const fetchApplicationTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('application_types')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setApplicationTypes(data || []);
+    } catch (error: any) {
+      console.error('Error fetching application types:', error);
     }
   };
 
@@ -700,12 +733,15 @@ const StaffPanel = () => {
         )}
 
         <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-gaming-card border-gaming-border">
+          <TabsList className="grid w-full grid-cols-6 bg-gaming-card border-gaming-border">
             <TabsTrigger value="applications" className="data-[state=active]:bg-neon-purple/20">
               Pending ({pendingApplications.length})
             </TabsTrigger>
             <TabsTrigger value="all-applications" className="data-[state=active]:bg-neon-purple/20">
               All Apps ({applications.length})
+            </TabsTrigger>
+            <TabsTrigger value="app-types" className="data-[state=active]:bg-neon-purple/20">
+              App Types
             </TabsTrigger>
             <TabsTrigger value="players" className="data-[state=active]:bg-neon-purple/20">
               Players
@@ -1201,6 +1237,86 @@ const StaffPanel = () => {
                               </div>
                             </DialogContent>
                           </Dialog>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="app-types" className="space-y-4">
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-neon-cyan" />
+                  <span>Application Types</span>
+                </h2>
+                <Button 
+                  onClick={() => {
+                    setEditingApplicationType(null);
+                    setNewApplicationType({
+                      name: "",
+                      description: "",
+                      formFields: [
+                        { name: "steam_name", label: "Steam Name", type: "text", required: true },
+                        { name: "discord_tag", label: "Discord Tag", type: "text", required: true },
+                        { name: "discord_name", label: "Discord User ID", type: "text", required: true },
+                        { name: "fivem_name", label: "FiveM Name", type: "text", required: true },
+                        { name: "age", label: "Age", type: "number", required: true }
+                      ]
+                    });
+                    setShowApplicationTypeDialog(true);
+                  }}
+                  className="bg-neon-cyan hover:bg-neon-cyan/80 text-gaming-darker"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Application Type
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {applicationTypes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No application types created yet</p>
+                  </div>
+                ) : (
+                  applicationTypes.map((appType) => (
+                    <Card key={appType.id} className="p-4 bg-gaming-dark border-gaming-border">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h3 className="font-semibold text-foreground flex items-center space-x-2">
+                            {appType.name}
+                            {!appType.is_active && (
+                              <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                            )}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">{appType.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {appType.form_fields?.length || 0} fields
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setEditingApplicationType(appType);
+                              setNewApplicationType({
+                                name: appType.name,
+                                description: appType.description || "",
+                                formFields: appType.form_fields || []
+                              });
+                              setShowApplicationTypeDialog(true);
+                            }}
+                            className="border-gaming-border"
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
                         </div>
                       </div>
                     </Card>

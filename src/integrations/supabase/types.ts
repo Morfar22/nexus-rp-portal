@@ -49,9 +49,43 @@ export type Database = {
           },
         ]
       }
+      application_types: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          form_fields: Json
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          form_fields?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          form_fields?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           age: number
+          application_type_id: string
           character_backstory: string
           created_at: string
           discord_name: string | null
@@ -68,6 +102,7 @@ export type Database = {
         }
         Insert: {
           age: number
+          application_type_id: string
           character_backstory: string
           created_at?: string
           discord_name?: string | null
@@ -84,6 +119,7 @@ export type Database = {
         }
         Update: {
           age?: number
+          application_type_id?: string
           character_backstory?: string
           created_at?: string
           discord_name?: string | null
@@ -98,7 +134,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "applications_application_type_id_fkey"
+            columns: ["application_type_id"]
+            isOneToOne: false
+            referencedRelation: "application_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
