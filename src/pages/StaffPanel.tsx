@@ -176,7 +176,7 @@ const StaffPanel = () => {
           role,
           created_at,
           user_id,
-          profiles!inner(id, username, full_name)
+          profiles!user_roles_user_id_fkey(id, username, full_name)
         `)
         .in('role', ['admin', 'moderator'])
         .order('created_at', { ascending: false });
@@ -196,8 +196,7 @@ const StaffPanel = () => {
           id,
           username,
           full_name,
-          created_at,
-          user_roles(role)
+          created_at
         `)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -213,13 +212,51 @@ const StaffPanel = () => {
     if (!user || !newStaffEmail.trim()) return;
     
     try {
-      // For now, we'll need the user to provide the user ID or handle this differently
-      // This is a simplified approach - in production you'd want proper user lookup
+      // First, try to find the user by email in profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('username', newStaffEmail.split('@')[0])
+        .single();
+      
+      let targetUserId = profileData?.id;
+      
+      if (!targetUserId) {
+        // If not found by username, check if there's a user with that email in auth.users
+        // For now, we'll ask the user to provide the username instead
+        toast({
+          title: "User Not Found",
+          description: "Please enter the exact username (not email) of the user you want to add as staff.",
+        });
+        return;
+      }
+      
+      // Add staff role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: targetUserId,
+          role: newStaffRole as 'admin' | 'moderator'
+        });
+      
+      if (roleError) {
+        if (roleError.code === '23505') { // Unique constraint violation
+          toast({
+            title: "Error",
+            description: "User already has this role.",
+            variant: "destructive"
+          });
+          return;
+        }
+        throw roleError;
+      }
+      
       toast({
-        title: "Info",
-        description: "For now, staff must be added manually via database. Feature coming soon!",
+        title: "Success",
+        description: `User added as ${newStaffRole}`,
       });
       
+      fetchStaffMembers();
       setShowStaffDialog(false);
       setNewStaffEmail("");
       setNewStaffRole("moderator");
@@ -1365,14 +1402,14 @@ const StaffPanel = () => {
               <h3 className="text-lg font-semibold mb-4">Add Staff Member</h3>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="staff-email">User Email</Label>
+                  <Label htmlFor="staff-email">Username</Label>
                   <input
                     id="staff-email"
-                    type="email"
+                    type="text"
                     value={newStaffEmail}
                     onChange={(e) => setNewStaffEmail(e.target.value)}
                     className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
-                    placeholder="user@example.com"
+                    placeholder="Enter username (e.g., player123)"
                   />
                 </div>
                 <div>
