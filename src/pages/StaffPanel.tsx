@@ -415,6 +415,7 @@ const StaffPanel = () => {
               data: {
                 steam_name: appData.steam_name,
                 discord_tag: appData.discord_tag,
+                discord_name: appData.discord_name,
                 fivem_name: appData.fivem_name,
                 review_notes: notes
               },

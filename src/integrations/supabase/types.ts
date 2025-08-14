@@ -54,6 +54,7 @@ export type Database = {
           age: number
           character_backstory: string
           created_at: string
+          discord_name: string | null
           discord_tag: string
           fivem_name: string
           id: string
@@ -69,6 +70,7 @@ export type Database = {
           age: number
           character_backstory: string
           created_at?: string
+          discord_name?: string | null
           discord_tag: string
           fivem_name: string
           id?: string
@@ -84,6 +86,7 @@ export type Database = {
           age?: number
           character_backstory?: string
           created_at?: string
+          discord_name?: string | null
           discord_tag?: string
           fivem_name?: string
           id?: string

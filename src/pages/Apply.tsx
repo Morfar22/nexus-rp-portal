@@ -15,6 +15,7 @@ const Apply = () => {
   const [formData, setFormData] = useState({
     steamName: "",
     discordTag: "",
+    discordName: "",
     fivemName: "",
     age: "",
     rpExperience: "",
@@ -76,6 +77,7 @@ const Apply = () => {
           user_id: user.id,
           steam_name: formData.steamName,
           discord_tag: formData.discordTag,
+          discord_name: formData.discordName,
           fivem_name: formData.fivemName,
           age: parseInt(formData.age),
           rp_experience: formData.rpExperience,
@@ -97,6 +99,7 @@ const Apply = () => {
             applicationData: {
               steam_name: formData.steamName,
               discord_tag: formData.discordTag,
+              discord_name: formData.discordName,
               fivem_name: formData.fivemName
             }
           }
@@ -113,12 +116,13 @@ const Apply = () => {
         await supabase.functions.invoke('discord-logger', {
           body: {
             type: 'application_submitted',
-            data: {
-              steam_name: formData.steamName,
-              discord_tag: formData.discordTag,
-              fivem_name: formData.fivemName,
-              age: parseInt(formData.age)
-            },
+              data: {
+                steam_name: formData.steamName,
+                discord_tag: formData.discordTag,
+                discord_name: formData.discordName,
+                fivem_name: formData.fivemName,
+                age: parseInt(formData.age)
+              },
             settings: {
               // The Discord function will check if webhook is configured
               discordWebhookUrl: null
@@ -141,6 +145,7 @@ const Apply = () => {
       setFormData({
         steamName: "",
         discordTag: "",
+        discordName: "",
         fivemName: "",
         age: "",
         rpExperience: "",
@@ -260,6 +265,19 @@ const Apply = () => {
                     className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
                     required
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="discordName">Discord Username</Label>
+                  <Input
+                    id="discordName"
+                    value={formData.discordName}
+                    onChange={(e) => setFormData({...formData, discordName: e.target.value})}
+                    placeholder="@username (for pings)"
+                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">Enter your Discord username for mentions in logs (e.g., @username)</p>
                 </div>
               </div>
 
