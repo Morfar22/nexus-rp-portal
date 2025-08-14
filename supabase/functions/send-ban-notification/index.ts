@@ -48,9 +48,14 @@ const handler = async (req: Request): Promise<Response> => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 30px; border-radius: 10px; color: white;">
           <h1 style="color: #ff6b6b; margin: 0 0 20px 0;">${subject}</h1>
-          <p style="font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-            User: <strong>${userName}</strong> ${originalUserEmail ? `(${originalUserEmail})` : ''}
-          </p>
+           ${originalUserEmail && originalUserEmail !== userEmail ? `
+             <p style="font-size: 14px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin: 0 0 20px 0;">
+               <strong>⚠️ Domain Verification Required:</strong> This email was sent to you (admin) because Resend requires domain verification to send to other recipients. The intended recipient was: ${originalUserEmail}
+             </p>
+           ` : ''}
+           <p style="font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+             User: <strong>${userName}</strong> ${originalUserEmail ? `(${originalUserEmail})` : ''}
+           </p>
           ${isBanned ? `
             <p style="font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
               Your account has been suspended by our moderation team.
@@ -86,11 +91,13 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     // Send email to the actual user being banned/unbanned, not the admin
+    // For testing: if domain not verified, send to admin email with note
     const recipientEmail = originalUserEmail || userEmail;
+    const isTestingMode = !originalUserEmail; // If no originalUserEmail, we're in testing mode
     
     const emailResponse = await resend.emails.send({
       from: "Gaming Community <onboarding@resend.dev>",
-      to: [recipientEmail],
+      to: [userEmail], // Send to admin email until domain is verified
       subject: subject,
       html: banEmailHtml,
     });
