@@ -377,62 +377,68 @@ const Apply = () => {
                     )}
 
                     {selectedApplicationType && (
-                      <form onSubmit={handleSubmit} className="space-y-6">
-                        {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => (
-                          <div key={field.name} className="space-y-2">
-                            <Label htmlFor={field.name} className="text-foreground">
-                              {field.label}
-                              {field.required && <span className="text-red-500 ml-1">*</span>}
-                            </Label>
-                            
-                            {field.type === 'textarea' ? (
-                              <Textarea
-                                id={field.name}
-                                value={formData[field.name] || ''}
-                                onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
-                                placeholder={field.placeholder || ''}
-                                className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
-                                required={field.required}
-                              />
-                            ) : (
-                              <Input
-                                id={field.name}
-                                type={field.type}
-                                value={formData[field.name] || ''}
-                                onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
-                                placeholder={field.placeholder || ''}
-                                className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                                required={field.required}
-                                min={field.type === 'number' ? '16' : undefined}
-                              />
-                            )}
-                          </div>
-                        ))}
-
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="rulesAgreed"
-                            checked={rulesAgreed}
-                            onChange={(e) => setRulesAgreed(e.target.checked)}
-                            className="rounded border-gaming-border"
-                            required
-                          />
-                          <Label htmlFor="rulesAgreed" className="text-sm">
-                            I have read and agree to follow all server rules
-                          </Label>
+                      <>
+                        <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg mb-4">
+                          <p className="text-sm text-blue-400">Debug: Form loaded with {(selectedApplicationType?.form_fields as any[])?.length || 0} fields</p>
+                          <p className="text-xs text-muted-foreground">Selected type: {selectedApplicationType.name}</p>
                         </div>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                          {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => (
+                            <div key={field.name} className="space-y-2">
+                              <Label htmlFor={field.name} className="text-foreground">
+                                {field.label}
+                                {field.required && <span className="text-red-500 ml-1">*</span>}
+                              </Label>
+                              
+                              {field.type === 'textarea' ? (
+                                <Textarea
+                                  id={field.name}
+                                  value={formData[field.name] || ''}
+                                  onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                                  placeholder={field.placeholder || ''}
+                                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
+                                  required={field.required}
+                                />
+                              ) : (
+                                <Input
+                                  id={field.name}
+                                  type={field.type}
+                                  value={formData[field.name] || ''}
+                                  onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                                  placeholder={field.placeholder || ''}
+                                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                                  required={field.required}
+                                  min={field.type === 'number' ? '16' : undefined}
+                                />
+                              )}
+                            </div>
+                          ))}
 
-                        <Button 
-                          type="submit" 
-                          variant="hero" 
-                          size="lg" 
-                          className="w-full" 
-                          disabled={isLoading || !selectedApplicationType}
-                        >
-                          {isLoading ? "Submitting..." : "Submit Application"}
-                        </Button>
-                      </form>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="rulesAgreed"
+                              checked={rulesAgreed}
+                              onChange={(e) => setRulesAgreed(e.target.checked)}
+                              className="rounded border-gaming-border"
+                              required
+                            />
+                            <Label htmlFor="rulesAgreed" className="text-sm">
+                              I have read and agree to follow all server rules
+                            </Label>
+                          </div>
+
+                          <Button 
+                            type="submit" 
+                            variant="hero" 
+                            size="lg" 
+                            className="w-full" 
+                            disabled={isLoading || !selectedApplicationType}
+                          >
+                            {isLoading ? "Submitting..." : "Submit Application"}
+                          </Button>
+                        </form>
+                      </>
                     )}
                   </Card>
                 )}
