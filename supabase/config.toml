@@ -76,3 +76,9 @@ verify_jwt = false
 
 [functions.discord-logger]
 verify_jwt = false
+
+[functions.fetch-server-stats]
+verify_jwt = false
+
+[functions.auto-fetch-server-stats]
+verify_jwt = false

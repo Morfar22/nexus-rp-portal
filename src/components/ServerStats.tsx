@@ -93,48 +93,78 @@ const ServerStats = () => {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <Card className="p-4 bg-gaming-card border-gaming-border hover:border-neon-green/50 transition-all duration-300">
-        <div className="flex items-center space-x-3">
-          <Users className="h-8 w-8 text-neon-green" />
-          <div>
-            <p className="text-2xl font-bold text-foreground">
-              {stats.players_online}/{stats.max_players}
-            </p>
-            <p className="text-sm text-muted-foreground">Players Online</p>
-          </div>
-        </div>
-      </Card>
+    <div className="space-y-4">
+      {/* Live Indicator */}
+      <div className="flex items-center justify-center space-x-2 mb-4">
+        <div className={`w-3 h-3 rounded-full ${stats.players_online > 0 ? 'bg-neon-green animate-pulse' : 'bg-red-500'}`} />
+        <span className="text-sm text-muted-foreground">
+          {stats.players_online > 0 ? 'Server Online' : 'Server Offline'} • Last updated: {new Date(stats.last_updated).toLocaleTimeString()}
+        </span>
+      </div>
       
-      <Card className="p-4 bg-gaming-card border-gaming-border hover:border-neon-blue/50 transition-all duration-300">
-        <div className="flex items-center space-x-3">
-          <Clock className="h-8 w-8 text-neon-blue" />
-          <div>
-            <p className="text-2xl font-bold text-foreground">{stats.uptime_percentage}%</p>
-            <p className="text-sm text-muted-foreground">Uptime</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 bg-gaming-card border-gaming-border hover:border-neon-green/50 transition-all duration-300">
+          <div className="flex items-center space-x-3">
+            <Users className="h-8 w-8 text-neon-green" />
+            <div>
+              <p className="text-2xl font-bold text-foreground">
+                {stats.players_online}/{stats.max_players}
+              </p>
+              <p className="text-sm text-muted-foreground">Players Online</p>
+              {stats.players_online > 0 && (
+                <div className="w-full bg-gaming-dark rounded-full h-1.5 mt-1">
+                  <div 
+                    className="bg-neon-green h-1.5 rounded-full transition-all duration-500" 
+                    style={{ width: `${(stats.players_online / stats.max_players) * 100}%` }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </Card>
-      
-      <Card className="p-4 bg-gaming-card border-gaming-border hover:border-neon-purple/50 transition-all duration-300">
-        <div className="flex items-center space-x-3">
-          <Globe className="h-8 w-8 text-neon-purple" />
-          <div>
-            <p className="text-2xl font-bold text-foreground">{stats.queue_count}</p>
-            <p className="text-sm text-muted-foreground">Queue</p>
+        </Card>
+        
+        <Card className="p-4 bg-gaming-card border-gaming-border hover:border-neon-blue/50 transition-all duration-300">
+          <div className="flex items-center space-x-3">
+            <Clock className="h-8 w-8 text-neon-blue" />
+            <div>
+              <p className="text-2xl font-bold text-foreground">{stats.uptime_percentage}%</p>
+              <p className="text-sm text-muted-foreground">Uptime</p>
+              <div className="w-full bg-gaming-dark rounded-full h-1.5 mt-1">
+                <div 
+                  className="bg-neon-blue h-1.5 rounded-full" 
+                  style={{ width: `${stats.uptime_percentage}%` }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </Card>
-      
-      <Card className="p-4 bg-gaming-card border-gaming-border hover:border-neon-green/50 transition-all duration-300">
-        <div className="flex items-center space-x-3">
-          <Zap className="h-8 w-8 text-neon-green" />
-          <div>
-            <p className="text-2xl font-bold text-foreground">{stats.ping_ms}ms</p>
-            <p className="text-sm text-muted-foreground">Ping</p>
+        </Card>
+        
+        <Card className="p-4 bg-gaming-card border-gaming-border hover:border-neon-purple/50 transition-all duration-300">
+          <div className="flex items-center space-x-3">
+            <Globe className="h-8 w-8 text-neon-purple" />
+            <div>
+              <p className="text-2xl font-bold text-foreground">{stats.queue_count}</p>
+              <p className="text-sm text-muted-foreground">Queue</p>
+              {stats.queue_count > 0 && (
+                <p className="text-xs text-orange-400 mt-1">~{stats.queue_count * 2} min wait</p>
+              )}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+        
+        <Card className="p-4 bg-gaming-card border-gaming-border hover:border-neon-green/50 transition-all duration-300">
+          <div className="flex items-center space-x-3">
+            <Zap className={`h-8 w-8 ${stats.ping_ms < 50 ? 'text-neon-green' : stats.ping_ms < 100 ? 'text-yellow-400' : 'text-red-400'}`} />
+            <div>
+              <p className="text-2xl font-bold text-foreground">{stats.ping_ms}ms</p>
+              <p className="text-sm text-muted-foreground">Ping</p>
+              <p className={`text-xs mt-1 ${stats.ping_ms < 50 ? 'text-neon-green' : stats.ping_ms < 100 ? 'text-yellow-400' : 'text-red-400'}`}>
+                {stats.ping_ms < 50 ? 'Excellent' : stats.ping_ms < 100 ? 'Good' : 'High'}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

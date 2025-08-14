@@ -2326,22 +2326,78 @@ const StaffPanel = () => {
                   </div>
                   <div className="space-y-4">
                     <div className="bg-gaming-dark p-4 rounded-lg">
-                      <h4 className="text-foreground font-semibold mb-2">Automatic Updates</h4>
+                      <h4 className="text-foreground font-semibold mb-2">Automatic Live Updates</h4>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Configure automatic fetching of live server stats every few minutes.
+                        Enable automatic fetching of live server stats every 2 minutes. This will keep your homepage updated with real player counts.
                       </p>
-                      <Button
-                        onClick={async () => {
-                          toast({
-                            title: "Coming Soon",
-                            description: "Automatic stats fetching will be available soon!",
-                          });
-                        }}
-                        variant="outline"
-                        className="border-gaming-border text-foreground hover:bg-gaming-dark"
-                      >
-                        Enable Auto-Fetch (Coming Soon)
-                      </Button>
+                      <div className="flex items-center space-x-4">
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const { error } = await supabase
+                                .from('server_settings')
+                                .upsert({
+                                  setting_key: 'auto_fetch_enabled',
+                                  setting_value: true
+                                });
+                              
+                              if (error) throw error;
+                              
+                              // Trigger the first auto-fetch
+                              await supabase.functions.invoke('auto-fetch-server-stats');
+                              
+                              toast({
+                                title: "Success",
+                                description: "Auto-fetch enabled! Stats will update every 2 minutes.",
+                              });
+                              
+                              fetchData();
+                            } catch (error) {
+                              console.error('Error enabling auto-fetch:', error);
+                              toast({
+                                title: "Error",
+                                description: "Failed to enable auto-fetch",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="bg-neon-green hover:bg-neon-green/80"
+                        >
+                          Enable Auto-Fetch
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const { error } = await supabase
+                                .from('server_settings')
+                                .upsert({
+                                  setting_key: 'auto_fetch_enabled',
+                                  setting_value: false
+                                });
+                              
+                              if (error) throw error;
+                              
+                              toast({
+                                title: "Success",
+                                description: "Auto-fetch disabled.",
+                              });
+                              
+                              fetchData();
+                            } catch (error) {
+                              console.error('Error disabling auto-fetch:', error);
+                              toast({
+                                title: "Error",
+                                description: "Failed to disable auto-fetch",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          variant="outline"
+                          className="border-gaming-border text-foreground hover:bg-gaming-dark"
+                        >
+                          Disable Auto-Fetch
+                        </Button>
+                      </div>
                     </div>
                     
                     <div className="bg-gaming-dark p-4 rounded-lg">
