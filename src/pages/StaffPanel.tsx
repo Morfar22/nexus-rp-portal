@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
@@ -11,7 +12,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Clock, Users, FileText, Settings, Eye, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Users, FileText, Settings, Eye, AlertCircle, Trash2 } from "lucide-react";
 
 const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
@@ -144,6 +145,54 @@ const StaffPanel = () => {
         title: "Error",
         description: error.message || "Failed to process application",
         variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteApplication = async (applicationId: string) => {
+    if (!user) return;
+    
+    setIsSubmitting(true);
+    try {
+      // First delete all related actions
+      const { error: actionsError } = await supabase
+        .from('application_actions')
+        .delete()
+        .eq('application_id', applicationId);
+
+      if (actionsError) {
+        console.error('Error deleting actions:', actionsError);
+        // Continue with application deletion even if actions deletion fails
+      }
+
+      // Then delete the application
+      const { error: deleteError } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', applicationId);
+
+      if (deleteError) throw deleteError;
+
+      toast({
+        title: "Success",
+        description: "Application deleted successfully",
+      });
+
+      // Refresh data
+      await Promise.all([fetchApplications(), fetchRecentActions()]);
+      
+      // Close dialog
+      setSelectedApplication(null);
+      setReviewNotes('');
+    } catch (err: any) {
+      console.error('Error deleting application:', err);
+      setError(err.message || 'Failed to delete application');
+      toast({
+        title: "Error",
+        description: err.message || 'Failed to delete application',
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -335,6 +384,41 @@ const StaffPanel = () => {
                                     Deny
                                   </Button>
                                 </div>
+                                
+                                <div className="flex justify-end pt-2">
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        disabled={isSubmitting}
+                                        className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Delete Application
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-foreground">Delete Application</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete this application? This action cannot be undone and will permanently remove the application and all related data.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel className="bg-gaming-dark border-gaming-border hover:bg-gaming-darker">
+                                          Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => handleDeleteApplication(app.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Delete Permanently
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                               </div>
                             </DialogContent>
                           </Dialog>
@@ -500,6 +584,41 @@ const StaffPanel = () => {
                                     <XCircle className="h-4 w-4 mr-1" />
                                     {app.status === 'denied' ? 'Re-deny' : 'Deny'}
                                   </Button>
+                                </div>
+                                
+                                <div className="flex justify-end pt-2">
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        disabled={isSubmitting}
+                                        className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Delete Application
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-foreground">Delete Application</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete this application? This action cannot be undone and will permanently remove the application and all related data.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel className="bg-gaming-dark border-gaming-border hover:bg-gaming-darker">
+                                          Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => handleDeleteApplication(app.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Delete Permanently
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               </div>
                             </DialogContent>
