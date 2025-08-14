@@ -18,6 +18,8 @@ const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [recentActions, setRecentActions] = useState<any[]>([]);
   const [rules, setRules] = useState<any[]>([]);
+  const [staffMembers, setStaffMembers] = useState<any[]>([]);
+  const [players, setPlayers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -25,6 +27,9 @@ const StaffPanel = () => {
   const [error, setError] = useState("");
   const [editingRule, setEditingRule] = useState<any>(null);
   const [newRule, setNewRule] = useState({ category: "", title: "", description: "" });
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  const [newStaffEmail, setNewStaffEmail] = useState("");
+  const [newStaffRole, setNewStaffRole] = useState("moderator");
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -34,6 +39,8 @@ const StaffPanel = () => {
     fetchApplications();
     fetchRecentActions();
     fetchRules();
+    fetchStaffMembers();
+    fetchPlayers();
   }, [user]);
 
   const fetchApplications = async () => {
@@ -155,6 +162,97 @@ const StaffPanel = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete rule",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchStaffMembers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select(`
+          id,
+          role,
+          created_at,
+          user_id,
+          profiles!inner(id, username, full_name)
+        `)
+        .in('role', ['admin', 'moderator'])
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setStaffMembers(data || []);
+    } catch (error: any) {
+      console.error('Error fetching staff members:', error);
+    }
+  };
+
+  const fetchPlayers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          full_name,
+          created_at,
+          user_roles(role)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setPlayers(data || []);
+    } catch (error: any) {
+      console.error('Error fetching players:', error);
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!user || !newStaffEmail.trim()) return;
+    
+    try {
+      // For now, we'll need the user to provide the user ID or handle this differently
+      // This is a simplified approach - in production you'd want proper user lookup
+      toast({
+        title: "Info",
+        description: "For now, staff must be added manually via database. Feature coming soon!",
+      });
+      
+      setShowStaffDialog(false);
+      setNewStaffEmail("");
+      setNewStaffRole("moderator");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add staff member",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveStaff = async (roleId: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('id', roleId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Staff member removed",
+      });
+      
+      fetchStaffMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove staff member",
         variant: "destructive"
       });
     }
@@ -521,6 +619,123 @@ const StaffPanel = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="players" className="space-y-4">
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-neon-green" />
+                  <span>Player Management</span>
+                </h2>
+                <Badge variant="secondary">{players.length} total players</Badge>
+              </div>
+              
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {players.map((player: any) => (
+                  <div key={player.id} className="flex items-center justify-between p-4 bg-gaming-dark rounded border border-gaming-border">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-foreground">
+                        {player.full_name || player.username || 'Unknown Player'}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        ID: {player.id.slice(0, 8)}... • Joined: {new Date(player.created_at).toLocaleDateString()}
+                      </p>
+                      <div className="flex space-x-2 mt-2">
+                        {player.user_roles?.map((role: any, index: number) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {role.role}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 ml-4">
+                      <Button variant="outline" size="sm" className="border-gaming-border hover:bg-gaming-darker">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" className="border-red-500/50 text-red-500 hover:bg-red-500/10">
+                        Ban
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                {players.length === 0 && (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No players found</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reports" className="space-y-4">
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
+                  <AlertCircle className="h-5 w-5 text-yellow-500" />
+                  <span>Player Reports</span>
+                </h2>
+                <Badge variant="secondary" className="bg-red-600">3 pending</Badge>
+              </div>
+              
+              <div className="space-y-4">
+                {[
+                  {
+                    id: 1,
+                    reporter: "Player123",
+                    reported: "BadPlayer456", 
+                    reason: "RDM in city center",
+                    time: "2 hours ago",
+                    status: "pending"
+                  },
+                  {
+                    id: 2,
+                    reporter: "GoodCitizen",
+                    reported: "Troublemaker",
+                    reason: "Metagaming during RP scenario",
+                    time: "5 hours ago", 
+                    status: "investigating"
+                  },
+                  {
+                    id: 3,
+                    reporter: "Officer_Smith",
+                    reported: "SpeedDemon",
+                    reason: "Fail RP during traffic stop",
+                    time: "1 day ago",
+                    status: "pending"
+                  }
+                ].map((report) => (
+                  <div key={report.id} className="flex items-center justify-between p-4 bg-gaming-dark rounded border border-gaming-border">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h4 className="font-medium text-foreground">{report.reporter}</h4>
+                        <span className="text-muted-foreground">reported</span>
+                        <h4 className="font-medium text-red-400">{report.reported}</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{report.reason}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{report.time}</p>
+                    </div>
+                    <div className="flex items-center space-x-2 ml-4">
+                      <Badge 
+                        variant="secondary" 
+                        className={
+                          report.status === 'pending' ? 'bg-yellow-600' : 
+                          report.status === 'investigating' ? 'bg-blue-600' : 
+                          'bg-gray-600'
+                        }
+                      >
+                        {report.status}
+                      </Badge>
+                      <Button variant="outline" size="sm" className="border-gaming-border hover:bg-gaming-darker">
+                        Review
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="all-applications" className="space-y-4">
             <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
               <div className="flex items-center justify-between mb-6">
@@ -876,7 +1091,10 @@ const StaffPanel = () => {
                     </div>
                   </div>
                 </div>
-                <Button className="w-full mt-6 bg-neon-green hover:bg-neon-green/80 text-black">
+                <Button 
+                  onClick={() => setShowStaffDialog(true)}
+                  className="w-full mt-6 bg-neon-green hover:bg-neon-green/80 text-black"
+                >
                   Manage Staff
                 </Button>
               </Card>
@@ -1099,6 +1317,88 @@ const StaffPanel = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Staff Management Dialog */}
+      <Dialog open={showStaffDialog} onOpenChange={setShowStaffDialog}>
+        <DialogContent className="bg-gaming-card border-gaming-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Staff Management</DialogTitle>
+            <DialogDescription>
+              Manage server staff members and their roles
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Current Staff */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Current Staff</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {staffMembers.map((member: any) => (
+                  <div key={member.id} className="flex items-center justify-between p-3 bg-gaming-dark rounded border border-gaming-border">
+                    <div>
+                      <span className="font-medium text-foreground">
+                        {member.profiles?.full_name || member.profiles?.username || 'Unknown'}
+                      </span>
+                      <Badge variant="secondary" className="ml-2">
+                        {member.role}
+                      </Badge>
+                    </div>
+                    <Button 
+                      onClick={() => handleRemoveStaff(member.id)}
+                      variant="outline" 
+                      size="sm" 
+                      className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {staffMembers.length === 0 && (
+                  <p className="text-muted-foreground text-center py-4">No staff members found</p>
+                )}
+              </div>
+            </div>
+            
+            {/* Add New Staff */}
+            <div className="border-t border-gaming-border pt-4">
+              <h3 className="text-lg font-semibold mb-4">Add Staff Member</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="staff-email">User Email</Label>
+                  <input
+                    id="staff-email"
+                    type="email"
+                    value={newStaffEmail}
+                    onChange={(e) => setNewStaffEmail(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
+                    placeholder="user@example.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="staff-role">Role</Label>
+                  <select
+                    id="staff-role"
+                    value={newStaffRole}
+                    onChange={(e) => setNewStaffRole(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
+                  >
+                    <option value="moderator">Moderator</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <Button 
+                  onClick={handleAddStaff}
+                  className="w-full bg-neon-purple hover:bg-neon-purple/80"
+                  disabled={!newStaffEmail.trim()}
+                >
+                  Add Staff Member
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
