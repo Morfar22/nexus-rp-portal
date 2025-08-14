@@ -1342,7 +1342,7 @@ const StaffPanel = () => {
                 </div>
                 <Button 
                   onClick={handleSaveApplicationSettings}
-                  className="w-full mt-6 bg-neon-cyan hover:bg-neon-cyan/80 text-black"
+                  className="w-full mt-6 bg-neon-cyan hover:bg-neon-cyan/80 text-gaming-darker"
                 >
                   Save Application Settings
                 </Button>
