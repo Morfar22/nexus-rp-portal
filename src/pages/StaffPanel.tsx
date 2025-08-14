@@ -12,16 +12,19 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Clock, Users, FileText, Settings, Eye, AlertCircle, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Users, FileText, Settings, Eye, AlertCircle, Trash2, Plus, Edit } from "lucide-react";
 
 const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [recentActions, setRecentActions] = useState<any[]>([]);
+  const [rules, setRules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [editingRule, setEditingRule] = useState<any>(null);
+  const [newRule, setNewRule] = useState({ category: "", title: "", description: "" });
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -30,6 +33,7 @@ const StaffPanel = () => {
     console.log('StaffPanel useEffect - user:', user);
     fetchApplications();
     fetchRecentActions();
+    fetchRules();
   }, [user]);
 
   const fetchApplications = async () => {
@@ -66,6 +70,93 @@ const StaffPanel = () => {
       setRecentActions(data || []);
     } catch (error: any) {
       console.error('Error fetching recent actions:', error);
+    }
+  };
+
+  const fetchRules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('rules')
+        .select('*')
+        .order('category', { ascending: true })
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      setRules(data || []);
+    } catch (error: any) {
+      console.error('Error fetching rules:', error);
+    }
+  };
+
+  const handleSaveRule = async (ruleData: any) => {
+    if (!user) return;
+    
+    try {
+      if (editingRule) {
+        // Update existing rule
+        const { error } = await supabase
+          .from('rules')
+          .update(ruleData)
+          .eq('id', editingRule.id);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Rule updated successfully",
+        });
+      } else {
+        // Create new rule
+        const { error } = await supabase
+          .from('rules')
+          .insert({
+            ...ruleData,
+            created_by: user.id
+          });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Success", 
+          description: "Rule created successfully",
+        });
+      }
+      
+      fetchRules();
+      setEditingRule(null);
+      setNewRule({ category: "", title: "", description: "" });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save rule",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteRule = async (ruleId: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('rules')
+        .delete()
+        .eq('id', ruleId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Rule deleted successfully",
+      });
+      
+      fetchRules();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete rule",
+        variant: "destructive"
+      });
     }
   };
 
@@ -817,6 +908,192 @@ const StaffPanel = () => {
                 <Button variant="outline" className="w-full mt-6 border-gaming-border hover:bg-gaming-darker">
                   View Logs
                 </Button>
+              </Card>
+
+              {/* Rules Editor */}
+              <Card className="md:col-span-2 p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2">
+                    <FileText className="h-5 w-5 text-neon-blue" />
+                    <span>Rules Management</span>
+                  </h2>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="bg-neon-blue hover:bg-neon-blue/80">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Rule
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-gaming-card border-gaming-border">
+                      <DialogHeader>
+                        <DialogTitle className="text-foreground">Add New Rule</DialogTitle>
+                        <DialogDescription>
+                          Create a new server rule for your community
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="new-category">Category</Label>
+                          <input
+                            id="new-category"
+                            value={newRule.category}
+                            onChange={(e) => setNewRule({...newRule, category: e.target.value})}
+                            className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-blue focus:border-transparent"
+                            placeholder="e.g., General Rules"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="new-title">Rule Title</Label>
+                          <input
+                            id="new-title"
+                            value={newRule.title}
+                            onChange={(e) => setNewRule({...newRule, title: e.target.value})}
+                            className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-blue focus:border-transparent"
+                            placeholder="e.g., No Metagaming"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="new-description">Description</Label>
+                          <Textarea
+                            id="new-description"
+                            value={newRule.description}
+                            onChange={(e) => setNewRule({...newRule, description: e.target.value})}
+                            className="mt-1 bg-gaming-dark border-gaming-border focus:border-neon-blue"
+                            placeholder="Detailed description of the rule..."
+                            rows={3}
+                          />
+                        </div>
+                        <div className="flex space-x-2 pt-4">
+                          <Button 
+                            onClick={() => handleSaveRule(newRule)}
+                            className="flex-1 bg-neon-blue hover:bg-neon-blue/80"
+                            disabled={!newRule.category || !newRule.title || !newRule.description}
+                          >
+                            Create Rule
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {Object.entries(
+                    rules.reduce((acc: any, rule: any) => {
+                      if (!acc[rule.category]) acc[rule.category] = [];
+                      acc[rule.category].push(rule);
+                      return acc;
+                    }, {})
+                  ).map(([category, categoryRules]: [string, any]) => (
+                    <div key={category} className="space-y-2">
+                      <h3 className="font-semibold text-foreground border-b border-gaming-border pb-2">
+                        {category}
+                      </h3>
+                      {categoryRules.map((rule: any) => (
+                        <div key={rule.id} className="flex items-center justify-between p-3 bg-gaming-dark rounded border border-gaming-border">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-foreground">{rule.title}</h4>
+                            <p className="text-sm text-muted-foreground">{rule.description}</p>
+                          </div>
+                          <div className="flex items-center space-x-2 ml-4">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingRule(rule);
+                                    setNewRule({
+                                      category: rule.category,
+                                      title: rule.title,
+                                      description: rule.description
+                                    });
+                                  }}
+                                  className="border-gaming-border hover:bg-gaming-darker"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="bg-gaming-card border-gaming-border">
+                                <DialogHeader>
+                                  <DialogTitle className="text-foreground">Edit Rule</DialogTitle>
+                                  <DialogDescription>
+                                    Modify the rule details
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label htmlFor="edit-category">Category</Label>
+                                    <input
+                                      id="edit-category"
+                                      value={newRule.category}
+                                      onChange={(e) => setNewRule({...newRule, category: e.target.value})}
+                                      className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-blue focus:border-transparent"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-title">Rule Title</Label>
+                                    <input
+                                      id="edit-title"
+                                      value={newRule.title}
+                                      onChange={(e) => setNewRule({...newRule, title: e.target.value})}
+                                      className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-blue focus:border-transparent"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-description">Description</Label>
+                                    <Textarea
+                                      id="edit-description"
+                                      value={newRule.description}
+                                      onChange={(e) => setNewRule({...newRule, description: e.target.value})}
+                                      className="mt-1 bg-gaming-dark border-gaming-border focus:border-neon-blue"
+                                      rows={3}
+                                    />
+                                  </div>
+                                  <div className="flex space-x-2 pt-4">
+                                    <Button 
+                                      onClick={() => handleSaveRule(newRule)}
+                                      className="flex-1 bg-neon-blue hover:bg-neon-blue/80"
+                                      disabled={!newRule.category || !newRule.title || !newRule.description}
+                                    >
+                                      Update Rule
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="border-red-500/50 text-red-500 hover:bg-red-500/10">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-foreground">Delete Rule</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this rule? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel className="bg-gaming-dark border-gaming-border hover:bg-gaming-darker">
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleDeleteRule(rule.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </Card>
             </div>
           </TabsContent>
