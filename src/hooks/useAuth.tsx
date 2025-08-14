@@ -54,83 +54,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const checkBanStatus = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('banned')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error checking ban status:', error);
-        return false;
-      }
-      
-      return data?.banned || false;
-    } catch (error) {
-      console.error('Error checking ban status:', error);
-      return false;
-    }
-  };
-
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Check ban status if user is signed in
-        if (session?.user) {
-          const banned = await checkBanStatus(session.user.id);
-          setIsBanned(banned);
-          
-          // If user is banned, sign them out immediately
-          if (banned) {
-            setTimeout(async () => {
-              await signOut();
-            }, 0);
-            return;
-          }
-        } else {
-          setIsBanned(false);
-        }
-        
+        setIsBanned(false); // Reset ban status, will be checked separately
         setLoading(false);
       }
     );
 
     // THEN check for existing session
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          const banned = await checkBanStatus(session.user.id);
-          setIsBanned(banned);
-          
-          // If user is banned, sign them out immediately
-          if (banned) {
-            setTimeout(async () => {
-              await signOut();
-            }, 0);
-            return;
-          }
-        } else {
-          setIsBanned(false);
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error during auth initialization:', error);
-        setLoading(false);
-      }
-    };
-    
-    initAuth();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsBanned(false); // Reset ban status
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);

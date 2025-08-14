@@ -1,17 +1,53 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading, isBanned } = useAuth();
+  const { user, loading } = useAuth();
+  const [isBanned, setIsBanned] = useState(false);
+  const [banLoading, setBanLoading] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    const checkBanStatus = async () => {
+      if (!user) {
+        setBanLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('banned')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error checking ban status:', error);
+          setIsBanned(false);
+        } else {
+          setIsBanned(data?.banned || false);
+        }
+      } catch (error) {
+        console.error('Error checking ban status:', error);
+        setIsBanned(false);
+      } finally {
+        setBanLoading(false);
+      }
+    };
+
+    if (!loading) {
+      checkBanStatus();
+    }
+  }, [user, loading]);
+
+  if (loading || banLoading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
         <Card className="p-8 bg-gaming-card border-gaming-border">
