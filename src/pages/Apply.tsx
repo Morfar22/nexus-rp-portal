@@ -376,37 +376,8 @@ const Apply = () => {
                       </div>
                     )}
 
-                    {/* SIMPLE TEST FORM - Remove after testing */}
-                    <div className="bg-red-500/20 border border-red-500 p-4 rounded-lg mb-4">
-                      <h3 className="text-white font-bold mb-4">TEST FORM (This should work)</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-white block mb-2">Test Input 1:</label>
-                          <input 
-                            type="text" 
-                            placeholder="Type here..." 
-                            className="w-full p-2 bg-white text-black border rounded"
-                            onChange={(e) => console.log('Input 1:', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-white block mb-2">Test Input 2:</label>
-                          <input 
-                            type="text" 
-                            placeholder="Type here too..." 
-                            className="w-full p-2 bg-white text-black border rounded"
-                            onChange={(e) => console.log('Input 2:', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
                     {selectedApplicationType && (
                       <>
-                        <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg mb-4">
-                          <p className="text-sm text-blue-400">Debug: Form loaded with {(selectedApplicationType?.form_fields as any[])?.length || 0} fields</p>
-                          <p className="text-xs text-muted-foreground">Selected type: {selectedApplicationType.name}</p>
-                        </div>
                         <form onSubmit={handleSubmit} className="space-y-6">
                           {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => {
                             // Create unique field key to avoid conflicts with duplicate names
@@ -420,10 +391,10 @@ const Apply = () => {
                                 </Label>
                                 
                                 {field.type === 'textarea' ? (
-                                  <Textarea
+                                 <Textarea
                                     id={fieldKey}
-                                    value={formData[fieldKey] || ''}
-                                    onChange={(e) => setFormData({...formData, [fieldKey]: e.target.value})}
+                                    value={formData[field.name] || ''}
+                                    onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
                                     placeholder={field.placeholder || ''}
                                     className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
                                     required={field.required}
@@ -432,8 +403,8 @@ const Apply = () => {
                                   <Input
                                     id={fieldKey}
                                     type={field.type}
-                                    value={formData[fieldKey] || ''}
-                                    onChange={(e) => setFormData({...formData, [fieldKey]: e.target.value})}
+                                    value={formData[field.name] || ''}
+                                    onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
                                     placeholder={field.placeholder || ''}
                                     className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
                                     required={field.required}
