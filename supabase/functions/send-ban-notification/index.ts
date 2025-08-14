@@ -28,6 +28,11 @@ const handler = async (req: Request): Promise<Response> => {
     const { userEmail, userName, isBanned, banReason, staffName }: BanNotificationRequest = await req.json();
 
     console.log(`Processing ${isBanned ? 'ban' : 'unban'} notification for user: ${userEmail}`);
+    console.log('Request data:', { userEmail, userName, isBanned, banReason, staffName });
+
+    if (!userEmail) {
+      throw new Error('User email is required');
+    }
 
     const subject = isBanned ? "Account Suspended" : "Account Reinstated";
     
@@ -73,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Gaming Community <noreply@resend.dev>",
+      from: "Gaming Community <onboarding@resend.dev>",
       to: [userEmail],
       subject: subject,
       html: banEmailHtml,
