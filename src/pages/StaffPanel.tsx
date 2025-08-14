@@ -188,11 +188,10 @@ const StaffPanel = () => {
       setReviewNotes('');
     } catch (err: any) {
       console.error('Error deleting application:', err);
-      setError(err.message || 'Failed to delete application');
       toast({
         title: "Error",
-        description: err.message || 'Failed to delete application',
-        variant: "destructive",
+        description: err.message || "Failed to delete application",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
