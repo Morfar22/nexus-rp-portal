@@ -77,33 +77,43 @@ const StaffPanel = () => {
     try {
       setIsLoading(true);
       
-      // Fetch staff members with proper profile data using a direct query
-      const { data: staffMembersWithProfiles, error: staffError } = await supabase
+      // Fetch staff members using a working approach
+      const { data: staffRolesData, error: staffError } = await supabase
         .from('user_roles')
-        .select(`
-          id,
-          role,
-          created_at,
-          user_id,
-          profiles (
-            id,
-            username,
-            full_name
-          )
-        `)
+        .select('id, role, created_at, user_id')
         .in('role', ['admin', 'moderator']);
 
-      // Handle cases where profiles might be missing
-      const processedStaffMembers = staffMembersWithProfiles?.map(staff => ({
-        ...staff,
-        profiles: staff.profiles || {
-          id: staff.user_id,
-          username: `User ${staff.user_id.slice(0, 8)}`,
-          full_name: null
-        }
-      })) || [];
+      console.log('Staff roles data:', staffRolesData, 'Error:', staffError);
 
-      console.log('Processed staff members:', processedStaffMembers);
+      // Process staff members with profile lookup
+      let processedStaffMembers = [];
+      if (staffRolesData && staffRolesData.length > 0) {
+        // Get all user IDs
+        const userIds = staffRolesData.map(role => role.user_id);
+        
+        // Fetch corresponding profiles
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, full_name')
+          .in('id', userIds);
+
+        console.log('Profiles data:', profilesData, 'Error:', profilesError);
+
+        // Combine staff roles with profiles
+        processedStaffMembers = staffRolesData.map(staff => {
+          const profile = profilesData?.find(p => p.id === staff.user_id);
+          return {
+            ...staff,
+            profiles: profile || {
+              id: staff.user_id,
+              username: `User ${staff.user_id.slice(0, 8)}`,
+              full_name: null
+            }
+          };
+        });
+      }
+
+      console.log('Final processed staff members:', processedStaffMembers);
 
       const [applicationsRes, rulesRes, typesRes, settingsRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
