@@ -83,8 +83,6 @@ const StaffPanel = () => {
         .select('id, role, created_at, user_id')
         .in('role', ['admin', 'moderator']);
 
-      console.log('Staff roles fetch result:', { staffRolesData, staffError });
-
       // Get profile data for staff members
       let staffMembersWithProfiles = [];
       if (staffRolesData && staffRolesData.length > 0) {
@@ -99,6 +97,8 @@ const StaffPanel = () => {
           profiles: profilesData?.find(profile => profile.id === role.user_id)
         }));
       }
+
+      console.log('Staff members with profiles:', staffMembersWithProfiles);
 
       const [applicationsRes, rulesRes, typesRes, settingsRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
