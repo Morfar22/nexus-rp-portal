@@ -4,6 +4,20 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+// Initialize Supabase client with service role for admin operations
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -11,7 +25,8 @@ const corsHeaders = {
 
 interface EmailRequest {
   type: 'submission' | 'approved' | 'denied' | 'under_review' | 'staff_notification';
-  userEmail: string;
+  userEmail?: string;
+  userId?: string;
   applicationData: {
     steam_name: string;
     discord_tag: string;
@@ -160,20 +175,42 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, userEmail, applicationData, staffEmail }: EmailRequest = await req.json();
+    const { type, userEmail, userId, applicationData, staffEmail }: EmailRequest = await req.json();
 
-    console.log(`Sending ${type} email to ${userEmail}`, applicationData);
+    console.log(`Processing ${type} email request for user:`, userId || userEmail);
+
+    let recipientEmail = userEmail;
+    
+    // If no email provided but userId is available, fetch from auth
+    if (!recipientEmail && userId) {
+      try {
+        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (userError) {
+          console.error('Error fetching user:', userError);
+          throw new Error('Failed to fetch user email');
+        }
+        recipientEmail = userData.user?.email;
+        console.log('Fetched user email from auth:', recipientEmail);
+      } catch (authError) {
+        console.error('Error with admin auth:', authError);
+        throw new Error('Unable to access user email');
+      }
+    }
+
+    if (!recipientEmail) {
+      throw new Error('No recipient email available');
+    }
 
     const subject = {
       submission: "Application Submitted - FiveM Server",
       approved: "🎉 Application Approved - Welcome!",
-      denied: "Application Update - FiveM Server",
+      denied: "Application Update - FiveM Server", 
       under_review: "Application Under Review - FiveM Server",
       staff_notification: "New Application Requires Review"
     }[type];
 
     const html = getEmailTemplate(type, applicationData);
-    const toEmail = type === 'staff_notification' ? (staffEmail || 'staff@yourdomain.com') : userEmail;
+    const toEmail = type === 'staff_notification' ? (staffEmail || 'staff@yourdomain.com') : recipientEmail;
 
     const emailResponse = await resend.emails.send({
       from: "FiveM Server <onboarding@resend.dev>",

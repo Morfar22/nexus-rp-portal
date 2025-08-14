@@ -93,7 +93,7 @@ const Apply = () => {
         await supabase.functions.invoke('send-application-email', {
           body: {
             type: 'submission',
-            userEmail: user.email,
+            userId: user.id,
             applicationData: {
               steam_name: formData.steamName,
               discord_tag: formData.discordTag,
@@ -101,8 +101,10 @@ const Apply = () => {
             }
           }
         });
+        console.log('Submission email sent successfully');
       } catch (emailError) {
-        console.error('Error sending email:', emailError);
+        console.error('Error sending submission email:', emailError);
+        // Don't fail the whole operation if email fails
       }
 
       setExistingApplication(data);

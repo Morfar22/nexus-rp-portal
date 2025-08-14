@@ -108,26 +108,23 @@ const StaffPanel = () => {
 
       // Send email notification to user
       try {
-        // Get user's auth data to access email
-        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(appData.user_id);
-        
-        if (authUser?.email) {
-          await supabase.functions.invoke('send-application-email', {
-            body: {
-              type: action,
-              userEmail: authUser.email,
-              applicationData: {
-                steam_name: appData.steam_name,
-                discord_tag: appData.discord_tag,
-                fivem_name: appData.fivem_name,
-                status: action,
-                review_notes: notes
-              }
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: action,
+            userId: appData.user_id,
+            applicationData: {
+              steam_name: appData.steam_name,
+              discord_tag: appData.discord_tag,
+              fivem_name: appData.fivem_name,
+              status: action,
+              review_notes: notes
             }
-          });
-        }
+          }
+        });
+        console.log('Email notification sent successfully');
       } catch (emailError) {
         console.error('Error sending email notification:', emailError);
+        // Don't fail the whole operation if email fails
       }
 
       toast({
