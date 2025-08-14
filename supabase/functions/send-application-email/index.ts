@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const resendClient = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 // Initialize Supabase client with service role for admin operations
 const supabaseAdmin = createClient(
@@ -43,7 +43,6 @@ const getEmailTemplate = (type: string, data: any) => {
       .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
       .content { background: white; padding: 30px; border: 1px solid #e1e5e9; }
       .footer { background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e1e5e9; border-top: none; }
-      .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; }
       .status-badge { padding: 6px 12px; border-radius: 4px; font-weight: bold; display: inline-block; margin: 8px 0; }
       .approved { background: #d4edda; color: #155724; }
       .denied { background: #f8d7da; color: #721c24; }
@@ -178,8 +177,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Request data:', { type, userEmail, userId, applicationData, staffEmail });
     console.log('RESEND_API_KEY exists:', !!Deno.env.get("RESEND_API_KEY"));
-    console.log('SUPABASE_URL:', Deno.env.get('SUPABASE_URL'));
-    console.log('SUPABASE_SERVICE_ROLE_KEY exists:', !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
 
     let recipientEmail = userEmail;
     
@@ -224,7 +221,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('About to send email to:', toEmail);
     console.log('Email HTML length:', html.length);
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await resendClient.emails.send({
       from: "FiveM Server <onboarding@resend.dev>",
       to: [toEmail],
       subject,
