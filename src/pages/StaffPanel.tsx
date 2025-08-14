@@ -2104,12 +2104,31 @@ const StaffPanel = () => {
                         <Button
                           onClick={async () => {
                             try {
-                              const { error } = await supabase
+                              // First try to update existing record
+                              const { data: existingSetting } = await supabase
                                 .from('server_settings')
-                                .upsert({
-                                  setting_key: 'server_ip',
-                                  setting_value: serverSettings.server_ip || ''
-                                });
+                                .select('id')
+                                .eq('setting_key', 'server_ip')
+                                .maybeSingle();
+
+                              let error;
+                              if (existingSetting) {
+                                // Update existing record
+                                const result = await supabase
+                                  .from('server_settings')
+                                  .update({ setting_value: serverSettings.server_ip || '' })
+                                  .eq('setting_key', 'server_ip');
+                                error = result.error;
+                              } else {
+                                // Insert new record
+                                const result = await supabase
+                                  .from('server_settings')
+                                  .insert({
+                                    setting_key: 'server_ip',
+                                    setting_value: serverSettings.server_ip || ''
+                                  });
+                                error = result.error;
+                              }
                               
                               if (error) throw error;
                               
@@ -2334,12 +2353,31 @@ const StaffPanel = () => {
                         <Button
                           onClick={async () => {
                             try {
-                              const { error } = await supabase
+                              // First try to update existing record
+                              const { data: existingSetting } = await supabase
                                 .from('server_settings')
-                                .upsert({
-                                  setting_key: 'auto_fetch_enabled',
-                                  setting_value: true
-                                });
+                                .select('id')
+                                .eq('setting_key', 'auto_fetch_enabled')
+                                .maybeSingle();
+
+                              let error;
+                              if (existingSetting) {
+                                // Update existing record
+                                const result = await supabase
+                                  .from('server_settings')
+                                  .update({ setting_value: true })
+                                  .eq('setting_key', 'auto_fetch_enabled');
+                                error = result.error;
+                              } else {
+                                // Insert new record
+                                const result = await supabase
+                                  .from('server_settings')
+                                  .insert({
+                                    setting_key: 'auto_fetch_enabled',
+                                    setting_value: true
+                                  });
+                                error = result.error;
+                              }
                               
                               if (error) throw error;
                               
@@ -2368,12 +2406,31 @@ const StaffPanel = () => {
                         <Button
                           onClick={async () => {
                             try {
-                              const { error } = await supabase
+                              // First try to update existing record
+                              const { data: existingSetting } = await supabase
                                 .from('server_settings')
-                                .upsert({
-                                  setting_key: 'auto_fetch_enabled',
-                                  setting_value: false
-                                });
+                                .select('id')
+                                .eq('setting_key', 'auto_fetch_enabled')
+                                .maybeSingle();
+
+                              let error;
+                              if (existingSetting) {
+                                // Update existing record
+                                const result = await supabase
+                                  .from('server_settings')
+                                  .update({ setting_value: false })
+                                  .eq('setting_key', 'auto_fetch_enabled');
+                                error = result.error;
+                              } else {
+                                // Insert new record
+                                const result = await supabase
+                                  .from('server_settings')
+                                  .insert({
+                                    setting_key: 'auto_fetch_enabled',
+                                    setting_value: false
+                                  });
+                                error = result.error;
+                              }
                               
                               if (error) throw error;
                               
