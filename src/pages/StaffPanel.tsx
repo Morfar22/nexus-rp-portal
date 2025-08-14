@@ -1238,6 +1238,29 @@ const StaffPanel = () => {
                       }}
                     />
                   </div>
+
+                  <div>
+                    <Label className="text-foreground">Max Server Population</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.general_settings?.max_population || 128}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.general_settings,
+                          max_population: parseInt(e.target.value) || 128
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          general_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('general_settings', {
+                        ...serverSettings.general_settings,
+                        max_population: serverSettings.general_settings?.max_population || 128
+                      })}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
                 </div>
               </Card>
 
@@ -1328,6 +1351,388 @@ const StaffPanel = () => {
                         auto_reject_days: serverSettings.application_settings?.auto_reject_days || 30
                       })}
                       className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Require Whitelist for Applications</Label>
+                    <Switch
+                      checked={serverSettings.application_settings?.require_whitelist || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          require_whitelist: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          application_settings: newSettings
+                        });
+                        handleSettingUpdate('application_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Discord Integration */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Users className="h-5 w-5 text-neon-purple" />
+                  <h2 className="text-xl font-semibold text-foreground">Discord Integration</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-foreground">Discord Server ID</Label>
+                    <Input
+                      value={serverSettings.discord_settings?.server_id || ''}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.discord_settings,
+                          server_id: e.target.value
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('discord_settings', {
+                        ...serverSettings.discord_settings,
+                        server_id: serverSettings.discord_settings?.server_id || ''
+                      })}
+                      placeholder="Discord server ID..."
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-foreground">Application Notification Channel</Label>
+                    <Input
+                      value={serverSettings.discord_settings?.application_channel || ''}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.discord_settings,
+                          application_channel: e.target.value
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('discord_settings', {
+                        ...serverSettings.discord_settings,
+                        application_channel: serverSettings.discord_settings?.application_channel || ''
+                      })}
+                      placeholder="Channel ID for application notifications..."
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Auto-Role Assignment</Label>
+                    <Switch
+                      checked={serverSettings.discord_settings?.auto_roles || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.discord_settings,
+                          auto_roles: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_settings: newSettings
+                        });
+                        handleSettingUpdate('discord_settings', newSettings);
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Sync Discord Roles</Label>
+                    <Switch
+                      checked={serverSettings.discord_settings?.sync_roles || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.discord_settings,
+                          sync_roles: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_settings: newSettings
+                        });
+                        handleSettingUpdate('discord_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Security Settings */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <AlertCircle className="h-5 w-5 text-neon-purple" />
+                  <h2 className="text-xl font-semibold text-foreground">Security Settings</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Enable IP Whitelist</Label>
+                    <Switch
+                      checked={serverSettings.security_settings?.ip_whitelist || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.security_settings,
+                          ip_whitelist: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          security_settings: newSettings
+                        });
+                        handleSettingUpdate('security_settings', newSettings);
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Two-Factor Authentication Required</Label>
+                    <Switch
+                      checked={serverSettings.security_settings?.require_2fa || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.security_settings,
+                          require_2fa: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          security_settings: newSettings
+                        });
+                        handleSettingUpdate('security_settings', newSettings);
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-foreground">Max Login Attempts</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.security_settings?.max_login_attempts || 5}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.security_settings,
+                          max_login_attempts: parseInt(e.target.value) || 5
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          security_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('security_settings', {
+                        ...serverSettings.security_settings,
+                        max_login_attempts: serverSettings.security_settings?.max_login_attempts || 5
+                      })}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-foreground">Session Timeout (minutes)</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.security_settings?.session_timeout || 60}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.security_settings,
+                          session_timeout: parseInt(e.target.value) || 60
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          security_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('security_settings', {
+                        ...serverSettings.security_settings,
+                        session_timeout: serverSettings.security_settings?.session_timeout || 60
+                      })}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Performance Settings */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Settings className="h-5 w-5 text-neon-purple" />
+                  <h2 className="text-xl font-semibold text-foreground">Performance Settings</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-foreground">Server Tick Rate</Label>
+                    <select
+                      value={serverSettings.performance_settings?.tick_rate || 30}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.performance_settings,
+                          tick_rate: parseInt(e.target.value)
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          performance_settings: newSettings
+                        });
+                        handleSettingUpdate('performance_settings', newSettings);
+                      }}
+                      className="w-full px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground"
+                    >
+                      <option value={15}>15 Hz</option>
+                      <option value={30}>30 Hz</option>
+                      <option value={60}>60 Hz</option>
+                      <option value={120}>120 Hz</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Auto-Restart Enabled</Label>
+                    <Switch
+                      checked={serverSettings.performance_settings?.auto_restart || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.performance_settings,
+                          auto_restart: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          performance_settings: newSettings
+                        });
+                        handleSettingUpdate('performance_settings', newSettings);
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-foreground">Restart Interval (hours)</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.performance_settings?.restart_interval || 6}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.performance_settings,
+                          restart_interval: parseInt(e.target.value) || 6
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          performance_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('performance_settings', {
+                        ...serverSettings.performance_settings,
+                        restart_interval: serverSettings.performance_settings?.restart_interval || 6
+                      })}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Performance Monitoring</Label>
+                    <Switch
+                      checked={serverSettings.performance_settings?.monitoring || true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.performance_settings,
+                          monitoring: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          performance_settings: newSettings
+                        });
+                        handleSettingUpdate('performance_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Logging & Analytics */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <FileText className="h-5 w-5 text-neon-purple" />
+                  <h2 className="text-xl font-semibold text-foreground">Logging & Analytics</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Enable Detailed Logging</Label>
+                    <Switch
+                      checked={serverSettings.logging_settings?.detailed_logs || true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.logging_settings,
+                          detailed_logs: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          logging_settings: newSettings
+                        });
+                        handleSettingUpdate('logging_settings', newSettings);
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Log Player Actions</Label>
+                    <Switch
+                      checked={serverSettings.logging_settings?.player_actions || true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.logging_settings,
+                          player_actions: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          logging_settings: newSettings
+                        });
+                        handleSettingUpdate('logging_settings', newSettings);
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-foreground">Log Retention (days)</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.logging_settings?.retention_days || 30}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.logging_settings,
+                          retention_days: parseInt(e.target.value) || 30
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          logging_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('logging_settings', {
+                        ...serverSettings.logging_settings,
+                        retention_days: serverSettings.logging_settings?.retention_days || 30
+                      })}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Analytics Enabled</Label>
+                    <Switch
+                      checked={serverSettings.logging_settings?.analytics || true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.logging_settings,
+                          analytics: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          logging_settings: newSettings
+                        });
+                        handleSettingUpdate('logging_settings', newSettings);
+                      }}
                     />
                   </div>
                 </div>
