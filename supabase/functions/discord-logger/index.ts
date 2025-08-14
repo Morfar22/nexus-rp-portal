@@ -50,7 +50,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `📋 **New application received** from **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace('@', '')}>)` : ''}`
+        content = `📋 **New application received** from **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
       case 'application_approved':
@@ -66,7 +66,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `🎉 **Application approved** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace('@', '')}>)` : ''}! Welcome to the server!`
+        content = `🎉 **Application approved** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}! Welcome to the server!`
         break
 
       case 'application_rejected':
@@ -82,7 +82,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `🚫 **Application rejected** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace('@', '')}>)` : ''}`
+        content = `🚫 **Application rejected** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
       case 'application_under_review':
@@ -98,7 +98,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `👀 **Application under review** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace('@', '')}>)` : ''}`
+        content = `👀 **Application under review** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
       case 'system_log':

@@ -268,16 +268,16 @@ const Apply = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="discordName">Discord Username</Label>
+                  <Label htmlFor="discordName">Discord User ID</Label>
                   <Input
                     id="discordName"
                     value={formData.discordName}
                     onChange={(e) => setFormData({...formData, discordName: e.target.value})}
-                    placeholder="@username (for pings)"
+                    placeholder="123456789012345678"
                     className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
                     required
                   />
-                  <p className="text-xs text-muted-foreground">Enter your Discord username for mentions in logs (e.g., @username)</p>
+                  <p className="text-xs text-muted-foreground">Enter your Discord User ID for pings. Right-click your profile in Discord {'->'} Copy User ID (enable Developer Mode first)</p>
                 </div>
               </div>
 
