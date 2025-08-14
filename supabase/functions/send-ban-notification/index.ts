@@ -48,11 +48,6 @@ const handler = async (req: Request): Promise<Response> => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 30px; border-radius: 10px; color: white;">
           <h1 style="color: #ff6b6b; margin: 0 0 20px 0;">${subject}</h1>
-          ${originalUserEmail ? `
-            <p style="font-size: 14px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin: 0 0 20px 0;">
-              <strong>Note:</strong> This notification was sent to you (admin) because domain verification is required to send to the user's email: ${originalUserEmail}
-            </p>
-          ` : ''}
           <p style="font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
             User: <strong>${userName}</strong> ${originalUserEmail ? `(${originalUserEmail})` : ''}
           </p>
@@ -90,9 +85,12 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     `;
 
+    // Send email to the actual user being banned/unbanned, not the admin
+    const recipientEmail = originalUserEmail || userEmail;
+    
     const emailResponse = await resend.emails.send({
       from: "Gaming Community <onboarding@resend.dev>",
-      to: [userEmail],
+      to: [recipientEmail],
       subject: subject,
       html: banEmailHtml,
     });
