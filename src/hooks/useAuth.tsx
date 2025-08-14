@@ -90,6 +90,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Real-time ban checking - listen for profile changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        async (payload) => {
+          console.log('🔄 Profile updated:', payload);
+          // Check if the user was banned
+          if (payload.new?.banned && !payload.old?.banned) {
+            console.log('🚨 User was banned, signing out...');
+            setIsBanned(true);
+            await signOut();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const checkBanStatus = async (userId: string) => {
     try {
       const { data: profile, error } = await supabase
@@ -106,7 +137,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (profile?.banned) {
         setIsBanned(true);
         // Force sign out banned users
-        console.log('User is banned, signing out...');
+        console.log('🚨 User is banned, signing out...');
         await signOut();
       } else {
         setIsBanned(false);
