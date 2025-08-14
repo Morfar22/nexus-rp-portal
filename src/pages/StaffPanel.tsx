@@ -34,6 +34,13 @@ const StaffPanel = () => {
   const [rules, setRules] = useState<any[]>([]);
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [serverStats, setServerStats] = useState<any>({
+    players_online: 0,
+    max_players: 300,
+    queue_count: 0,
+    uptime_percentage: 99.9,
+    ping_ms: 15
+  });
   const [players, setPlayers] = useState<any[]>([]);
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
   const [serverSettings, setServerSettings] = useState<any>({});
@@ -128,12 +135,13 @@ const StaffPanel = () => {
 
       console.log('Final processed staff members:', processedStaffMembers);
 
-      const [applicationsRes, rulesRes, typesRes, settingsRes, teamMembersRes] = await Promise.all([
+      const [applicationsRes, rulesRes, typesRes, settingsRes, teamMembersRes, serverStatsRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
         supabase.from('rules').select('*').order('category', { ascending: true }),
         supabase.from('application_types').select('*'),
         supabase.from('server_settings').select('*').maybeSingle(),
-        supabase.from('team_members').select('*').order('order_index', { ascending: true })
+        supabase.from('team_members').select('*').order('order_index', { ascending: true }),
+        supabase.from('server_stats').select('*').order('last_updated', { ascending: false }).limit(1).maybeSingle()
       ]);
 
       // Get server join link from settings
@@ -152,6 +160,7 @@ const StaffPanel = () => {
       if (typesRes.data) setApplicationTypes(typesRes.data);
       if (settingsRes.data) setServerSettings(settingsRes.data);
       if (teamMembersRes.data) setTeamMembers(teamMembersRes.data);
+      if (serverStatsRes.data) setServerStats(serverStatsRes.data);
       if (joinLinkSetting.data) setServerJoinLink(joinLinkSetting.data.setting_value as string);
       
     } catch (error) {
@@ -2067,6 +2076,126 @@ const StaffPanel = () => {
                       </p>
                     </div>
                   </div>
+                </div>
+              </Card>
+              
+              {/* Server Stats Management */}
+              <Card className="bg-gaming-card border-gaming-border">
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
+                    Server Statistics
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="playersOnline" className="text-foreground">
+                        Players Online
+                      </Label>
+                      <Input
+                        id="playersOnline"
+                        type="number"
+                        value={serverStats.players_online}
+                        onChange={(e) => setServerStats({ ...serverStats, players_online: parseInt(e.target.value) || 0 })}
+                        className="bg-gaming-dark border-gaming-border text-foreground"
+                        min="0"
+                        max={serverStats.max_players}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="maxPlayers" className="text-foreground">
+                        Max Players
+                      </Label>
+                      <Input
+                        id="maxPlayers"
+                        type="number"
+                        value={serverStats.max_players}
+                        onChange={(e) => setServerStats({ ...serverStats, max_players: parseInt(e.target.value) || 300 })}
+                        className="bg-gaming-dark border-gaming-border text-foreground"
+                        min="1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="queueCount" className="text-foreground">
+                        Queue Count
+                      </Label>
+                      <Input
+                        id="queueCount"
+                        type="number"
+                        value={serverStats.queue_count}
+                        onChange={(e) => setServerStats({ ...serverStats, queue_count: parseInt(e.target.value) || 0 })}
+                        className="bg-gaming-dark border-gaming-border text-foreground"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="ping" className="text-foreground">
+                        Ping (ms)
+                      </Label>
+                      <Input
+                        id="ping"
+                        type="number"
+                        value={serverStats.ping_ms}
+                        onChange={(e) => setServerStats({ ...serverStats, ping_ms: parseInt(e.target.value) || 0 })}
+                        className="bg-gaming-dark border-gaming-border text-foreground"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="uptime" className="text-foreground">
+                        Uptime (%)
+                      </Label>
+                      <Input
+                        id="uptime"
+                        type="number"
+                        step="0.1"
+                        value={serverStats.uptime_percentage}
+                        onChange={(e) => setServerStats({ ...serverStats, uptime_percentage: parseFloat(e.target.value) || 0 })}
+                        className="bg-gaming-dark border-gaming-border text-foreground"
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const { error } = await supabase
+                              .from('server_stats')
+                              .update({
+                                players_online: serverStats.players_online,
+                                max_players: serverStats.max_players,
+                                queue_count: serverStats.queue_count,
+                                uptime_percentage: serverStats.uptime_percentage,
+                                ping_ms: serverStats.ping_ms,
+                                last_updated: new Date().toISOString()
+                              })
+                              .eq('id', serverStats.id);
+                            
+                            if (error) throw error;
+                            
+                            toast({
+                              title: "Success",
+                              description: "Server stats updated successfully",
+                            });
+                            
+                            fetchData();
+                          } catch (error) {
+                            console.error('Error updating server stats:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to update server stats",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        className="w-full bg-neon-purple hover:bg-neon-purple/80"
+                      >
+                        Update Server Stats
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-4">
+                    These stats will be displayed in real-time on the homepage and update instantly for all users.
+                  </p>
                 </div>
               </Card>
             </div>

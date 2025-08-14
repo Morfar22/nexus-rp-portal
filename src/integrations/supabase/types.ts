@@ -246,6 +246,42 @@ export type Database = {
         }
         Relationships: []
       }
+      server_stats: {
+        Row: {
+          created_at: string
+          id: string
+          last_updated: string
+          max_players: number
+          ping_ms: number
+          players_online: number
+          queue_count: number
+          updated_at: string
+          uptime_percentage: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_updated?: string
+          max_players?: number
+          ping_ms?: number
+          players_online?: number
+          queue_count?: number
+          updated_at?: string
+          uptime_percentage?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_updated?: string
+          max_players?: number
+          ping_ms?: number
+          players_online?: number
+          queue_count?: number
+          updated_at?: string
+          uptime_percentage?: number
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           bio: string | null
