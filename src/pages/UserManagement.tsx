@@ -168,6 +168,7 @@ export default function UserManagement() {
         });
       } else {
         try {
+          console.log('🚀 Calling send-ban-notification function...');
           const result = await supabase.functions.invoke('send-ban-notification', {
             body: {
               userEmail: userToBan.email,
@@ -176,11 +177,22 @@ export default function UserManagement() {
               staffName: user?.email || 'Staff Member'
             }
           });
-          console.log('Ban notification result:', result);
-          console.log('Ban notification email sent successfully');
+          
+          console.log('📧 Email function response:', result);
+          
+          if (result.error) {
+            console.error('❌ Email function error:', result.error);
+            throw new Error(result.error.message || 'Email function failed');
+          }
+          
+          console.log('✅ Ban notification email sent successfully');
         } catch (emailError) {
-          console.error('Failed to send ban notification email:', emailError);
-          // Don't fail the ban action if email fails
+          console.error('💥 Failed to send ban notification email:', emailError);
+          toast({
+            title: "Email Error",
+            description: "User banned but email notification failed. Check console for details.",
+            variant: "destructive",
+          });
         }
       }
 

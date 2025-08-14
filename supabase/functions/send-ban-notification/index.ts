@@ -91,6 +91,11 @@ const handler = async (req: Request): Promise<Response> => {
       html: banEmailHtml,
     });
 
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      throw new Error(`Email sending failed: ${emailResponse.error.message}`);
+    }
+
     console.log("Ban/unban notification sent successfully:", emailResponse);
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
