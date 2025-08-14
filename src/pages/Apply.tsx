@@ -221,7 +221,7 @@ const Apply = () => {
               Whitelist Application
             </h1>
             <p className="text-muted-foreground">
-              Join NightCity RP - The premier FiveM roleplay experience
+              Join Dreamlight RP - The premier FiveM roleplay experience
             </p>
           </div>
 

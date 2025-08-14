@@ -12,7 +12,7 @@ const Navbar = () => {
         <Link to="/" className="flex items-center space-x-2">
           <Server className="h-8 w-8 text-neon-purple" />
           <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            NightCity RP
+            Dreamlight RP
           </span>
         </Link>
         

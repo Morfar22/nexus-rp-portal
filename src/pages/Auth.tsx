@@ -173,7 +173,7 @@ const Auth = () => {
           <Link to="/" className="inline-flex items-center space-x-2 mb-4">
             <Server className="h-8 w-8 text-neon-purple" />
             <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              NightCity RP
+              Dreamlight RP
             </span>
           </Link>
           <p className="text-muted-foreground">
@@ -205,7 +205,7 @@ const Auth = () => {
               <TabsContent value="signin" className="space-y-4">
                 <CardTitle className="text-center text-foreground">Welcome Back</CardTitle>
                 <CardDescription className="text-center">
-                  Sign in to your NightCity RP account
+                  Sign in to your Dreamlight RP account
                 </CardDescription>
                 
                 <form onSubmit={handleSignIn} className="space-y-4">
@@ -264,7 +264,7 @@ const Auth = () => {
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
-                <CardTitle className="text-center text-foreground">Join NightCity RP</CardTitle>
+                <CardTitle className="text-center text-foreground">Join Dreamlight RP</CardTitle>
                 <CardDescription className="text-center">
                   Create your account to apply for whitelist
                 </CardDescription>

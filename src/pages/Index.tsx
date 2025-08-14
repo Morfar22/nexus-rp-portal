@@ -55,7 +55,7 @@ const Index = () => {
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
             <span className="bg-gradient-primary bg-clip-text text-transparent">
-              NightCity RP
+              Dreamlight RP
             </span>
           </h1>
           
@@ -85,7 +85,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
-              Why Choose NightCity RP?
+              Why Choose Dreamlight RP?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               We've built the most immersive FiveM experience with attention to every detail
@@ -142,7 +142,7 @@ const Index = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Server IP:</span>
                     <code className="bg-gaming-dark px-3 py-1 rounded text-neon-purple">
-                      connect nightcity-rp.com
+                      connect dreamlight-rp.com
                     </code>
                   </div>
                   <div className="flex justify-between items-center">
