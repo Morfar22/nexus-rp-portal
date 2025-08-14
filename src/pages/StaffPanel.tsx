@@ -73,6 +73,15 @@ const StaffPanel = () => {
     
     setIsSubmitting(true);
     try {
+      // Get application data for email
+      const { data: appData, error: fetchError } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('id', applicationId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       // Update application status
       const { error: updateError } = await supabase
         .from('applications')
@@ -96,6 +105,30 @@ const StaffPanel = () => {
         });
 
       if (logError) throw logError;
+
+      // Send email notification to user
+      try {
+        // Get user's auth data to access email
+        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(appData.user_id);
+        
+        if (authUser?.email) {
+          await supabase.functions.invoke('send-application-email', {
+            body: {
+              type: action,
+              userEmail: authUser.email,
+              applicationData: {
+                steam_name: appData.steam_name,
+                discord_tag: appData.discord_tag,
+                fivem_name: appData.fivem_name,
+                status: action,
+                review_notes: notes
+              }
+            }
+          });
+        }
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+      }
 
       toast({
         title: "Action Completed",

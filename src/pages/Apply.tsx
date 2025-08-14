@@ -88,10 +88,27 @@ const Apply = () => {
         throw error;
       }
 
+      // Send submission email
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: 'submission',
+            userEmail: user.email,
+            applicationData: {
+              steam_name: formData.steamName,
+              discord_tag: formData.discordTag,
+              fivem_name: formData.fivemName
+            }
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending email:', emailError);
+      }
+
       setExistingApplication(data);
       toast({
         title: "Application Submitted!",
-        description: "Your whitelist application has been sent to our staff team. You'll receive a notification once reviewed.",
+        description: "Your whitelist application has been sent to our staff team. You'll receive an email notification when it's reviewed.",
       });
 
       // Reset form
