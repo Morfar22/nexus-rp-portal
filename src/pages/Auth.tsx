@@ -81,6 +81,31 @@ const Auth = () => {
       }
 
       if (data.user) {
+        // Check if user is banned BEFORE allowing login
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('banned, username')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error checking user profile:', profileError);
+          setError("Error checking account status. Please try again.");
+          // Sign out the user immediately
+          await supabase.auth.signOut({ scope: 'global' });
+          return;
+        }
+
+        if (profile?.banned) {
+          // User is banned - block login and show message
+          setError(`Account suspended. Your account has been suspended and you cannot access the application. If you believe this is an error, please contact support.`);
+          // Sign out the user immediately
+          await supabase.auth.signOut({ scope: 'global' });
+          cleanupAuthState();
+          return;
+        }
+
+        // User is not banned - allow login
         toast({
           title: "Welcome back!",
           description: "You have successfully signed in.",
