@@ -14,16 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 
 const Apply = () => {
-  const [formData, setFormData] = useState({
-    steamName: "",
-    discordTag: "",
-    discordName: "",
-    fivemName: "",
-    age: "",
-    rpExperience: "",
-    characterBackstory: "",
-    rulesAgreed: false
-  });
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [rulesAgreed, setRulesAgreed] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   const [existingApplication, setExistingApplication] = useState<any>(null);
@@ -49,6 +41,13 @@ const Apply = () => {
         // Auto-select first type if only one exists
         if (data && data.length === 1) {
           setSelectedApplicationType(data[0]);
+          // Initialize form data based on the application type fields
+          const initialFormData: Record<string, any> = {};
+          const formFields = data[0].form_fields as any[];
+          formFields?.forEach((field: any) => {
+            initialFormData[field.name] = field.type === 'number' ? 0 : '';
+          });
+          setFormData(initialFormData);
         }
       } catch (error) {
         console.error('Error fetching application types:', error);
@@ -118,19 +117,25 @@ const Apply = () => {
     }
 
     try {
+      // Build the application data dynamically based on the form fields
+      const applicationData: any = {
+        user_id: user.id,
+        application_type_id: selectedApplicationType.id,
+      };
+
+      // Add form field data
+      const submitFormFields = selectedApplicationType.form_fields as any[];
+      submitFormFields?.forEach((field: any) => {
+        if (field.name === 'age') {
+          applicationData[field.name] = parseInt(formData[field.name]) || 0;
+        } else {
+          applicationData[field.name] = formData[field.name] || '';
+        }
+      });
+
       const { data, error } = await supabase
         .from('applications')
-        .insert({
-          user_id: user.id,
-          application_type_id: selectedApplicationType.id,
-          steam_name: formData.steamName,
-          discord_tag: formData.discordTag,
-          discord_name: formData.discordName,
-          fivem_name: formData.fivemName,
-          age: parseInt(formData.age),
-          rp_experience: formData.rpExperience,
-          character_backstory: formData.characterBackstory,
-        })
+        .insert(applicationData)
         .select()
         .single();
 
@@ -145,10 +150,10 @@ const Apply = () => {
             type: 'submission',
             userId: user.id,
             applicationData: {
-              steam_name: formData.steamName,
-              discord_tag: formData.discordTag,
-              discord_name: formData.discordName,
-              fivem_name: formData.fivemName
+              steam_name: formData.steam_name || '',
+              discord_tag: formData.discord_tag || '',
+              discord_name: formData.discord_name || '',
+              fivem_name: formData.fivem_name || ''
             }
           }
         });
@@ -165,11 +170,11 @@ const Apply = () => {
           body: {
             type: 'application_submitted',
               data: {
-                steam_name: formData.steamName,
-                discord_tag: formData.discordTag,
-                discord_name: formData.discordName,
-                fivem_name: formData.fivemName,
-                age: parseInt(formData.age)
+                steam_name: formData.steam_name || '',
+                discord_tag: formData.discord_tag || '',
+                discord_name: formData.discord_name || '',
+                fivem_name: formData.fivem_name || '',
+                age: parseInt(formData.age) || 0
               },
             settings: {
               // The Discord function will check if webhook is configured
@@ -191,16 +196,13 @@ const Apply = () => {
       });
 
       // Reset form
-      setFormData({
-        steamName: "",
-        discordTag: "",
-        discordName: "",
-        fivemName: "",
-        age: "",
-        rpExperience: "",
-        characterBackstory: "",
-        rulesAgreed: false
+      const resetFormData: Record<string, any> = {};
+      const resetFormFields = selectedApplicationType.form_fields as any[];
+      resetFormFields?.forEach((field: any) => {
+        resetFormData[field.name] = field.type === 'number' ? 0 : '';
       });
+      setFormData(resetFormData);
+      setRulesAgreed(false);
 
     } catch (error: any) {
       console.error('Error submitting application:', error);
@@ -301,118 +303,61 @@ const Apply = () => {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="steamName">Steam Name</Label>
-                  <Input
-                    id="steamName"
-                    value={formData.steamName}
-                    onChange={(e) => setFormData({...formData, steamName: e.target.value})}
-                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => (
+                  <div key={field.name} className="space-y-2">
+                    <Label htmlFor={field.name} className="text-foreground">
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </Label>
+                    
+                    {field.type === 'textarea' ? (
+                      <Textarea
+                        id={field.name}
+                        value={formData[field.name] || ''}
+                        onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                        placeholder={field.placeholder || ''}
+                        className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
+                        required={field.required}
+                      />
+                    ) : (
+                      <Input
+                        id={field.name}
+                        type={field.type}
+                        value={formData[field.name] || ''}
+                        onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                        placeholder={field.placeholder || ''}
+                        className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                        required={field.required}
+                        min={field.type === 'number' ? '16' : undefined}
+                      />
+                    )}
+                  </div>
+                ))}
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="rulesAgreed"
+                    checked={rulesAgreed}
+                    onChange={(e) => setRulesAgreed(e.target.checked)}
+                    className="rounded border-gaming-border"
                     required
                   />
+                  <Label htmlFor="rulesAgreed" className="text-sm">
+                    I have read and agree to follow all server rules
+                  </Label>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="discordTag">Discord Tag</Label>
-                  <Input
-                    id="discordTag"
-                    value={formData.discordTag}
-                    onChange={(e) => setFormData({...formData, discordTag: e.target.value})}
-                    placeholder="username#1234"
-                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="discordName">Discord User ID</Label>
-                  <Input
-                    id="discordName"
-                    value={formData.discordName}
-                    onChange={(e) => setFormData({...formData, discordName: e.target.value})}
-                    placeholder="123456789012345678"
-                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">Enter your Discord User ID for pings. Right-click your profile in Discord {'->'} Copy User ID (enable Developer Mode first)</p>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fivemName">FiveM Name</Label>
-                  <Input
-                    id="fivemName"
-                    value={formData.fivemName}
-                    onChange={(e) => setFormData({...formData, fivemName: e.target.value})}
-                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    min="16"
-                    value={formData.age}
-                    onChange={(e) => setFormData({...formData, age: e.target.value})}
-                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="rpExperience">Roleplay Experience</Label>
-                <Textarea
-                  id="rpExperience"
-                  value={formData.rpExperience}
-                  onChange={(e) => setFormData({...formData, rpExperience: e.target.value})}
-                  placeholder="Tell us about your previous RP experience..."
-                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="characterBackstory">Character Backstory</Label>
-                <Textarea
-                  id="characterBackstory"
-                  value={formData.characterBackstory}
-                  onChange={(e) => setFormData({...formData, characterBackstory: e.target.value})}
-                  placeholder="Describe your character's background and story..."
-                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[120px]"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="rulesAgreed"
-                  checked={formData.rulesAgreed}
-                  onChange={(e) => setFormData({...formData, rulesAgreed: e.target.checked})}
-                  className="rounded border-gaming-border"
-                  required
-                />
-                <Label htmlFor="rulesAgreed" className="text-sm">
-                  I have read and agree to follow all server rules
-                </Label>
-              </div>
-
-              <Button 
-                type="submit" 
-                variant="hero" 
-                size="lg" 
-                className="w-full" 
-                disabled={isLoading}
-              >
-                {isLoading ? "Submitting..." : "Submit Application"}
-              </Button>
-            </form>
+                <Button 
+                  type="submit" 
+                  variant="hero" 
+                  size="lg" 
+                  className="w-full" 
+                  disabled={isLoading || !selectedApplicationType}
+                >
+                  {isLoading ? "Submitting..." : "Submit Application"}
+                </Button>
+              </form>
           </Card>
           )}
 
