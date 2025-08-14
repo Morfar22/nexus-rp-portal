@@ -677,13 +677,148 @@ const StaffPanel = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2 mb-6">
-                <Settings className="h-5 w-5 text-neon-purple" />
-                <span>Server Settings</span>
-              </h2>
-              <p className="text-muted-foreground">Server configuration options coming soon...</p>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* General Settings */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2 mb-6">
+                  <Settings className="h-5 w-5 text-neon-purple" />
+                  <span>General Settings</span>
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="server-name" className="text-sm font-medium">Server Name</Label>
+                    <input 
+                      id="server-name"
+                      className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
+                      placeholder="FiveM RP Server"
+                      defaultValue="FiveM RP Server"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="max-players" className="text-sm font-medium">Max Players</Label>
+                    <input 
+                      id="max-players"
+                      type="number"
+                      className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
+                      placeholder="64"
+                      defaultValue="64"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="application-cooldown" className="text-sm font-medium">Application Cooldown (days)</Label>
+                    <input 
+                      id="application-cooldown"
+                      type="number"
+                      className="w-full mt-1 px-3 py-2 bg-gaming-dark border border-gaming-border rounded-md text-foreground focus:ring-2 focus:ring-neon-purple focus:border-transparent"
+                      placeholder="7"
+                      defaultValue="7"
+                    />
+                  </div>
+                </div>
+                <Button className="w-full mt-6 bg-neon-purple hover:bg-neon-purple/80">
+                  Save General Settings
+                </Button>
+              </Card>
+
+              {/* Application Settings */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2 mb-6">
+                  <FileText className="h-5 w-5 text-neon-cyan" />
+                  <span>Application Settings</span>
+                </h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm font-medium">Auto-approve applications</Label>
+                      <p className="text-xs text-muted-foreground">Automatically approve applications that meet criteria</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="border-gaming-border">
+                      Disabled
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm font-medium">Email notifications</Label>
+                      <p className="text-xs text-muted-foreground">Send email updates to applicants</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="border-gaming-border bg-neon-purple/20 text-neon-purple">
+                      Enabled
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm font-medium">Discord integration</Label>
+                      <p className="text-xs text-muted-foreground">Post updates to Discord channel</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="border-gaming-border">
+                      Disabled
+                    </Button>
+                  </div>
+                </div>
+                <Button className="w-full mt-6 bg-neon-cyan hover:bg-neon-cyan/80 text-black">
+                  Save Application Settings
+                </Button>
+              </Card>
+
+              {/* User Management */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2 mb-6">
+                  <Users className="h-5 w-5 text-neon-green" />
+                  <span>User Management</span>
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Staff Roles</Label>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-2 bg-gaming-dark rounded">
+                        <span className="text-sm">Admin</span>
+                        <Badge className="bg-red-600">Full Access</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-gaming-dark rounded">
+                        <span className="text-sm">Moderator</span>
+                        <Badge className="bg-yellow-600">Limited Access</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-gaming-dark rounded">
+                        <span className="text-sm">Helper</span>
+                        <Badge className="bg-green-600">View Only</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button className="w-full mt-6 bg-neon-green hover:bg-neon-green/80 text-black">
+                  Manage Staff
+                </Button>
+              </Card>
+
+              {/* System Status */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <h2 className="text-xl font-semibold text-foreground flex items-center space-x-2 mb-6">
+                  <AlertCircle className="h-5 w-5 text-yellow-500" />
+                  <span>System Status</span>
+                </h2>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Database Status</span>
+                    <Badge className="bg-green-600">Online</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Email Service</span>
+                    <Badge className="bg-green-600">Online</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Server Health</span>
+                    <Badge className="bg-green-600">Healthy</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Last Backup</span>
+                    <span className="text-xs text-muted-foreground">2 hours ago</span>
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full mt-6 border-gaming-border hover:bg-gaming-darker">
+                  View Logs
+                </Button>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
