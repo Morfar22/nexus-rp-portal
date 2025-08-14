@@ -124,8 +124,7 @@ const StaffPanel = () => {
         .update({ 
           status: action,
           review_notes: reviewNotes,
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString()
+          reviewed_by: user.id
         })
         .eq('id', applicationId);
 
@@ -607,8 +606,8 @@ const StaffPanel = () => {
                       </div>
                       <p className="text-muted-foreground text-sm">
                         Submitted {new Date(application.created_at).toLocaleDateString()}
-                        {application.reviewed_at && (
-                          <span> • Reviewed {new Date(application.reviewed_at).toLocaleDateString()}</span>
+                        {application.reviewed_by && (
+                          <span> • Reviewed by staff</span>
                         )}
                       </p>
                     </div>
