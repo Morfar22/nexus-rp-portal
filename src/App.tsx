@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import StaffProtectedRoute from "@/components/StaffProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Apply from "./pages/Apply";
@@ -33,9 +34,9 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/staff" element={
-              <ProtectedRoute>
+              <StaffProtectedRoute>
                 <StaffPanel />
-              </ProtectedRoute>
+              </StaffProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
