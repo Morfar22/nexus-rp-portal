@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
 import { 
   AlertCircle, 
   FileText, 
@@ -34,6 +35,7 @@ const StaffPanel = () => {
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
+  const [serverSettings, setServerSettings] = useState<any>({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -97,6 +99,7 @@ const StaffPanel = () => {
     fetchStaffMembers();
     fetchPlayers();
     fetchApplicationTypes();
+    fetchServerSettings();
   }, [user]);
 
   const fetchApplications = async () => {
@@ -224,6 +227,55 @@ const StaffPanel = () => {
       console.error('Error fetching application types:', error);
     }
   };
+
+  const fetchServerSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('*');
+
+      if (error) throw error;
+      
+      const settings: Record<string, any> = {};
+      data?.forEach(setting => {
+        settings[setting.setting_key] = setting.setting_value;
+      });
+      setServerSettings(settings);
+    } catch (error: any) {
+      console.error('Error fetching server settings:', error);
+    }
+  };
+
+  const handleSettingUpdate = async (settingKey: string, newValue: any) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('server_settings')
+        .upsert({
+          setting_key: settingKey,
+          setting_value: newValue,
+          created_by: user.id
+        });
+
+      if (error) throw error;
+
+      setServerSettings({
+        ...serverSettings,
+        [settingKey]: newValue
+      });
+
+      toast({
+        title: "Success",
+        description: "Settings updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update settings",
+        variant: "destructive"
+      });
+    }
 
   const handleSaveApplicationType = async () => {
     if (!user) return;
@@ -1090,6 +1142,528 @@ const StaffPanel = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="settings" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* General Settings */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Settings className="h-5 w-5 text-neon-purple" />
+                  <h2 className="text-xl font-semibold text-foreground">General Settings</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-foreground">Server Name</Label>
+                    <Input
+                      value={serverSettings.general_settings?.server_name || ''}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.general_settings,
+                          server_name: e.target.value
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          general_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('general_settings', {
+                        ...serverSettings.general_settings,
+                      })}
+                      className="bg-gaming-dark border-gaming-border"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-foreground">Max Players</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.general_settings?.max_players || 64}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.general_settings,
+                          max_players: parseInt(e.target.value) || 64
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          general_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('general_settings', {
+                        ...serverSettings.general_settings,
+                      })}
+                      className="bg-gaming-dark border-gaming-border"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-foreground">Application Cooldown (days)</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.general_settings?.application_cooldown_days || 0}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.general_settings,
+                          application_cooldown_days: parseInt(e.target.value) || 0
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          general_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('general_settings', {
+                        ...serverSettings.general_settings,
+                      })}
+                      className="bg-gaming-dark border-gaming-border"
+                    />
+                  </div>
+                  
+                  <Button 
+                    variant="gaming" 
+                    className="w-full bg-neon-purple hover:bg-neon-purple/80"
+                    onClick={() => handleSettingUpdate('general_settings', serverSettings.general_settings)}
+                  >
+                    Save General Settings
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Application Settings */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <FileText className="h-5 w-5 text-neon-cyan" />
+                  <h2 className="text-xl font-semibold text-foreground">Application Settings</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">Auto-approve applications</Label>
+                      <p className="text-sm text-muted-foreground">Automatically approve applications that meet criteria</p>
+                    </div>
+                    <Switch
+                      checked={serverSettings.application_settings?.auto_approve || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          auto_approve: checked
+                        };
+                        handleSettingUpdate('application_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">Email notifications</Label>
+                      <p className="text-sm text-muted-foreground">Send email updates to applicants</p>
+                    </div>
+                    <Switch
+                      checked={serverSettings.application_settings?.email_notifications ?? true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          email_notifications: checked
+                        };
+                        handleSettingUpdate('application_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">Allow multiple applications</Label>
+                      <p className="text-sm text-muted-foreground">Allow users to submit multiple applications</p>
+                    </div>
+                    <Switch
+                      checked={serverSettings.application_settings?.multiple_applications_allowed ?? true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          multiple_applications_allowed: checked
+                        };
+                        handleSettingUpdate('application_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">Discord integration</Label>
+                      <p className="text-sm text-muted-foreground">Post updates to Discord channel</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="outline" size="sm" className="border-gaming-border">
+                        Configure
+                      </Button>
+                      <Switch
+                        checked={serverSettings.application_settings?.discord_integration || false}
+                        onCheckedChange={(checked) => {
+                          const newSettings = {
+                            ...serverSettings.application_settings,
+                            discord_integration: checked
+                          };
+                          handleSettingUpdate('application_settings', newSettings);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="gaming" 
+                    className="w-full bg-neon-cyan hover:bg-neon-cyan/80 text-gaming-darker"
+                    onClick={() => handleSettingUpdate('application_settings', serverSettings.application_settings)}
+                  >
+                    Save Application Settings
+                  </Button>
+                </div>
+              </Card>
+
+              {/* System Status */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <AlertCircle className="h-5 w-5 text-neon-orange" />
+                  <h2 className="text-xl font-semibold text-foreground">System Status</h2>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">Database Status</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
+                      <span className="text-neon-green text-sm">Online</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">Email Service</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
+                      <span className="text-neon-green text-sm">Online</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">Server Health</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
+                      <span className="text-neon-green text-sm">Healthy</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">Last Backup</span>
+                    <span className="text-muted-foreground text-sm">2 hours ago</span>
+                  </div>
+                  
+                  <div className="flex space-x-2 pt-4">
+                    <Button variant="outline" className="flex-1 border-gaming-border">
+                      Refresh Status
+                    </Button>
+                    <Button variant="outline" className="flex-1 border-gaming-border">
+                      View Logs
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* User Management */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Users className="h-5 w-5 text-neon-green" />
+                  <h2 className="text-xl font-semibold text-foreground">User Management</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-foreground mb-3 block">Staff Roles</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
+                        <span className="text-foreground">Admin</span>
+                        <Badge variant="destructive">Full Access</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
+                        <span className="text-foreground">Moderator</span>
+                        <Badge variant="secondary">Limited Access</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
+                        <span className="text-foreground">Helper</span>
+                        <Badge variant="outline">View Only</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="gaming" 
+                    className="w-full bg-neon-green hover:bg-neon-green/80 text-gaming-darker"
+                  >
+                    Manage Staff
+                  </Button>
+                </div>
+              </Card>
+            </div>
+            </TabsContent>
+
+          <TabsContent value="settings" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* General Settings */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Settings className="h-5 w-5 text-neon-purple" />
+                  <h2 className="text-xl font-semibold text-foreground">General Settings</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-foreground">Server Name</Label>
+                    <Input
+                      value={serverSettings.general_settings?.server_name || ''}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.general_settings,
+                          server_name: e.target.value
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          general_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('general_settings', {
+                        ...serverSettings.general_settings,
+                      })}
+                      className="bg-gaming-dark border-gaming-border"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-foreground">Max Players</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.general_settings?.max_players || 64}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.general_settings,
+                          max_players: parseInt(e.target.value) || 64
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          general_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('general_settings', {
+                        ...serverSettings.general_settings,
+                      })}
+                      className="bg-gaming-dark border-gaming-border"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-foreground">Application Cooldown (days)</Label>
+                    <Input
+                      type="number"
+                      value={serverSettings.general_settings?.application_cooldown_days || 0}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.general_settings,
+                          application_cooldown_days: parseInt(e.target.value) || 0
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          general_settings: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('general_settings', {
+                        ...serverSettings.general_settings,
+                      })}
+                      className="bg-gaming-dark border-gaming-border"
+                    />
+                  </div>
+                  
+                  <Button 
+                    variant="gaming" 
+                    className="w-full bg-neon-purple hover:bg-neon-purple/80"
+                    onClick={() => handleSettingUpdate('general_settings', serverSettings.general_settings)}
+                  >
+                    Save General Settings
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Application Settings */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <FileText className="h-5 w-5 text-neon-cyan" />
+                  <h2 className="text-xl font-semibold text-foreground">Application Settings</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">Auto-approve applications</Label>
+                      <p className="text-sm text-muted-foreground">Automatically approve applications that meet criteria</p>
+                    </div>
+                    <Switch
+                      checked={serverSettings.application_settings?.auto_approve || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          auto_approve: checked
+                        };
+                        handleSettingUpdate('application_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">Email notifications</Label>
+                      <p className="text-sm text-muted-foreground">Send email updates to applicants</p>
+                    </div>
+                    <Switch
+                      checked={serverSettings.application_settings?.email_notifications ?? true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          email_notifications: checked
+                        };
+                        handleSettingUpdate('application_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">Allow multiple applications</Label>
+                      <p className="text-sm text-muted-foreground">Allow users to submit multiple applications</p>
+                    </div>
+                    <Switch
+                      checked={serverSettings.application_settings?.multiple_applications_allowed ?? true}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.application_settings,
+                          multiple_applications_allowed: checked
+                        };
+                        handleSettingUpdate('application_settings', newSettings);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">Discord integration</Label>
+                      <p className="text-sm text-muted-foreground">Post updates to Discord channel</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="outline" size="sm" className="border-gaming-border">
+                        Configure
+                      </Button>
+                      <Switch
+                        checked={serverSettings.application_settings?.discord_integration || false}
+                        onCheckedChange={(checked) => {
+                          const newSettings = {
+                            ...serverSettings.application_settings,
+                            discord_integration: checked
+                          };
+                          handleSettingUpdate('application_settings', newSettings);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="gaming" 
+                    className="w-full bg-neon-cyan hover:bg-neon-cyan/80 text-gaming-darker"
+                    onClick={() => handleSettingUpdate('application_settings', serverSettings.application_settings)}
+                  >
+                    Save Application Settings
+                  </Button>
+                </div>
+              </Card>
+
+              {/* System Status */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <AlertCircle className="h-5 w-5 text-neon-orange" />
+                  <h2 className="text-xl font-semibold text-foreground">System Status</h2>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">Database Status</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
+                      <span className="text-neon-green text-sm">Online</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">Email Service</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
+                      <span className="text-neon-green text-sm">Online</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">Server Health</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-neon-green rounded-full"></div>
+                      <span className="text-neon-green text-sm">Healthy</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">Last Backup</span>
+                    <span className="text-muted-foreground text-sm">2 hours ago</span>
+                  </div>
+                  
+                  <div className="flex space-x-2 pt-4">
+                    <Button variant="outline" className="flex-1 border-gaming-border">
+                      Refresh Status
+                    </Button>
+                    <Button variant="outline" className="flex-1 border-gaming-border">
+                      View Logs
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* User Management */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Users className="h-5 w-5 text-neon-green" />
+                  <h2 className="text-xl font-semibold text-foreground">User Management</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-foreground mb-3 block">Staff Roles</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
+                        <span className="text-foreground">Admin</span>
+                        <Badge variant="destructive">Full Access</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
+                        <span className="text-foreground">Moderator</span>
+                        <Badge variant="secondary">Limited Access</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gaming-dark rounded">
+                        <span className="text-foreground">Helper</span>
+                        <Badge variant="outline">View Only</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="gaming" 
+                    className="w-full bg-neon-green hover:bg-neon-green/80 text-gaming-darker"
+                  >
+                    Manage Staff
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
           <TabsContent value="players" className="space-y-4">
             <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
               <div className="flex items-center justify-between mb-6">
@@ -1373,8 +1947,11 @@ const StaffPanel = () => {
           </div>
         </DialogContent>
       </Dialog>
+        </Tabs>
+      </div>
     </div>
   );
 };
 
+export default StaffPanel;
 export default StaffPanel;

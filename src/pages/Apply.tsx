@@ -23,6 +23,7 @@ const Apply = () => {
   const [allApplications, setAllApplications] = useState<any[]>([]);
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
   const [selectedApplicationType, setSelectedApplicationType] = useState<any>(null);
+  const [serverSettings, setServerSettings] = useState<any>({});
   const [error, setError] = useState("");
   
   const { toast } = useToast();
@@ -37,21 +38,17 @@ const Apply = () => {
           .eq('is_active', true);
 
         if (error) throw error;
-        console.log('Application types fetched:', data);
         setApplicationTypes(data || []);
         
         // Auto-select first type if only one exists
         if (data && data.length === 1) {
-          console.log('Auto-selecting single application type:', data[0]);
           setSelectedApplicationType(data[0]);
           // Initialize form data based on the application type fields
           const initialFormData: Record<string, any> = {};
           const formFields = data[0].form_fields as any[];
-          console.log('Initializing form fields:', formFields);
           formFields?.forEach((field: any) => {
             initialFormData[field.name] = field.type === 'number' ? 0 : '';
           });
-          console.log('Initial form data:', initialFormData);
           setFormData(initialFormData);
         }
       } catch (error) {
@@ -60,9 +57,28 @@ const Apply = () => {
     };
 
     fetchApplicationTypes();
+    fetchServerSettings();
     checkExistingApplication();
     fetchAllUserApplications();
   }, [user]);
+
+  const fetchServerSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('*');
+
+      if (error) throw error;
+      
+      const settings: Record<string, any> = {};
+      data?.forEach(setting => {
+        settings[setting.setting_key] = setting.setting_value;
+      });
+      setServerSettings(settings);
+    } catch (error) {
+      console.error('Error fetching server settings:', error);
+    }
+  };
 
   const checkExistingApplication = async () => {
     if (!user) return;
@@ -81,7 +97,9 @@ const Apply = () => {
         return;
       }
 
-      if (data) {
+      // Only set existing application if multiple applications are not allowed
+      // and the user has an approved application
+      if (data && (!serverSettings.application_settings?.multiple_applications_allowed && data.status === 'approved')) {
         setExistingApplication(data);
       }
     } catch (error) {
@@ -111,19 +129,15 @@ const Apply = () => {
   };
 
   const handleApplicationTypeChange = (applicationTypeId: string) => {
-    console.log('Selected application type ID:', applicationTypeId);
     const selectedType = applicationTypes.find(type => type.id === applicationTypeId);
-    console.log('Found application type:', selectedType);
     if (selectedType) {
       setSelectedApplicationType(selectedType);
       // Reset form data based on new application type
       const newFormData: Record<string, any> = {};
       const formFields = selectedType.form_fields as any[];
-      console.log('Form fields:', formFields);
       formFields?.forEach((field: any) => {
         newFormData[field.name] = field.type === 'number' ? 0 : '';
       });
-      console.log('New form data:', newFormData);
       setFormData(newFormData);
     }
   };
@@ -290,8 +304,8 @@ const Apply = () => {
 
             <TabsContent value="apply" className="space-y-6">
               <div className="max-w-2xl mx-auto">
-                {/* Show existing application status if exists */}
-                {existingApplication && (
+                {/* Show existing application status if exists and multiple apps not allowed */}
+                {existingApplication && !serverSettings.application_settings?.multiple_applications_allowed && (
                   <Card className="mb-6 p-6 bg-gaming-card border-gaming-border">
                     <div className="flex items-center space-x-3 mb-4">
                       {getStatusIcon(existingApplication.status)}
@@ -320,8 +334,10 @@ const Apply = () => {
                   </Card>
                 )}
 
-                {/* Show form only if no approved application exists */}
-                {(!existingApplication || existingApplication.status === 'denied') && (
+                {/* Show form - allow multiple applications based on settings */}
+                {(!existingApplication || 
+                  existingApplication.status === 'denied' || 
+                  serverSettings.application_settings?.multiple_applications_allowed) && (
                   <Card className="p-8 bg-gaming-card border-gaming-border shadow-gaming">
                     {error && (
                       <Alert className="mb-6 border-destructive/50 bg-destructive/10">
@@ -362,9 +378,7 @@ const Apply = () => {
 
                     {selectedApplicationType && (
                       <form onSubmit={handleSubmit} className="space-y-6">
-                        {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => {
-                          console.log('Rendering field:', field, 'Current value:', formData[field.name]);
-                          return (
+                        {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => (
                           <div key={field.name} className="space-y-2">
                             <Label htmlFor={field.name} className="text-foreground">
                               {field.label}
@@ -375,10 +389,7 @@ const Apply = () => {
                               <Textarea
                                 id={field.name}
                                 value={formData[field.name] || ''}
-                                onChange={(e) => {
-                                  console.log('Textarea change:', field.name, e.target.value);
-                                  setFormData({...formData, [field.name]: e.target.value});
-                                }}
+                                onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
                                 placeholder={field.placeholder || ''}
                                 className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
                                 required={field.required}
@@ -388,10 +399,7 @@ const Apply = () => {
                                 id={field.name}
                                 type={field.type}
                                 value={formData[field.name] || ''}
-                                onChange={(e) => {
-                                  console.log('Input change:', field.name, e.target.value);
-                                  setFormData({...formData, [field.name]: e.target.value});
-                                }}
+                                onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
                                 placeholder={field.placeholder || ''}
                                 className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
                                 required={field.required}
@@ -399,8 +407,7 @@ const Apply = () => {
                               />
                             )}
                           </div>
-                          );
-                        })}
+                        ))}
 
                         <div className="flex items-center space-x-2">
                           <input
