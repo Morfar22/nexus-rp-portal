@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,7 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,18 @@ const StaffPanel = () => {
   const [showStaffDialog, setShowStaffDialog] = useState(false);
   const [newStaffEmail, setNewStaffEmail] = useState("");
   const [newStaffRole, setNewStaffRole] = useState("moderator");
+  
+  // Application Editing
+  const [editingApplication, setEditingApplication] = useState<any>(null);
+  const [editApplicationData, setEditApplicationData] = useState({
+    steam_name: "",
+    discord_tag: "",
+    discord_name: "",
+    fivem_name: "",
+    age: 18,
+    rp_experience: "",
+    character_backstory: ""
+  });
   
   // Application Type Management
   const [showApplicationTypeDialog, setShowApplicationTypeDialog] = useState(false);
@@ -589,6 +601,46 @@ const StaffPanel = () => {
     }));
   };
 
+  const handleEditApplication = async () => {
+    if (!editingApplication) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .update({
+          steam_name: editApplicationData.steam_name,
+          discord_tag: editApplicationData.discord_tag,
+          discord_name: editApplicationData.discord_name,
+          fivem_name: editApplicationData.fivem_name,
+          age: editApplicationData.age,
+          rp_experience: editApplicationData.rp_experience,
+          character_backstory: editApplicationData.character_backstory
+        })
+        .eq('id', editingApplication.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Application updated successfully",
+      });
+      
+      // Refresh applications
+      fetchApplications();
+      setEditingApplication(null);
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update application",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // System status monitoring
   const checkSystemStatus = async () => {
     try {
@@ -892,7 +944,27 @@ const StaffPanel = () => {
                                     className="flex-1"
                                   >
                                     <XCircle className="h-4 w-4 mr-1" />
-                                    Deny
+                                     Deny
+                                   </Button>
+                                   <Button 
+                                     variant="outline" 
+                                     onClick={() => {
+                                       setEditingApplication(app);
+                                       setEditApplicationData({
+                                         steam_name: app.steam_name,
+                                         discord_tag: app.discord_tag,
+                                         discord_name: app.discord_name || "",
+                                         fivem_name: app.fivem_name,
+                                         age: app.age,
+                                         rp_experience: app.rp_experience,
+                                         character_backstory: app.character_backstory
+                                       });
+                                     }}
+                                     disabled={isSubmitting}
+                                     className="flex-1 border-gaming-border hover:border-neon-cyan/50"
+                                   >
+                                     <Edit className="h-4 w-4 mr-1" />
+                                     Edit
                                   </Button>
                                 </div>
                                 
@@ -1210,7 +1282,27 @@ const StaffPanel = () => {
                                     className="flex-1"
                                   >
                                     <XCircle className="h-4 w-4 mr-1" />
-                                    {app.status === 'denied' ? 'Re-deny' : 'Deny'}
+                                     {app.status === 'denied' ? 'Re-deny' : 'Deny'}
+                                   </Button>
+                                   <Button 
+                                     variant="outline" 
+                                     onClick={() => {
+                                       setEditingApplication(app);
+                                       setEditApplicationData({
+                                         steam_name: app.steam_name,
+                                         discord_tag: app.discord_tag,
+                                         discord_name: app.discord_name || "",
+                                         fivem_name: app.fivem_name,
+                                         age: app.age,
+                                         rp_experience: app.rp_experience,
+                                         character_backstory: app.character_backstory
+                                       });
+                                     }}
+                                     disabled={isSubmitting}
+                                     className="flex-1 border-gaming-border hover:border-neon-cyan/50"
+                                   >
+                                     <Edit className="h-4 w-4 mr-1" />
+                                     Edit
                                   </Button>
                                 </div>
                                 
@@ -1985,6 +2077,114 @@ const StaffPanel = () => {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Application Dialog */}
+      <Dialog open={editingApplication !== null} onOpenChange={() => setEditingApplication(null)}>
+        <DialogContent className="bg-gaming-card border-gaming-border max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">
+              Edit Application - {editingApplication?.steam_name}
+            </DialogTitle>
+            <DialogDescription>
+              Modify the application details below
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingApplication && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-steam-name" className="text-foreground">Steam Name</Label>
+                  <Input
+                    id="edit-steam-name"
+                    value={editApplicationData.steam_name}
+                    onChange={(e) => setEditApplicationData({...editApplicationData, steam_name: e.target.value})}
+                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-discord-tag" className="text-foreground">Discord Tag</Label>
+                  <Input
+                    id="edit-discord-tag"
+                    value={editApplicationData.discord_tag}
+                    onChange={(e) => setEditApplicationData({...editApplicationData, discord_tag: e.target.value})}
+                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-discord-name" className="text-foreground">Discord User ID</Label>
+                  <Input
+                    id="edit-discord-name"
+                    value={editApplicationData.discord_name}
+                    onChange={(e) => setEditApplicationData({...editApplicationData, discord_name: e.target.value})}
+                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-fivem-name" className="text-foreground">FiveM Name</Label>
+                  <Input
+                    id="edit-fivem-name"
+                    value={editApplicationData.fivem_name}
+                    onChange={(e) => setEditApplicationData({...editApplicationData, fivem_name: e.target.value})}
+                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-age" className="text-foreground">Age</Label>
+                  <Input
+                    id="edit-age"
+                    type="number"
+                    value={editApplicationData.age}
+                    onChange={(e) => setEditApplicationData({...editApplicationData, age: parseInt(e.target.value) || 18})}
+                    className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-rp-experience" className="text-foreground">Roleplay Experience</Label>
+                <Textarea
+                  id="edit-rp-experience"
+                  value={editApplicationData.rp_experience}
+                  onChange={(e) => setEditApplicationData({...editApplicationData, rp_experience: e.target.value})}
+                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                  rows={4}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-character-backstory" className="text-foreground">Character Backstory</Label>
+                <Textarea
+                  id="edit-character-backstory"
+                  value={editApplicationData.character_backstory}
+                  onChange={(e) => setEditApplicationData({...editApplicationData, character_backstory: e.target.value})}
+                  className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                  rows={4}
+                />
+              </div>
+              
+              <div className="flex space-x-2 pt-4">
+                <Button 
+                  variant="neon" 
+                  onClick={handleEditApplication}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setEditingApplication(null)}
+                  disabled={isSubmitting}
+                  className="flex-1 border-gaming-border hover:border-neon-purple/50"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
