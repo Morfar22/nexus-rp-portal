@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Server, Mail, Lock, User, AlertCircle } from "lucide-react";
+import { Server, Mail, Lock, User, AlertCircle, Shield, Ban } from "lucide-react";
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 const Auth = () => {
@@ -18,6 +18,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [showBannedScreen, setShowBannedScreen] = useState(false);
+  const [bannedUserInfo, setBannedUserInfo] = useState<{username: string, email: string} | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -97,8 +99,12 @@ const Auth = () => {
         }
 
         if (profile?.banned) {
-          // User is banned - block login and show message
-          setError(`Account suspended. Your account has been suspended and you cannot access the application. If you believe this is an error, please contact support.`);
+          // User is banned - show banned screen
+          setBannedUserInfo({
+            username: profile.username || 'User',
+            email: data.user.email || email
+          });
+          setShowBannedScreen(true);
           // Sign out the user immediately
           await supabase.auth.signOut({ scope: 'global' });
           cleanupAuthState();
@@ -190,6 +196,88 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
+  // Show banned screen if user is banned
+  if (showBannedScreen && bannedUserInfo) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-flex items-center space-x-2 mb-4">
+              <Server className="h-8 w-8 text-neon-purple" />
+              <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Dreamlight RP
+              </span>
+            </Link>
+          </div>
+
+          <Card className="bg-gaming-card border-red-500/50 shadow-gaming">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center">
+                <Ban className="h-8 w-8 text-red-500" />
+              </div>
+              <CardTitle className="text-red-500 text-xl">Account Suspended</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Your access to Dreamlight RP has been restricted
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <Shield className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-red-400">
+                      Account Status: Suspended
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Username:</strong> {bannedUserInfo.username}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Email:</strong> {bannedUserInfo.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  Your account has been suspended by our moderation team and you cannot access the application at this time.
+                </p>
+                <p>
+                  If you believe this is an error or would like to appeal this decision, please contact our support team.
+                </p>
+              </div>
+              
+              <div className="pt-4 space-y-3">
+                <Button 
+                  onClick={() => {
+                    setShowBannedScreen(false);
+                    setBannedUserInfo(null);
+                    setEmail("");
+                    setPassword("");
+                    setError("");
+                  }}
+                  variant="outline" 
+                  className="w-full border-gaming-border hover:bg-gaming-dark"
+                >
+                  Try Different Account
+                </Button>
+                
+                <Button 
+                  onClick={() => navigate("/")}
+                  variant="secondary" 
+                  className="w-full"
+                >
+                  Return to Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
