@@ -228,6 +228,11 @@ export default function ServerManagement() {
           <div>
             <h1 className="text-4xl font-bold text-foreground mb-2">Server Management</h1>
             <p className="text-muted-foreground">Monitor and manage your game servers</p>
+            <div className="flex items-center mt-2">
+              <Badge variant="secondary" className="bg-neon-purple/20 text-neon-purple border-neon-purple/50">
+                Staff Only
+              </Badge>
+            </div>
           </div>
           
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
