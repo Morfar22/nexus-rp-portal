@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Server, Users, FileText, Settings } from "lucide-react";
+import { Server, LogIn, LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
+  const { user, signOut } = useAuth();
+
   return (
     <nav className="border-b border-gaming-border bg-gaming-card/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -32,9 +35,32 @@ const Navbar = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          <Button variant="neon" size="sm">
-            Join Server
-          </Button>
+          {user ? (
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-neon-purple" />
+                <span className="text-sm text-foreground">
+                  {user.user_metadata?.username || user.email}
+                </span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={signOut}
+                className="hover:border-neon-purple/50"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <Button variant="neon" size="sm" asChild>
+              <Link to="/auth">
+                <LogIn className="h-4 w-4 mr-1" />
+                Sign In
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </nav>
