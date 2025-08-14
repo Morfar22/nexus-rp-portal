@@ -296,32 +296,6 @@ export default function UserManagement() {
             <span className="text-muted-foreground">Total Users</span>
           </div>
 
-          {/* Test Email Button - Remove after testing */}
-          <Button 
-            onClick={async () => {
-              try {
-                const result = await supabase.functions.invoke('test-email', {
-                  body: { testEmail: user?.email || 'emilfrobergww@gmail.com' }
-                });
-                console.log('Test email result:', result);
-                toast({
-                  title: "Test email sent",
-                  description: "Check your inbox and spam folder",
-                });
-              } catch (error) {
-                console.error('Test email error:', error);
-                toast({
-                  title: "Test email failed",
-                  description: "Check console for details",
-                  variant: "destructive",
-                });
-              }
-            }}
-            variant="outline"
-            className="text-xs"
-          >
-            Test Email
-          </Button>
         </div>
 
         {/* Search and Filter */}
