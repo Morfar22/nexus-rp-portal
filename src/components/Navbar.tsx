@@ -38,6 +38,9 @@ const Navbar = () => {
           <Link to="/servers" className="text-foreground hover:text-neon-purple transition-colors">
             Servers
           </Link>
+          <Link to="/users" className="text-foreground hover:text-neon-purple transition-colors">
+            Users
+          </Link>
         </div>
         
         <div className="flex items-center space-x-4">

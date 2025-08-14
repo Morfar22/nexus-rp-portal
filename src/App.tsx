@@ -14,6 +14,7 @@ import Map from "./pages/Map";
 import StaffPanel from "./pages/StaffPanel";
 import OurTeam from "./pages/OurTeam";
 import ServerManagement from "./pages/ServerManagement";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,11 @@ const App = () => (
               </StaffProtectedRoute>
             } />
             <Route path="/servers" element={<ServerManagement />} />
+            <Route path="/users" element={
+              <StaffProtectedRoute>
+                <UserManagement />
+              </StaffProtectedRoute>
+            } />
             <Route path="/team" element={<OurTeam />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
