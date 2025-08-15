@@ -23,8 +23,11 @@ serve(async (req: Request) => {
 
   try {
     console.log("Processing request...");
-    const { type, userEmail, applicationData } = await req.json();
-    console.log("Request data:", { type, userEmail, applicationData });
+    const requestBody = await req.json();
+    console.log("Full request body:", requestBody);
+    
+    const { type, userEmail, applicationData } = requestBody;
+    console.log("Extracted data:", { type, userEmail, applicationData });
 
     // Send email using Resend
     const emailResponse = await resend.emails.send({
