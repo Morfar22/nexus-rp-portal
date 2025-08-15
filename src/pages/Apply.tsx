@@ -236,20 +236,15 @@ const Apply = () => {
 
       // Send Discord notification for new application
       try {
-        // Try to send Discord notification - it will handle its own webhook validation
         await supabase.functions.invoke('discord-logger', {
           body: {
             type: 'application_submitted',
-              data: {
-                steam_name: applicationData.steam_name || formData.steam_name || '',
-                discord_tag: applicationData.discord_tag || formData.discord_tag || '',
-                discord_name: applicationData.discord_name || formData.discord_name || '',
-                fivem_name: applicationData.fivem_name || formData.fivem_name || '',
-                age: applicationData.age || parseInt(formData.age) || 0
-              },
-            settings: {
-              // The Discord function will check if webhook is configured
-              discordWebhookUrl: null
+            data: {
+              steam_name: applicationData.steam_name || formData.steam_name || '',
+              discord_tag: applicationData.discord_tag || formData.discord_tag || '',
+              discord_name: applicationData.discord_name || formData.discord_name || '',
+              fivem_name: applicationData.fivem_name || formData.fivem_name || '',
+              age: applicationData.age || parseInt(formData.age) || 0
             }
           }
         });

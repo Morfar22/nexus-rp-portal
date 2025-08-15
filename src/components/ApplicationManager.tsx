@@ -47,6 +47,15 @@ const ApplicationManager = () => {
 
   const updateApplicationStatus = async (applicationId: string, status: string, notes?: string) => {
     try {
+      // Get the application data first for notifications
+      const { data: appData, error: fetchError } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('id', applicationId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { error } = await supabase
         .from('applications')
         .update({
@@ -57,6 +66,49 @@ const ApplicationManager = () => {
         .eq('id', applicationId);
 
       if (error) throw error;
+
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: status === 'approved' ? 'approved' : status === 'rejected' ? 'denied' : 'under_review',
+            userId: appData.user_id,
+            applicationData: {
+              steam_name: appData.steam_name || '',
+              discord_tag: appData.discord_tag || '',
+              discord_name: appData.discord_name || '',
+              fivem_name: appData.fivem_name || '',
+              review_notes: notes || ''
+            }
+          }
+        });
+        console.log('Status update email sent successfully');
+      } catch (emailError) {
+        console.error('Error sending status update email:', emailError);
+      }
+
+      // Send Discord notification
+      try {
+        const discordType = status === 'approved' ? 'application_approved' : 
+                          status === 'rejected' ? 'application_denied' : 
+                          'application_under_review';
+        
+        await supabase.functions.invoke('discord-logger', {
+          body: {
+            type: discordType,
+            data: {
+              steam_name: appData.steam_name || '',
+              discord_tag: appData.discord_tag || '',
+              discord_name: appData.discord_name || '',
+              fivem_name: appData.fivem_name || '',
+              review_notes: notes || ''
+            }
+          }
+        });
+        console.log('Discord notification sent successfully');
+      } catch (discordError) {
+        console.error('Error sending Discord notification:', discordError);
+      }
 
       await fetchApplications();
       toast({
