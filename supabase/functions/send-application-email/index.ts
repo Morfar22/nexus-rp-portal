@@ -2,20 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const resendClient = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-// Initialize Supabase client with service role for admin operations
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -57,22 +43,23 @@ const getEmailTemplate = (type: string, data: any) => {
         ${baseStyles}
         <div class="container">
           <div class="header">
-            <h1>Application Submitted</h1>
+            <h1>🎮 Application Received!</h1>
+            <p>Thank you for applying to Nexus RP</p>
           </div>
           <div class="content">
-            <h2>Thank you for your application!</h2>
-            <p>Hi <strong>${data.steam_name}</strong>,</p>
-            <p>We've received your whitelist application for our FiveM server. Here are the details we have on file:</p>
+            <p>Hello <strong>${data.steam_name || 'Applicant'}</strong>,</p>
+            <p>We've successfully received your application for Nexus RP. Our staff team will review your application and get back to you soon.</p>
+            <h3>📋 Application Details:</h3>
             <ul>
-              <li><strong>Steam Name:</strong> ${data.steam_name}</li>
-              <li><strong>Discord Tag:</strong> ${data.discord_tag}</li>
-              <li><strong>FiveM Name:</strong> ${data.fivem_name}</li>
+              <li><strong>Steam Name:</strong> ${data.steam_name || 'Not provided'}</li>
+              <li><strong>Discord:</strong> ${data.discord_tag || 'Not provided'}</li>
+              <li><strong>FiveM Name:</strong> ${data.fivem_name || 'Not provided'}</li>
             </ul>
-            <p>Our staff team will review your application and get back to you soon. You'll receive an email notification once a decision has been made.</p>
-            <p>Thank you for your interest in joining our community!</p>
+            <p>Please be patient while we review your application. We'll send you an email with the decision within 48 hours.</p>
           </div>
           <div class="footer">
-            <p><small>This is an automated message. Please do not reply to this email.</small></p>
+            <p>Thank you for your interest in Nexus RP!</p>
+            <p><strong>The Nexus RP Team</strong></p>
           </div>
         </div>
       `;
@@ -82,18 +69,24 @@ const getEmailTemplate = (type: string, data: any) => {
         ${baseStyles}
         <div class="container">
           <div class="header">
-            <h1>🎉 Application Approved!</h1>
+            <h1>🎉 Welcome to Nexus RP!</h1>
+            <p>Your application has been approved</p>
           </div>
           <div class="content">
-            <h2>Welcome to the community!</h2>
-            <p>Hi <strong>${data.steam_name}</strong>,</p>
-            <p>Congratulations! Your whitelist application has been <span class="status-badge approved">APPROVED</span>.</p>
-            <p>You can now join our FiveM server and start your roleplay journey with us.</p>
-            ${data.review_notes ? `<p><strong>Staff Notes:</strong> ${data.review_notes}</p>` : ''}
-            <p>Welcome to the community, and we look forward to seeing you in-game!</p>
+            <div class="status-badge approved">✅ APPROVED</div>
+            <p>Congratulations <strong>${data.steam_name}</strong>!</p>
+            <p>Your application has been approved and you're now part of the Nexus RP community!</p>
+            <h3>🚀 Next Steps:</h3>
+            <ol>
+              <li>Join our Discord server for important updates</li>
+              <li>Read through our server rules carefully</li>
+              <li>Connect to the server and start your roleplay journey</li>
+            </ol>
+            <p>Welcome to the family! We're excited to see what stories you'll create.</p>
           </div>
           <div class="footer">
-            <p><small>This is an automated message. Please do not reply to this email.</small></p>
+            <p>Welcome aboard!</p>
+            <p><strong>The Nexus RP Team</strong></p>
           </div>
         </div>
       `;
@@ -103,17 +96,19 @@ const getEmailTemplate = (type: string, data: any) => {
         ${baseStyles}
         <div class="container">
           <div class="header">
-            <h1>Application Update</h1>
+            <h1>📋 Application Update</h1>
+            <p>Regarding your Nexus RP application</p>
           </div>
           <div class="content">
-            <h2>Application Status Update</h2>
-            <p>Hi <strong>${data.steam_name}</strong>,</p>
-            <p>Thank you for your interest in joining our FiveM server. After careful review, your application has been <span class="status-badge denied">DENIED</span>.</p>
-            ${data.review_notes ? `<p><strong>Reason:</strong> ${data.review_notes}</p>` : ''}
-            <p>You're welcome to submit a new application in the future. Please make sure to read our rules and guidelines carefully before reapplying.</p>
+            <div class="status-badge denied">❌ NOT APPROVED</div>
+            <p>Hello <strong>${data.steam_name}</strong>,</p>
+            <p>Thank you for your interest in Nexus RP. After careful review, we've decided not to approve your application at this time.</p>
+            ${data.review_notes ? `<h3>📝 Feedback:</h3><p>${data.review_notes}</p>` : ''}
+            <p>We encourage you to review our rules and requirements, and you're welcome to reapply in the future.</p>
           </div>
           <div class="footer">
-            <p><small>This is an automated message. Please do not reply to this email.</small></p>
+            <p>Thank you for your understanding</p>
+            <p><strong>The Nexus RP Team</strong></p>
           </div>
         </div>
       `;
@@ -123,18 +118,19 @@ const getEmailTemplate = (type: string, data: any) => {
         ${baseStyles}
         <div class="container">
           <div class="header">
-            <h1>Application Under Review</h1>
+            <h1>🔍 Application Under Review</h1>
+            <p>We're reviewing your application</p>
           </div>
           <div class="content">
-            <h2>Application Status Update</h2>
-            <p>Hi <strong>${data.steam_name}</strong>,</p>
-            <p>Your whitelist application is currently <span class="status-badge under-review">UNDER REVIEW</span>.</p>
-            <p>Our staff team is taking a closer look at your application. We'll notify you once a final decision has been made.</p>
-            ${data.review_notes ? `<p><strong>Staff Notes:</strong> ${data.review_notes}</p>` : ''}
-            <p>Thank you for your patience!</p>
+            <div class="status-badge under-review">⏳ UNDER REVIEW</div>
+            <p>Hello <strong>${data.steam_name}</strong>,</p>
+            <p>Your application is currently being reviewed by our staff team. We may need additional information or clarification.</p>
+            ${data.review_notes ? `<h3>📝 Additional Notes:</h3><p>${data.review_notes}</p>` : ''}
+            <p>Please be patient while we complete our review process. We'll update you as soon as we have more information.</p>
           </div>
           <div class="footer">
-            <p><small>This is an automated message. Please do not reply to this email.</small></p>
+            <p>Thank you for your patience</p>
+            <p><strong>The Nexus RP Team</strong></p>
           </div>
         </div>
       `;
@@ -144,20 +140,22 @@ const getEmailTemplate = (type: string, data: any) => {
         ${baseStyles}
         <div class="container">
           <div class="header">
-            <h1>New Application Submitted</h1>
+            <h1>📋 New Application Submitted</h1>
+            <p>Staff Notification</p>
           </div>
           <div class="content">
-            <h2>Staff Notification</h2>
-            <p>A new whitelist application has been submitted and requires review:</p>
+            <p>A new application has been submitted and requires review.</p>
+            <h3>📋 Application Details:</h3>
             <ul>
-              <li><strong>Steam Name:</strong> ${data.steam_name}</li>
-              <li><strong>Discord Tag:</strong> ${data.discord_tag}</li>
-              <li><strong>FiveM Name:</strong> ${data.fivem_name}</li>
+              <li><strong>Steam Name:</strong> ${data.steam_name || 'Not provided'}</li>
+              <li><strong>Discord:</strong> ${data.discord_tag || 'Not provided'}</li>
+              <li><strong>FiveM Name:</strong> ${data.fivem_name || 'Not provided'}</li>
+              <li><strong>Applicant Email:</strong> ${data.toEmail || 'Not provided'}</li>
             </ul>
-            <p>Please log in to the staff panel to review and process this application.</p>
+            <p>Please review this application in the staff panel.</p>
           </div>
           <div class="footer">
-            <p><small>This is an automated staff notification.</small></p>
+            <p><strong>Nexus RP Staff System</strong></p>
           </div>
         </div>
       `;
@@ -168,18 +166,46 @@ const getEmailTemplate = (type: string, data: any) => {
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    console.log('OPTIONS request received for CORS preflight');
-    return new Response(null, { status: 200, headers: corsHeaders });
-  }
-
   try {
+    // Handle CORS preflight requests
+    if (req.method === "OPTIONS") {
+      console.log('OPTIONS request received for CORS preflight');
+      return new Response(null, { status: 200, headers: corsHeaders });
+    }
+
     console.log('=== EMAIL FUNCTION START ===');
+    
+    // Check if RESEND_API_KEY exists before proceeding
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      console.error('RESEND_API_KEY not found');
+      return new Response(
+        JSON.stringify({ error: "RESEND_API_KEY not configured" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Initialize Resend client here to catch initialization errors
+    const resendClient = new Resend(apiKey);
+
+    // Initialize Supabase client with service role for admin operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
     const { type, userEmail, userId, applicationData, staffEmail }: EmailRequest = await req.json();
 
     console.log('Request data:', { type, userEmail, userId, applicationData, staffEmail });
-    console.log('RESEND_API_KEY exists:', !!Deno.env.get("RESEND_API_KEY"));
 
     let recipientEmail = userEmail;
     
@@ -191,35 +217,45 @@ const handler = async (req: Request): Promise<Response> => {
         console.log('User fetch result:', { userData: !!userData?.user, error: userError });
         if (userError) {
           console.error('Error fetching user:', userError);
-          throw new Error('Failed to fetch user email: ' + userError.message);
+          throw new Error(`Failed to fetch user: ${userError.message}`);
         }
-        recipientEmail = userData.user?.email;
-        console.log('Fetched user email:', recipientEmail);
-      } catch (authError) {
-        console.error('Error with admin auth:', authError);
-        throw new Error('Unable to access user email: ' + authError.message);
+        recipientEmail = userData?.user?.email;
+      } catch (fetchError) {
+        console.error('Error in user fetch block:', fetchError);
+        throw fetchError;
       }
     }
 
-    if (!recipientEmail) {
-      console.error('No recipient email available');
+    const toEmail = type === 'staff_notification' ? staffEmail : recipientEmail;
+    
+    if (!toEmail) {
+      console.error('No recipient email found');
       throw new Error('No recipient email available');
     }
 
-    console.log('Final recipient email:', recipientEmail);
+    // Generate subject and template
+    let subject = '';
+    switch (type) {
+      case 'submission':
+        subject = 'Application Received - Nexus RP Portal';
+        break;
+      case 'approved':
+        subject = 'Application Approved - Welcome to Nexus RP!';
+        break;
+      case 'denied':
+        subject = 'Application Update - Nexus RP Portal';
+        break;
+      case 'under_review':
+        subject = 'Application Under Review - Nexus RP Portal';
+        break;
+      case 'staff_notification':
+        subject = 'New Application Submitted - Nexus RP Portal';
+        break;
+      default:
+        subject = 'Nexus RP Portal Notification';
+    }
 
-    const subject = {
-      submission: "Application Submitted - FiveM Server",
-      approved: "🎉 Application Approved - Welcome!",
-      denied: "Application Update - FiveM Server", 
-      under_review: "Application Under Review - FiveM Server",
-      staff_notification: "New Application Requires Review"
-    }[type];
-
-    console.log('Email subject:', subject);
-
-    const html = getEmailTemplate(type, applicationData);
-    const toEmail = type === 'staff_notification' ? (staffEmail || 'staff@yourdomain.com') : recipientEmail;
+    const html = getEmailTemplate(type, { ...applicationData, toEmail });
 
     console.log('About to send email to:', toEmail);
     console.log('Email HTML length:', html.length);
@@ -245,6 +281,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error details:", error);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
+    
+    // Always return CORS headers even on error
     return new Response(
       JSON.stringify({ error: error.message, details: error.toString() }),
       {
