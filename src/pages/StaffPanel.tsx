@@ -44,6 +44,8 @@ import ApplicationManager from "@/components/ApplicationManager";
 import RulesManager from "@/components/RulesManager";
 import StaffManager from "@/components/StaffManager";
 import UserManagementSection from "@/components/UserManagementSection";
+import TeamManager from "@/components/TeamManager";
+import NavbarManager from "@/components/NavbarManager";
 
 const StaffPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -143,11 +145,11 @@ const StaffPanel = () => {
     try {
       const { error } = await supabase
         .from('server_settings')
-        .upsert({
-          setting_key: settingType,
+        .update({
           setting_value: value,
-          created_by: user?.id
-        });
+          updated_at: new Date().toISOString()
+        })
+        .eq('setting_key', settingType);
 
       if (error) throw error;
 
@@ -200,12 +202,14 @@ const StaffPanel = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 bg-gaming-card border-gaming-border">
+          <TabsList className="grid w-full grid-cols-10 bg-gaming-card border-gaming-border">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="applications">Applications</TabsTrigger>
             <TabsTrigger value="rules">Rules</TabsTrigger>
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="navbar">Navbar</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
@@ -266,6 +270,14 @@ const StaffPanel = () => {
 
           <TabsContent value="users" className="space-y-6">
             <UserManagementSection />
+          </TabsContent>
+
+          <TabsContent value="team" className="space-y-6">
+            <TeamManager />
+          </TabsContent>
+
+          <TabsContent value="navbar" className="space-y-6">
+            <NavbarManager />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

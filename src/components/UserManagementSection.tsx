@@ -31,14 +31,27 @@ const UserManagementSection = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles (role)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+
+      // Get user roles separately
+      const userIds = data?.map(profile => profile.id) || [];
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds);
+
+      if (rolesError) throw rolesError;
+
+      // Combine the data
+      const usersWithRoles = data?.map(profile => ({
+        ...profile,
+        user_roles: roles?.filter(role => role.user_id === profile.id) || []
+      })) || [];
+
+      setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({

@@ -29,15 +29,28 @@ const StaffManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('user_roles')
-        .select(`
-          *,
-          profiles:user_id (username, email, full_name)
-        `)
+        .select('*')
         .in('role', ['admin', 'moderator'])
         .order('role', { ascending: true });
 
       if (error) throw error;
-      setStaff(data || []);
+
+      // Get user details separately
+      const userIds = data?.map(role => role.user_id) || [];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, email, full_name')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      const staffWithProfiles = data?.map(role => ({
+        ...role,
+        profiles: profiles?.find(profile => profile.id === role.user_id)
+      })) || [];
+
+      setStaff(staffWithProfiles);
     } catch (error) {
       console.error('Error fetching staff:', error);
       toast({
