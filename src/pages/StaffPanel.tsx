@@ -379,6 +379,9 @@ const StaffPanel = () => {
 
   const handleDeleteRule = async (ruleId: string) => {
     try {
+      // Get the rule details before deleting
+      const ruleToDelete = rules.find(rule => rule.id === ruleId);
+      
       const { error } = await supabase
         .from('rules')
         .delete()
@@ -386,10 +389,15 @@ const StaffPanel = () => {
 
       if (error) throw error;
 
-      // Log rule change to Discord
+      // Log rule change to Discord with full details
       await sendDiscordLog('rule_change', {
         action: 'rule_deleted',
-        rule_id: ruleId,
+        rule: {
+          id: ruleId,
+          title: ruleToDelete?.title || 'Unknown Rule',
+          description: ruleToDelete?.description || 'No description',
+          category: ruleToDelete?.category || 'No category'
+        },
         admin: user?.email
       });
 

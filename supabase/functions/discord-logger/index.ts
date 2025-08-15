@@ -209,6 +209,26 @@ serve(async (req) => {
         content = `📝 **Application ${data.action}** by **${data.admin_user}** for **${data.steam_name}**`
         break
 
+      case 'rule_change':
+        const actionEmoji = data.action === 'rule_created' ? '➕' : data.action === 'rule_updated' ? '✏️' : '🗑️';
+        const actionColor = data.action === 'rule_created' ? 0x27ae60 : data.action === 'rule_updated' ? 0xf39c12 : 0xe74c3c;
+        
+        embed = {
+          title: `${actionEmoji} Rule ${data.action?.replace('rule_', '').replace('_', ' ').toUpperCase()}`,
+          color: actionColor,
+          fields: [
+            { name: "Action", value: data.action?.replace('rule_', '').replace('_', ' ') || "Unknown", inline: true },
+            { name: "Admin", value: data.admin || "Unknown", inline: true },
+            { name: "Rule Title", value: data.rule?.title || "Unknown", inline: false },
+            { name: "Category", value: data.rule?.category || "No category", inline: true },
+            { name: "Description", value: data.rule?.description?.substring(0, 200) + (data.rule?.description?.length > 200 ? '...' : '') || "No description", inline: false }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: "FiveM Server Admin Panel" }
+        }
+        content = `📋 **Rule ${data.action?.replace('rule_', '')}** by **${data.admin}**: "${data.rule?.title || 'Unknown Rule'}"`
+        break
+
       default:
         console.log("Unknown Discord log type:", type)
         return new Response(
