@@ -86,60 +86,63 @@ export type Database = {
         Row: {
           age: number
           application_type_id: string
-          character_backstory: string
+          character_backstory: string | null
           closed: boolean
           closed_at: string | null
           closed_by: string | null
           created_at: string
           discord_name: string | null
-          discord_tag: string
-          fivem_name: string
+          discord_tag: string | null
+          fivem_name: string | null
+          form_data: Json | null
           id: string
           review_notes: string | null
           reviewed_by: string | null
-          rp_experience: string
+          rp_experience: string | null
           status: string
-          steam_name: string
+          steam_name: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           age: number
           application_type_id: string
-          character_backstory: string
+          character_backstory?: string | null
           closed?: boolean
           closed_at?: string | null
           closed_by?: string | null
           created_at?: string
           discord_name?: string | null
-          discord_tag: string
-          fivem_name: string
+          discord_tag?: string | null
+          fivem_name?: string | null
+          form_data?: Json | null
           id?: string
           review_notes?: string | null
           reviewed_by?: string | null
-          rp_experience: string
+          rp_experience?: string | null
           status?: string
-          steam_name: string
+          steam_name?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           age?: number
           application_type_id?: string
-          character_backstory?: string
+          character_backstory?: string | null
           closed?: boolean
           closed_at?: string | null
           closed_by?: string | null
           created_at?: string
           discord_name?: string | null
-          discord_tag?: string
-          fivem_name?: string
+          discord_tag?: string | null
+          fivem_name?: string | null
+          form_data?: Json | null
           id?: string
           review_notes?: string | null
           reviewed_by?: string | null
-          rp_experience?: string
+          rp_experience?: string | null
           status?: string
-          steam_name?: string
+          steam_name?: string | null
           updated_at?: string
           user_id?: string
         }

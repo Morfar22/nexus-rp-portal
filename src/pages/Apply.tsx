@@ -164,14 +164,15 @@ const Apply = () => {
       const applicationData: any = {
         user_id: user.id,
         application_type_id: selectedApplicationType.id,
+        form_data: formData, // Store all form data as JSON
       };
 
-      // Map form field data to database columns based on field labels
+      // Map standard form fields to database columns if they exist
       const submitFormFields = selectedApplicationType.form_fields as any[];
       submitFormFields?.forEach((field: any) => {
         const fieldValue = formData[field.id] || '';
         
-        // Map field labels to database columns
+        // Map field labels to database columns for standard fields
         switch (field.label?.toLowerCase()) {
           case 'steam name':
           case 'steam username':
@@ -189,7 +190,7 @@ const Apply = () => {
             applicationData.fivem_name = fieldValue;
             break;
           case 'age':
-            applicationData.age = parseInt(fieldValue) || 18;
+            applicationData.age = parseInt(fieldValue) || null;
             break;
           case 'character backstory':
           case 'backstory':
@@ -199,16 +200,6 @@ const Apply = () => {
           case 'roleplay experience':
           case 'experience':
             applicationData.rp_experience = fieldValue;
-            break;
-          default:
-            // For any unmapped fields, try to infer from field id or skip
-            if (field.id.includes('steam')) applicationData.steam_name = fieldValue;
-            else if (field.id.includes('discord_tag')) applicationData.discord_tag = fieldValue;
-            else if (field.id.includes('discord')) applicationData.discord_name = fieldValue;
-            else if (field.id.includes('fivem')) applicationData.fivem_name = fieldValue;
-            else if (field.id.includes('age')) applicationData.age = parseInt(fieldValue) || 18;
-            else if (field.id.includes('backstory')) applicationData.character_backstory = fieldValue;
-            else if (field.id.includes('experience')) applicationData.rp_experience = fieldValue;
             break;
         }
       });
@@ -223,17 +214,17 @@ const Apply = () => {
         throw error;
       }
 
-      // Send submission email
+      // Send submission email - use form data with fallbacks
       try {
         await supabase.functions.invoke('send-application-email', {
           body: {
             type: 'submission',
             userId: user.id,
             applicationData: {
-              steam_name: formData.steam_name || '',
-              discord_tag: formData.discord_tag || '',
-              discord_name: formData.discord_name || '',
-              fivem_name: formData.fivem_name || ''
+              steam_name: applicationData.steam_name || formData.steam_name || '',
+              discord_tag: applicationData.discord_tag || formData.discord_tag || '',
+              discord_name: applicationData.discord_name || formData.discord_name || '',
+              fivem_name: applicationData.fivem_name || formData.fivem_name || ''
             }
           }
         });
@@ -250,11 +241,11 @@ const Apply = () => {
           body: {
             type: 'application_submitted',
               data: {
-                steam_name: formData.steam_name || '',
-                discord_tag: formData.discord_tag || '',
-                discord_name: formData.discord_name || '',
-                fivem_name: formData.fivem_name || '',
-                age: parseInt(formData.age) || 0
+                steam_name: applicationData.steam_name || formData.steam_name || '',
+                discord_tag: applicationData.discord_tag || formData.discord_tag || '',
+                discord_name: applicationData.discord_name || formData.discord_name || '',
+                fivem_name: applicationData.fivem_name || formData.fivem_name || '',
+                age: applicationData.age || parseInt(formData.age) || 0
               },
             settings: {
               // The Discord function will check if webhook is configured
