@@ -244,7 +244,8 @@ const Apply = () => {
               discord_tag: applicationData.discord_tag || formData.discord_tag || '',
               discord_name: applicationData.discord_name || formData.discord_name || '',
               fivem_name: applicationData.fivem_name || formData.fivem_name || '',
-              age: applicationData.age || parseInt(formData.age) || 0
+              age: applicationData.age || parseInt(formData.age) || 0,
+              form_data: formData // Include the complete form data for fallback
             }
           }
         });

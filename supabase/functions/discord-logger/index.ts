@@ -65,52 +65,66 @@ serve(async (req) => {
 
     switch (type) {
       case 'application_submitted':
+        // Extract data from form_data if available, fallback to direct fields
+        const steamName = data.steam_name || data.form_data?.steam_name || "Not provided";
+        const discordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
+        const fivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
+        const age = data.age || data.form_data?.age || "Not provided";
+        
         embed = {
           title: "🆕 New Application Submitted",
           color: 0x3498db, // Blue
           fields: [
-            { name: "Steam Name", value: data.steam_name || "N/A", inline: true },
-            { name: "Discord Tag", value: data.discord_tag || "N/A", inline: true },
-            { name: "FiveM Name", value: data.fivem_name || "N/A", inline: true },
-            { name: "Age", value: data.age?.toString() || "N/A", inline: true },
+            { name: "Steam Name", value: steamName, inline: true },
+            { name: "Discord Tag", value: discordTag, inline: true },
+            { name: "FiveM Name", value: fivemName, inline: true },
+            { name: "Age", value: age.toString(), inline: true },
             { name: "Status", value: "Pending Review", inline: true }
           ],
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `📋 **New application received** from **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
+        content = `📋 **New application received** from **${steamName}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
       case 'application_approved':
+        const approvedSteamName = data.steam_name || data.form_data?.steam_name || "Not provided";
+        const approvedDiscordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
+        const approvedFivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
+        
         embed = {
           title: "✅ Application Approved",
           color: 0x27ae60, // Green
           fields: [
-            { name: "Steam Name", value: data.steam_name || "N/A", inline: true },
-            { name: "Discord Tag", value: data.discord_tag || "N/A", inline: true },
-            { name: "FiveM Name", value: data.fivem_name || "N/A", inline: true },
+            { name: "Steam Name", value: approvedSteamName, inline: true },
+            { name: "Discord Tag", value: approvedDiscordTag, inline: true },
+            { name: "FiveM Name", value: approvedFivemName, inline: true },
             { name: "Review Notes", value: data.review_notes || "No notes provided", inline: false }
           ],
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `🎉 **Application approved** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}! Welcome to the server!`
+        content = `🎉 **Application approved** for **${approvedSteamName}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}! Welcome to the server!`
         break
 
       case 'application_denied':
+        const deniedSteamName = data.steam_name || data.form_data?.steam_name || "Not provided";
+        const deniedDiscordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
+        const deniedFivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
+        
         embed = {
           title: "❌ Application Denied",
           color: 0xe74c3c, // Red
           fields: [
-            { name: "Steam Name", value: data.steam_name || "N/A", inline: true },
-            { name: "Discord Tag", value: data.discord_tag || "N/A", inline: true },
-            { name: "FiveM Name", value: data.fivem_name || "N/A", inline: true },
+            { name: "Steam Name", value: deniedSteamName, inline: true },
+            { name: "Discord Tag", value: deniedDiscordTag, inline: true },
+            { name: "FiveM Name", value: deniedFivemName, inline: true },
             { name: "Reason", value: data.review_notes || "No reason provided", inline: false }
           ],
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `🚫 **Application denied** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
+        content = `🚫 **Application denied** for **${deniedSteamName}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
       case 'application_under_review':

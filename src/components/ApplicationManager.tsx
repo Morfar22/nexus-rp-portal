@@ -101,7 +101,8 @@ const ApplicationManager = () => {
               discord_tag: appData.discord_tag || '',
               discord_name: appData.discord_name || '',
               fivem_name: appData.fivem_name || '',
-              review_notes: notes || ''
+              review_notes: notes || '',
+              form_data: appData.form_data || {} // Include the form_data for fallback
             }
           }
         });
