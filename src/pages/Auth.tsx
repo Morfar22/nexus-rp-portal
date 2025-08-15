@@ -16,15 +16,27 @@ const Auth = () => {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [showBannedScreen, setShowBannedScreen] = useState(false);
   const [bannedUserInfo, setBannedUserInfo] = useState<{username: string, email: string} | null>(null);
+  const [isPasswordReset, setIsPasswordReset] = useState(false);
   const captchaRef = useRef<HCaptcha>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check for password reset flow
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+    
+    if (type === 'recovery') {
+      setIsPasswordReset(true);
+      return; // Don't redirect if it's a password reset
+    }
+
     // Check if user is already logged in - but not if we're showing banned screen
     if (!showBannedScreen) {
       const checkUser = async () => {
@@ -198,6 +210,47 @@ const Auth = () => {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      toast({
+        title: "Password Updated",
+        description: "Your password has been successfully updated!",
+      });
+
+      // Redirect to home page
+      navigate("/");
+    } catch (error: any) {
+      setError(error.message || "An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Show banned screen if user is banned
   if (showBannedScreen && bannedUserInfo) {
     return (
@@ -276,6 +329,104 @@ const Auth = () => {
                   Return to Home
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show password reset form if user came from reset link
+  if (isPasswordReset) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-flex items-center space-x-2 mb-4">
+              <Server className="h-8 w-8 text-neon-purple" />
+              <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Dreamlight RP
+              </span>
+            </Link>
+            <p className="text-muted-foreground">
+              Create a new password for your account
+            </p>
+          </div>
+
+          <Card className="bg-gaming-card border-gaming-border shadow-gaming">
+            <CardHeader>
+              <CardTitle className="text-center text-foreground">Reset Password</CardTitle>
+              <CardDescription className="text-center">
+                Enter your new password below
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              {error && (
+                <Alert className="mb-4 border-destructive/50 bg-destructive/10">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handlePasswordReset} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password" className="text-foreground">New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="new-password"
+                      type="password"
+                      placeholder="Enter new password (min. 6 characters)"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-10 bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-foreground">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder="Confirm new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10 bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  variant="hero" 
+                  className="w-full" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Updating Password..." : "Update Password"}
+                </Button>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setIsPasswordReset(false);
+                      navigate("/auth");
+                    }}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Back to Sign In
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </div>
