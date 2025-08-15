@@ -52,6 +52,11 @@ const StaffPanel = () => {
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Debug logging for isSubmitting state
+  useEffect(() => {
+    console.log('isSubmitting state changed:', isSubmitting);
+  }, [isSubmitting]);
   const [error, setError] = useState("");
   const [editingRule, setEditingRule] = useState<any>(null);
   const [newRule, setNewRule] = useState({ category: "", title: "", description: "" });
@@ -830,11 +835,37 @@ const StaffPanel = () => {
   console.log('All applications:', applications);
   console.log('Pending applications:', pendingApplications);
 
+  // Emergency reset function for stuck states
+  const resetStates = () => {
+    setIsSubmitting(false);
+    setIsLoading(false);
+    console.log('Emergency reset: States reset to false');
+    toast({
+      title: "States Reset",
+      description: "UI states have been reset. Buttons should work now.",
+    });
+  };
+
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-hero">
-        <Navbar />
-        <div className="container mx-auto px-4 py-8">
+  return (
+    <div className="min-h-screen bg-gradient-hero">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
+        {/* Emergency Reset Button */}
+        {isSubmitting && (
+          <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-red-400">Buttons disabled? UI might be stuck.</span>
+              <Button
+                onClick={resetStates}
+                variant="destructive"
+                size="sm"
+              >
+                Reset UI States
+              </Button>
+            </div>
+          </div>
+        )}
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neon-purple mx-auto"></div>
             <p className="text-muted-foreground mt-4">Loading staff panel...</p>
