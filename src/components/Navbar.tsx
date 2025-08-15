@@ -59,7 +59,7 @@ const Navbar = () => {
           .eq('setting_key', 'navbar_config')
           .maybeSingle();
           
-        if (data) {
+        if (data?.setting_value) {
           setNavbarConfig(data.setting_value as typeof navbarConfig);
         }
       } catch (error) {
@@ -68,6 +68,29 @@ const Navbar = () => {
     };
 
     loadNavbarConfig();
+
+    // Set up real-time subscription for navbar config changes
+    const channel = supabase
+      .channel('navbar-config-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'server_settings',
+          filter: 'setting_key=eq.navbar_config'
+        },
+        (payload) => {
+          if (payload.new && (payload.new as any).setting_value) {
+            setNavbarConfig((payload.new as any).setting_value as typeof navbarConfig);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const NavLinks = () => {
