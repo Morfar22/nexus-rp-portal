@@ -451,6 +451,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      analytics_query: {
+        Args: { query: string }
+        Returns: {
+          result: Json
+        }[]
+      }
       get_user_id_by_email: {
         Args: { _email: string }
         Returns: string
