@@ -67,8 +67,13 @@ const ServerStatsManager = () => {
 
       if (data) {
         setStats({
-          ...data,
-          server_online: data.server_online ?? true // Ensure server_online is always boolean
+          players_online: data.players_online,
+          max_players: data.max_players,
+          queue_count: data.queue_count,
+          uptime_percentage: data.uptime_percentage,
+          ping_ms: data.ping_ms,
+          server_online: data.server_online ?? true,
+          last_updated: data.last_updated
         });
       }
     } catch (error) {

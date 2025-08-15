@@ -336,6 +336,7 @@ export type Database = {
           ping_ms: number
           players_online: number
           queue_count: number
+          server_online: boolean
           updated_at: string
           uptime_percentage: number
         }
@@ -347,6 +348,7 @@ export type Database = {
           ping_ms?: number
           players_online?: number
           queue_count?: number
+          server_online?: boolean
           updated_at?: string
           uptime_percentage?: number
         }
@@ -358,6 +360,7 @@ export type Database = {
           ping_ms?: number
           players_online?: number
           queue_count?: number
+          server_online?: boolean
           updated_at?: string
           uptime_percentage?: number
         }

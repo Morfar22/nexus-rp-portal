@@ -99,18 +99,49 @@ const Index = () => {
     }
   };
 
-  const handleConnectNow = () => {
-    if (!serverJoinLink) {
+  const handleConnectNow = async () => {
+    try {
+      // Fetch connect settings from database
+      const { data: connectData } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'connect_info')
+        .maybeSingle();
+
+      let connectInfo = {
+        connect_ip: 'join.dlrp.dk',
+        connect_port: 30121,
+        connect_enabled: true
+      };
+
+      if (connectData?.setting_value) {
+        connectInfo = JSON.parse(connectData.setting_value as string);
+      }
+
+      if (!connectInfo.connect_enabled) {
+        toast({
+          title: "Server Unavailable",
+          description: "The server connection is currently disabled.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const connectCommand = `connect ${connectInfo.connect_ip}:${connectInfo.connect_port}`;
+      await navigator.clipboard.writeText(connectCommand);
+      
       toast({
-        title: "Server Join Link Not Available",
-        description: "The server join link has not been configured yet. Please contact staff.",
+        title: "Connect Command Copied!",
+        description: `Press F8 in FiveM and paste: ${connectCommand}`,
+      });
+    } catch (error) {
+      console.error('Error copying connect command:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy connect command",
         variant: "destructive",
       });
-      return;
     }
-
-    // Try to open the FiveM link
-    window.location.href = serverJoinLink;
   };
 
   const handleDiscordClick = () => {
