@@ -976,84 +976,64 @@ const StaffPanel = () => {
         )}
 
         <Tabs value={selectedApplicationView} onValueChange={setSelectedApplicationView} className="space-y-6">
-          <div className="flex justify-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-64 justify-between bg-gaming-card border-gaming-border text-foreground hover:bg-gaming-dark"
-                >
-                  <span>
-                    {selectedApplicationView === 'pending' && `Pending Applications (${applications.filter(app => app.status === 'pending' && !app.closed).length})`}
-                    {selectedApplicationView === 'all-applications' && `Open Applications (${applications.filter(app => !app.closed).length})`}
-                    {selectedApplicationView === 'closed-applications' && `Closed Applications (${applications.filter(app => app.closed).length})`}
-                    {selectedApplicationView === 'app-types' && 'Application Types'}
-                    {selectedApplicationView === 'rules' && 'Rules Management'}
-                    {selectedApplicationView === 'staff' && 'Staff Management'}
-                    {selectedApplicationView === 'settings' && 'Settings'}
-                    {selectedApplicationView === 'content' && 'Homepage Content'}
-                  </span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64 bg-gaming-card border-gaming-border z-50">
-                <DropdownMenuItem 
-                  onClick={() => setSelectedApplicationView('pending')}
-                  className="cursor-pointer hover:bg-gaming-dark text-foreground"
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  Pending Applications ({applications.filter(app => app.status === 'pending' && !app.closed).length})
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedApplicationView('all-applications')}
-                  className="cursor-pointer hover:bg-gaming-dark text-foreground"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Open Applications ({applications.filter(app => !app.closed).length})
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedApplicationView('closed-applications')}
-                  className="cursor-pointer hover:bg-gaming-dark text-foreground"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Closed Applications ({applications.filter(app => app.closed).length})
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedApplicationView('app-types')}
-                  className="cursor-pointer hover:bg-gaming-dark text-foreground"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Application Types
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedApplicationView('rules')}
-                  className="cursor-pointer hover:bg-gaming-dark text-foreground"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Rules Management
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedApplicationView('staff')}
-                  className="cursor-pointer hover:bg-gaming-dark text-foreground"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Staff Management
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedApplicationView('settings')}
-                  className="cursor-pointer hover:bg-gaming-dark text-foreground"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedApplicationView('content')}
-                  className="cursor-pointer hover:bg-gaming-dark text-neon-purple"
-                >
-                  🎨 Homepage Content
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex justify-center overflow-x-auto">
+            <TabsList className="bg-gaming-card border-gaming-border flex-wrap">
+              <div className="mr-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="justify-between bg-gaming-card border-gaming-border text-foreground hover:bg-gaming-dark"
+                    >
+                      <span>
+                        {selectedApplicationView === 'pending' && `Pending Applications (${applications.filter(app => app.status === 'pending' && !app.closed).length})`}
+                        {selectedApplicationView === 'all-applications' && `Open Applications (${applications.filter(app => !app.closed).length})`}
+                        {selectedApplicationView === 'closed-applications' && `Closed Applications (${applications.filter(app => app.closed).length})`}
+                      </span>
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 bg-gaming-card border-gaming-border z-50">
+                    <DropdownMenuItem 
+                      onClick={() => setSelectedApplicationView('pending')}
+                      className="cursor-pointer hover:bg-gaming-dark text-foreground"
+                    >
+                      <Clock className="h-4 w-4 mr-2" />
+                      Pending Applications ({applications.filter(app => app.status === 'pending' && !app.closed).length})
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setSelectedApplicationView('all-applications')}
+                      className="cursor-pointer hover:bg-gaming-dark text-foreground"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Open Applications ({applications.filter(app => !app.closed).length})
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setSelectedApplicationView('closed-applications')}
+                      className="cursor-pointer hover:bg-gaming-dark text-foreground"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Closed Applications ({applications.filter(app => app.closed).length})
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <TabsTrigger value="app-types" className="data-[state=active]:bg-gaming-dark">
+                Application Types
+              </TabsTrigger>
+              <TabsTrigger value="rules" className="data-[state=active]:bg-gaming-dark">
+                Rules Management
+              </TabsTrigger>
+              <TabsTrigger value="staff" className="data-[state=active]:bg-gaming-dark">
+                Staff Management
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-gaming-dark">
+                Settings
+              </TabsTrigger>
+              <TabsTrigger value="content" className="data-[state=active]:bg-gaming-dark text-neon-purple">
+                🎨 Homepage Content
+              </TabsTrigger>
+            </TabsList>
           </div>
 
           {/* Pending Applications Tab */}
