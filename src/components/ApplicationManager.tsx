@@ -477,16 +477,17 @@ const DiscordSettingsPanel = ({ settings, onUpdate }: any) => {
       <div className="flex items-center space-x-3 mb-6">
         <Webhook className="h-6 w-6 text-neon-purple" />
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Discord Application Notifications</h2>
-          <p className="text-sm text-muted-foreground">Configure Discord webhooks for application status updates</p>
+          <h2 className="text-xl font-semibold text-foreground">Application Discord Notifications</h2>
+          <p className="text-sm text-muted-foreground">Configure Discord webhooks for application management (Staff Channel)</p>
         </div>
       </div>
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-foreground">Enable Discord Notifications</Label>
-            <p className="text-sm text-muted-foreground">Send notifications to Discord when applications are processed</p>
+            <Label className="text-foreground">Enable Application Notifications</Label>
+            <p className="text-sm text-muted-foreground">Send application notifications to your staff Discord channel</p>
+            <p className="text-xs text-neon-purple">⚠️ Use a dedicated staff channel - contains sensitive application data</p>
           </div>
           <Switch
             checked={localSettings.enabled}
@@ -497,7 +498,7 @@ const DiscordSettingsPanel = ({ settings, onUpdate }: any) => {
         {localSettings.enabled && (
           <>
             <div className="space-y-2">
-              <Label htmlFor="webhook-url" className="text-foreground">Discord Webhook URL</Label>
+              <Label htmlFor="webhook-url" className="text-foreground">Staff Discord Webhook URL</Label>
               <Input
                 id="webhook-url"
                 type="url"
@@ -506,45 +507,69 @@ const DiscordSettingsPanel = ({ settings, onUpdate }: any) => {
                 onChange={(e) => handleSettingChange('webhook_url', e.target.value)}
                 className="bg-gaming-dark border-gaming-border text-foreground"
               />
-              <p className="text-xs text-muted-foreground">
-                Create a webhook in your Discord server settings → Integrations → Webhooks
-              </p>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  Create a webhook in your <strong>staff Discord channel</strong> → Settings → Integrations → Webhooks
+                </p>
+                <p className="text-xs text-amber-400">
+                  🔒 <strong>Important:</strong> Use a private staff channel - this contains applicant personal information
+                </p>
+              </div>
             </div>
 
             <div className="space-y-4">
-              <Label className="text-foreground">Notification Types</Label>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-foreground">New Applications</Label>
-                  <p className="text-sm text-muted-foreground">Notify when new applications are submitted</p>
+              <div className="space-y-4">
+                <div className="p-4 bg-gaming-dark border border-gaming-border rounded-lg">
+                  <Label className="text-foreground font-medium flex items-center space-x-2">
+                    <Settings className="h-4 w-4 text-neon-blue" />
+                    <span>Staff Notifications</span>
+                  </Label>
+                  <p className="text-sm text-muted-foreground mb-4">Internal notifications for staff members only</p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-foreground">New Application Submissions</Label>
+                      <p className="text-sm text-muted-foreground">Notify staff when new applications are submitted</p>
+                      <p className="text-xs text-neon-blue">🔒 Staff Only - Not visible to applicants</p>
+                    </div>
+                    <Switch
+                      checked={localSettings.notify_submissions}
+                      onCheckedChange={(checked) => handleSettingChange('notify_submissions', checked)}
+                    />
+                  </div>
                 </div>
-                <Switch
-                  checked={localSettings.notify_submissions}
-                  onCheckedChange={(checked) => handleSettingChange('notify_submissions', checked)}
-                />
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-foreground">Application Approvals</Label>
-                  <p className="text-sm text-muted-foreground">Notify when applications are approved</p>
-                </div>
-                <Switch
-                  checked={localSettings.notify_approvals}
-                  onCheckedChange={(checked) => handleSettingChange('notify_approvals', checked)}
-                />
-              </div>
+                <div className="p-4 bg-gaming-dark border border-gaming-border rounded-lg">
+                  <Label className="text-foreground font-medium flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4 text-neon-green" />
+                    <span>Application Status Updates</span>
+                  </Label>
+                  <p className="text-sm text-muted-foreground mb-4">Notifications when applications are processed</p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-foreground">Application Approvals</Label>
+                        <p className="text-sm text-muted-foreground">Notify when applications are approved</p>
+                      </div>
+                      <Switch
+                        checked={localSettings.notify_approvals}
+                        onCheckedChange={(checked) => handleSettingChange('notify_approvals', checked)}
+                      />
+                    </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-foreground">Application Denials</Label>
-                  <p className="text-sm text-muted-foreground">Notify when applications are denied</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-foreground">Application Denials</Label>
+                        <p className="text-sm text-muted-foreground">Notify when applications are denied</p>
+                      </div>
+                      <Switch
+                        checked={localSettings.notify_denials}
+                        onCheckedChange={(checked) => handleSettingChange('notify_denials', checked)}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <Switch
-                  checked={localSettings.notify_denials}
-                  onCheckedChange={(checked) => handleSettingChange('notify_denials', checked)}
-                />
               </div>
             </div>
 
