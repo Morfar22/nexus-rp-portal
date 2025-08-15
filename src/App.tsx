@@ -41,7 +41,11 @@ const App = () => (
                 <StaffPanel />
               </StaffProtectedRoute>
             } />
-            <Route path="/servers" element={<ServerManagement />} />
+            <Route path="/servers" element={
+              <StaffProtectedRoute>
+                <ServerManagement />
+              </StaffProtectedRoute>
+            } />
             <Route path="/users" element={
               <StaffProtectedRoute>
                 <UserManagement />

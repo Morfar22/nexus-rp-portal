@@ -2,9 +2,38 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Server, LogIn, LogOut, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
+  const [isStaff, setIsStaff] = useState(false);
+
+  useEffect(() => {
+    const checkStaffRole = async () => {
+      if (!user) {
+        setIsStaff(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .rpc('is_staff', { _user_id: user.id });
+
+        if (error) {
+          console.error('Error checking staff role:', error);
+          setIsStaff(false);
+        } else {
+          setIsStaff(data);
+        }
+      } catch (error) {
+        console.error('Error checking staff role:', error);
+        setIsStaff(false);
+      }
+    };
+
+    checkStaffRole();
+  }, [user]);
 
   return (
     <nav className="border-b border-gaming-border bg-gaming-card/80 backdrop-blur-md sticky top-0 z-50">
@@ -32,15 +61,19 @@ const Navbar = () => {
           <Link to="/team" className="text-foreground hover:text-neon-purple transition-colors">
             Our Team
           </Link>
-          <Link to="/staff" className="text-foreground hover:text-neon-purple transition-colors">
-            Staff Panel
-          </Link>
-          <Link to="/servers" className="text-foreground hover:text-neon-purple transition-colors">
-            Servers
-          </Link>
-          <Link to="/users" className="text-foreground hover:text-neon-purple transition-colors">
-            Users
-          </Link>
+          {isStaff && (
+            <>
+              <Link to="/staff" className="text-foreground hover:text-neon-purple transition-colors">
+                Staff Panel
+              </Link>
+              <Link to="/servers" className="text-foreground hover:text-neon-purple transition-colors">
+                Servers
+              </Link>
+              <Link to="/users" className="text-foreground hover:text-neon-purple transition-colors">
+                Users
+              </Link>
+            </>
+          )}
         </div>
         
         <div className="flex items-center space-x-4">
