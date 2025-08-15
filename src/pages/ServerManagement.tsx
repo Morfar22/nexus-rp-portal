@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Server, Plus, Activity, Users, Clock, Zap, Trash2 } from 'lucide-react';
+import { Server, Plus, Activity, Users, Clock, Zap, Trash2, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
+import ServerStatsManager from '@/components/ServerStatsManager';
 
 interface ServerData {
   id: string;
@@ -42,6 +43,7 @@ export default function ServerManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
   const [checkingStaff, setCheckingStaff] = useState(true);
+  const [showStatsManager, setShowStatsManager] = useState(false);
   const [newServer, setNewServer] = useState({
     name: '',
     ip_address: '',
@@ -284,13 +286,23 @@ export default function ServerManagement() {
           </div>
           
           {isStaff && (
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-neon-purple hover:bg-neon-purple/80">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Server
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => setShowStatsManager(!showStatsManager)}
+                variant={showStatsManager ? "default" : "outline"}
+                className={showStatsManager ? "bg-neon-green hover:bg-neon-green/80" : ""}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {showStatsManager ? "Hide Stats Manager" : "Manage Stats"}
               </Button>
-            </DialogTrigger>
+              
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-neon-purple hover:bg-neon-purple/80">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Server
+                </Button>
+              </DialogTrigger>
             <DialogContent className="bg-gaming-card border-gaming-border">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Add New Server</DialogTitle>
@@ -335,8 +347,16 @@ export default function ServerManagement() {
               </div>
             </DialogContent>
             </Dialog>
+            </div>
           )}
         </div>
+
+        {/* Stats Manager Section */}
+        {isStaff && showStatsManager && (
+          <div className="mb-8">
+            <ServerStatsManager />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {servers.map((server) => {
