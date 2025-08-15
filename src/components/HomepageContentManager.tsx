@@ -81,6 +81,8 @@ const HomepageContentManager = ({ userId }: HomepageContentManagerProps) => {
           setting_key: 'homepage_features',
           setting_value: homepageFeatures as any,
           created_by: userId
+        }, {
+          onConflict: 'setting_key'
         });
 
       if (error) throw error;
@@ -107,6 +109,8 @@ const HomepageContentManager = ({ userId }: HomepageContentManagerProps) => {
           setting_key: 'homepage_cta_section',
           setting_value: homepageCta as any,
           created_by: userId
+        }, {
+          onConflict: 'setting_key'
         });
 
       if (error) throw error;
