@@ -851,7 +851,51 @@ const StaffPanel = () => {
     <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        {/* Emergency Reset Button */}
+        {/* Emergency Reset Button - Always Visible */}
+        <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-blue-400 font-medium">UI Controls</span>
+              <p className="text-sm text-muted-foreground">Having issues with buttons or toggles?</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={resetStates}
+                variant="secondary"
+                size="sm"
+              >
+                Reset UI States
+              </Button>
+              <Button
+                onClick={() => {
+                  // Reset Discord logging settings to false
+                  const resetDiscordSettings = {
+                    enabled: false,
+                    webhook_url: serverSettings.discord_logging?.webhook_url || "",
+                    log_rule_changes: false,
+                    log_user_actions: false,
+                    log_application_actions: false,
+                    log_system_changes: false
+                  };
+                  setServerSettings({
+                    ...serverSettings,
+                    discord_logging: resetDiscordSettings
+                  });
+                  toast({
+                    title: "Discord Logging Reset",
+                    description: "All Discord logging toggles have been turned off.",
+                  });
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Reset Discord Toggles
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Emergency Reset Button for when buttons are disabled */}
         {isSubmitting && (
           <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
             <div className="flex items-center justify-between">
@@ -861,7 +905,7 @@ const StaffPanel = () => {
                 variant="destructive"
                 size="sm"
               >
-                Reset UI States
+                Emergency Reset
               </Button>
             </div>
           </div>
