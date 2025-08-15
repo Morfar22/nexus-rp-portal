@@ -1,3 +1,4 @@
+import React from 'react';
 import { useServerSettings } from '@/hooks/useServerSettings';
 import { Card } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
@@ -8,7 +9,12 @@ interface ApplicationGateProps {
 }
 
 const ApplicationGate: React.FC<ApplicationGateProps> = ({ children }) => {
-  const { settings, loading } = useServerSettings();
+  const { settings, loading, refreshSettings } = useServerSettings();
+
+  // Refresh settings when component mounts to ensure latest data
+  React.useEffect(() => {
+    refreshSettings();
+  }, [refreshSettings]);
 
   if (loading) {
     return (
