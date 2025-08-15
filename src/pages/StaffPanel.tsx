@@ -425,6 +425,7 @@ const StaffPanel = () => {
 
         if (error) throw error;
 
+        console.log('Rule updated, calling Discord log...');
         // Log rule change to Discord
         await sendDiscordLog('rule_change', {
           action: 'rule_updated',
@@ -443,6 +444,7 @@ const StaffPanel = () => {
 
         if (error) throw error;
 
+        console.log('Rule created, calling Discord log...');
         // Log rule change to Discord
         await sendDiscordLog('rule_change', {
           action: 'rule_created',
