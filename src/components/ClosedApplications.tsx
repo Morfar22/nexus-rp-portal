@@ -27,13 +27,21 @@ const ClosedApplications = () => {
 
   const fetchClosedApplications = async () => {
     try {
+      console.log('Fetching closed applications...');
       const { data, error } = await supabase
         .from('applications')
         .select('*')
         .eq('closed', true)
         .order('closed_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Closed applications query result:', { data, error });
+      
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Found closed applications:', data?.length || 0);
       setClosedApplications(data || []);
     } catch (error) {
       console.error('Error fetching closed applications:', error);
