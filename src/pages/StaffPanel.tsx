@@ -365,6 +365,7 @@ const StaffPanel = () => {
     }
   };
 
+  const handleDeleteRule = async (ruleId: string) => {
     try {
       const { error } = await supabase
         .from('rules')
