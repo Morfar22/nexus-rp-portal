@@ -166,13 +166,50 @@ const Apply = () => {
         application_type_id: selectedApplicationType.id,
       };
 
-      // Add form field data
+      // Map form field data to database columns based on field labels
       const submitFormFields = selectedApplicationType.form_fields as any[];
       submitFormFields?.forEach((field: any) => {
-        if (field.id === 'age') {
-          applicationData[field.id] = parseInt(formData[field.id]) || 0;
-        } else {
-          applicationData[field.id] = formData[field.id] || '';
+        const fieldValue = formData[field.id] || '';
+        
+        // Map field labels to database columns
+        switch (field.label?.toLowerCase()) {
+          case 'steam name':
+          case 'steam username':
+            applicationData.steam_name = fieldValue;
+            break;
+          case 'discord tag':
+          case 'discord username':
+            applicationData.discord_tag = fieldValue;
+            break;
+          case 'discord name':
+            applicationData.discord_name = fieldValue;
+            break;
+          case 'fivem name':
+          case 'fivem username':
+            applicationData.fivem_name = fieldValue;
+            break;
+          case 'age':
+            applicationData.age = parseInt(fieldValue) || 18;
+            break;
+          case 'character backstory':
+          case 'backstory':
+            applicationData.character_backstory = fieldValue;
+            break;
+          case 'rp experience':
+          case 'roleplay experience':
+          case 'experience':
+            applicationData.rp_experience = fieldValue;
+            break;
+          default:
+            // For any unmapped fields, try to infer from field id or skip
+            if (field.id.includes('steam')) applicationData.steam_name = fieldValue;
+            else if (field.id.includes('discord_tag')) applicationData.discord_tag = fieldValue;
+            else if (field.id.includes('discord')) applicationData.discord_name = fieldValue;
+            else if (field.id.includes('fivem')) applicationData.fivem_name = fieldValue;
+            else if (field.id.includes('age')) applicationData.age = parseInt(fieldValue) || 18;
+            else if (field.id.includes('backstory')) applicationData.character_backstory = fieldValue;
+            else if (field.id.includes('experience')) applicationData.rp_experience = fieldValue;
+            break;
         }
       });
 
