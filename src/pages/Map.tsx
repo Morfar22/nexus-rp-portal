@@ -160,19 +160,34 @@ const Map = () => {
   ];
 
   useEffect(() => {
-    // Try to get Mapbox token from environment/secrets
+    // Get Mapbox token from Supabase secrets
     const initializeMap = async () => {
       try {
-        // For production, this would come from Supabase secrets
-        // For demo, we'll use a token input
+        // Try to get token from Supabase edge function that accesses secrets
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        
+        if (data?.token) {
+          setMapboxToken(data.token);
+          setIsTokenSet(true);
+          initMap(data.token);
+        } else {
+          // Fallback to localStorage for development
+          const storedToken = localStorage.getItem('mapbox_token');
+          if (storedToken) {
+            setMapboxToken(storedToken);
+            setIsTokenSet(true);
+            initMap(storedToken);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        // Fallback to localStorage
         const storedToken = localStorage.getItem('mapbox_token');
         if (storedToken) {
           setMapboxToken(storedToken);
           setIsTokenSet(true);
           initMap(storedToken);
         }
-      } catch (error) {
-        console.error('Error initializing map:', error);
       }
     };
 
@@ -501,7 +516,10 @@ const Map = () => {
                 </p>
               </div>
               
-              <Button onClick={handleTokenSubmit} className="w-full" variant="neon">
+              <Button 
+                onClick={handleTokenSubmit}
+                className="w-full bg-neon-purple hover:bg-neon-purple/80"
+              >
                 Initialize Map
               </Button>
             </div>
@@ -515,123 +533,157 @@ const Map = () => {
     <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       
-      {/* Map Controls */}
-      <div className="absolute top-20 left-4 z-10 space-y-2">
-        <Card className="p-4 bg-gaming-card/90 border-gaming-border backdrop-blur-sm">
-          <div className="flex items-center space-x-2 mb-4">
-            <Activity className="h-5 w-5 text-neon-purple" />
-            <h3 className="text-lg font-semibold text-foreground">Live Map Controls</h3>
-          </div>
-          
-          <div className="space-y-3">
+      {/* Map Controls Panel */}
+      <div className="absolute top-20 left-4 z-10 space-y-4">
+        <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-foreground text-sm">Show Servers</Label>
-              <Switch
-                checked={showServers}
-                onCheckedChange={setShowServers}
-              />
+              <h3 className="text-lg font-semibold text-foreground">Map Controls</h3>
+              <Activity className="h-5 w-5 text-neon-purple" />
             </div>
             
-            <div className="flex items-center justify-between">
-              <Label className="text-foreground text-sm">Show Players</Label>
-              <Switch
-                checked={showPlayers}
-                onCheckedChange={setShowPlayers}
-              />
+            {/* Server Info */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Servers:</span>
+                <Badge variant="secondary">{servers.length}</Badge>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Players:</span>
+                <Badge variant="secondary">{players.length}</Badge>
+              </div>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <Label className="text-foreground text-sm">Auto Refresh</Label>
-              <Switch
-                checked={autoRefresh}
-                onCheckedChange={setAutoRefresh}
-              />
+
+            {/* Toggle Controls */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground">Show Players</span>
+                <Switch
+                  checked={showPlayers}
+                  onCheckedChange={(checked) => {
+                    setShowPlayers(checked);
+                    if (map.current) {
+                      const playerMarkers = document.querySelectorAll('.player-marker');
+                      playerMarkers.forEach(marker => marker.remove());
+                      if (checked) addPlayerMarkers();
+                    }
+                  }}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground">Show Servers</span>
+                <Switch
+                  checked={showServers}
+                  onCheckedChange={(checked) => {
+                    setShowServers(checked);
+                    if (map.current) {
+                      const serverMarkers = document.querySelectorAll('.server-marker');
+                      serverMarkers.forEach(marker => marker.remove());
+                      if (checked) addServerMarkers();
+                    }
+                  }}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground">Auto Refresh</span>
+                <Switch
+                  checked={autoRefresh}
+                  onCheckedChange={setAutoRefresh}
+                />
+              </div>
             </div>
-            
+
+            {/* Refresh Interval */}
             {autoRefresh && (
               <div>
-                <Label className="text-foreground text-sm">Refresh Interval (seconds)</Label>
+                <Label className="text-sm text-foreground">Refresh Interval (seconds)</Label>
                 <Input
                   type="number"
+                  min="5"
+                  max="300"
                   value={refreshInterval}
                   onChange={(e) => setRefreshInterval(parseInt(e.target.value) || 30)}
-                  min="10"
-                  max="300"
-                  className="bg-gaming-dark border-gaming-border text-foreground text-sm"
+                  className="bg-gaming-dark border-gaming-border text-foreground mt-1"
                 />
               </div>
             )}
-            
-            <Button onClick={refreshMap} size="sm" variant="outline" className="w-full">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh Now
-            </Button>
-          </div>
-        </Card>
-      </div>
 
-      {/* Map Legend */}
-      <div className="absolute top-20 right-4 z-10">
-        <Card className="p-4 bg-gaming-card/90 border-gaming-border backdrop-blur-sm">
-          <h4 className="text-sm font-semibold text-foreground mb-3">Legend</h4>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-              <span className="text-foreground">Server Online</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-yellow-500 rounded-full border-2 border-white"></div>
-              <span className="text-foreground">Server Maintenance</span>
-            </div>
-            <hr className="border-gaming-border my-2" />
-            <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-xs">🚔</div>
-              <span className="text-foreground">Police</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-xs">🚑</div>
-              <span className="text-foreground">EMS/Paramedic</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-xs">🔧</div>
-              <span className="text-foreground">Mechanic</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-xs">👤</div>
-              <span className="text-foreground">Civilian</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-purple-500 rounded-full border-2 border-white flex items-center justify-center text-xs">👑</div>
-              <span className="text-foreground">Admin</span>
+            {/* Action Buttons */}
+            <div className="flex space-x-2">
+              <Button
+                size="sm"
+                onClick={refreshMap}
+                className="flex-1 bg-neon-purple hover:bg-neon-purple/80"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (map.current) {
+                    map.current.flyTo({
+                      center: [-118.2437, 34.0522],
+                      zoom: 10,
+                      duration: 2000
+                    });
+                  }
+                }}
+                className="border-gaming-border"
+              >
+                <MapPin className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </Card>
-      </div>
 
-      {/* Server Stats */}
-      <div className="absolute bottom-4 left-4 z-10">
-        <Card className="p-4 bg-gaming-card/90 border-gaming-border backdrop-blur-sm">
-          <div className="flex items-center space-x-2 mb-3">
-            <Server className="h-5 w-5 text-neon-purple" />
+        {/* Job Filter Panel */}
+        <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-foreground">Filter by Job</h4>
+            <div className="space-y-2">
+              {[
+                { job: 'police', icon: '🚔', color: '#3B82F6', label: 'Police' },
+                { job: 'ems', icon: '🚑', color: '#EF4444', label: 'EMS' },
+                { job: 'mechanic', icon: '🔧', color: '#F59E0B', label: 'Mechanic' },
+                { job: 'civilian', icon: '👤', color: '#10B981', label: 'Civilian' }
+              ].map(({ job, icon, color, label }) => {
+                const count = players.filter(p => p.job === job).length;
+                return (
+                  <div key={job} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2">
+                      <span style={{ color }}>{icon}</span>
+                      <span className="text-foreground">{label}</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs">{count}</Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Card>
+
+        {/* Server Status Panel */}
+        <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+          <div className="space-y-3">
             <h4 className="text-sm font-semibold text-foreground">Server Status</h4>
-          </div>
-          <div className="space-y-2">
             {servers.map((server) => (
-              <div key={server.id} className="flex items-center justify-between text-xs">
-                <span className="text-foreground">{server.name}</span>
-                <div className="flex items-center space-x-2">
+              <div key={server.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-foreground">{server.name}</span>
                   <Badge 
-                    variant="outline" 
-                    className={
-                      server.status === 'online' 
-                        ? "border-green-500 text-green-500" 
-                        : server.status === 'offline'
-                        ? "border-red-500 text-red-500"
-                        : "border-yellow-500 text-yellow-500"
-                    }
+                    variant={server.status === 'online' ? 'default' : 'destructive'}
+                    className="text-xs"
                   >
-                    {server.playerCount}/{server.maxPlayers}
+                    {server.status}
                   </Badge>
+                </div>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <Users className="h-3 w-3 mr-1" />
+                  {server.playerCount}/{server.maxPlayers}
                 </div>
               </div>
             ))}
@@ -639,8 +691,64 @@ const Map = () => {
         </Card>
       </div>
 
-      {/* Map Container */}
-      <div ref={mapContainer} className="w-full h-screen" />
+      {/* Main Map Container */}
+      <div className="relative w-full h-screen">
+        <div ref={mapContainer} className="absolute inset-0" />
+        
+        {/* Map Overlay for loading */}
+        {!map.current && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neon-purple mx-auto mb-4"></div>
+              <p className="text-foreground">Loading map...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Map Legend */}
+        <div className="absolute bottom-4 right-4 z-10">
+          <Card className="p-3 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+            <h4 className="text-sm font-semibold text-foreground mb-2">Legend</h4>
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                <span className="text-foreground">Online Server</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+                <span className="text-foreground">Offline Server</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span style={{ color: '#3B82F6' }}>🚔</span>
+                <span className="text-foreground">Police</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span style={{ color: '#EF4444' }}>🚑</span>
+                <span className="text-foreground">EMS</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span style={{ color: '#10B981' }}>👤</span>
+                <span className="text-foreground">Civilian</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Real-time Status Indicator */}
+        <div className="absolute top-4 right-4 z-10">
+          <Card className="p-2 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}></div>
+              <span className="text-xs text-foreground">
+                {autoRefresh ? 'Live' : 'Paused'}
+              </span>
+              {autoRefresh && (
+                <Zap className="h-3 w-3 text-neon-purple" />
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
