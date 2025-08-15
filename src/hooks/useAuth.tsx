@@ -55,17 +55,49 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('🔐 Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
-        setIsBanned(false); // Reset ban status, let protected routes handle it
+        setIsBanned(false); // Reset ban status, let other checks handle it
         setLoading(false);
+        
+        // Check ban status immediately when user signs in or session loads
+        if (event === 'SIGNED_IN' || (event === 'TOKEN_REFRESHED' && session?.user)) {
+          setTimeout(async () => {
+            try {
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('banned, username')
+                .eq('id', session.user.id)
+                .single();
+
+              if (error) {
+                console.error('Error checking ban status:', error);
+                return;
+              }
+
+              if (profile?.banned) {
+                console.log('🚨 User is banned, signing out immediately...');
+                setIsBanned(true);
+                await supabase.auth.signOut({ scope: 'global' });
+                Object.keys(localStorage).forEach((key) => {
+                  if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+                    localStorage.removeItem(key);
+                  }
+                });
+                window.location.href = '/auth';
+              }
+            } catch (error) {
+              console.error('Error in ban check:', error);
+            }
+          }, 100);
+        }
       }
     );
 
-    // THEN check for existing session
+    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -75,6 +107,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Periodic ban check - check every 30 seconds as backup
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const checkBanStatus = async () => {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('banned')
+          .eq('id', user.id)
+          .single();
+
+        if (error) return;
+
+        if (profile?.banned) {
+          console.log('🚨 User ban detected in periodic check, signing out...');
+          setIsBanned(true);
+          await supabase.auth.signOut({ scope: 'global' });
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+              localStorage.removeItem(key);
+            }
+          });
+          window.location.href = '/auth';
+        }
+      } catch (error) {
+        console.error('Error in periodic ban check:', error);
+      }
+    };
+
+    // Check immediately
+    checkBanStatus();
+    
+    // Then check every 30 seconds
+    const interval = setInterval(checkBanStatus, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   // Real-time ban detection - immediately kick out users when banned
   useEffect(() => {
