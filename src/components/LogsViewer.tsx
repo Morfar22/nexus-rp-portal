@@ -30,49 +30,63 @@ const LogsViewer = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // Fetch auth logs
-      const authQuery = `
-        select id, auth_logs.timestamp, event_message, metadata.level, metadata.status, metadata.path, metadata.msg as msg, metadata.error 
-        from auth_logs
-        cross join unnest(metadata) as metadata
-        order by timestamp desc
-        limit 100
-      `;
+      // Fetch logs in parallel
+      const [authRes, dbRes, edgeRes] = await Promise.all([
+        supabase.functions.invoke('fetch-analytics-logs', {
+          body: { logType: 'auth', limit: 100 }
+        }),
+        supabase.functions.invoke('fetch-analytics-logs', {
+          body: { logType: 'database', limit: 100 }
+        }),
+        supabase.functions.invoke('fetch-analytics-logs', {
+          body: { logType: 'functions', limit: 100 }
+        })
+      ]);
 
-      // Fetch database logs
-      const dbQuery = `
-        select identifier, postgres_logs.timestamp, id, event_message, parsed.error_severity 
-        from postgres_logs
-        cross join unnest(metadata) as m
-        cross join unnest(m.parsed) as parsed
-        order by timestamp desc
-        limit 100
-      `;
+      // Process auth logs
+      if (authRes.data?.success && authRes.data?.data) {
+        const processedAuthLogs = authRes.data.data.map((log: any) => ({
+          id: log.id || `auth-${Date.now()}-${Math.random()}`,
+          timestamp: log.timestamp,
+          level: log.level || 'info',
+          event_message: log.event_message || '',
+          msg: log.msg,
+          path: log.path,
+          status: log.status,
+          error: log.error
+        }));
+        setAuthLogs(processedAuthLogs);
+      }
 
-      // Fetch edge function logs
-      const edgeQuery = `
-        select id, function_edge_logs.timestamp, event_message, response.status_code, request.method, m.function_id, m.execution_time_ms, m.deployment_id, m.version 
-        from function_edge_logs
-        cross join unnest(metadata) as m
-        cross join unnest(m.response) as response
-        cross join unnest(m.request) as request
-        order by timestamp desc
-        limit 100
-      `;
+      // Process database logs
+      if (dbRes.data?.success && dbRes.data?.data) {
+        const processedDbLogs = dbRes.data.data.map((log: any) => ({
+          id: log.id || `db-${Date.now()}-${Math.random()}`,
+          timestamp: log.timestamp,
+          level: log.error_severity || 'info',
+          event_message: log.event_message || '',
+          msg: log.event_message,
+          path: null,
+          status: null,
+          error: null
+        }));
+        setDbLogs(processedDbLogs);
+      }
 
-      // Using the analytics query tool instead
-      // For now, we'll simulate the data structure or use a simpler approach
-      // TODO: Implement proper analytics query method
-      
-      // For demo purposes, we'll set empty arrays
-      setAuthLogs([]);
-      setDbLogs([]);
-      setEdgeLogs([]);
-      
-      toast({
-        title: "Info",
-        description: "Logs functionality needs backend analytics query implementation",
-      });
+      // Process edge function logs
+      if (edgeRes.data?.success && edgeRes.data?.data) {
+        const processedEdgeLogs = edgeRes.data.data.map((log: any) => ({
+          id: log.id || `edge-${Date.now()}-${Math.random()}`,
+          timestamp: log.timestamp,
+          level: log.status_code >= 400 ? 'error' : 'info',
+          event_message: log.event_message || '',
+          msg: `${log.method || 'GET'} - ${log.function_id || 'unknown'} (${log.execution_time_ms || 0}ms)`,
+          path: log.function_id,
+          status: log.status_code?.toString(),
+          error: null
+        }));
+        setEdgeLogs(processedEdgeLogs);
+      }
 
     } catch (error) {
       console.error('Error fetching logs:', error);
