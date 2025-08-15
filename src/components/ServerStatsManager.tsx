@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Clock, Globe, Zap, Save, RefreshCw } from 'lucide-react';
+import { Users, Clock, Globe, Zap, Save, RefreshCw, Play } from 'lucide-react';
 
 interface ServerStats {
   players_online: number;
@@ -23,6 +23,11 @@ interface ConnectSettings {
   connect_ip: string;
   connect_port: number;
   connect_enabled: boolean;
+}
+
+interface ServerInfo {
+  server_ip: string;
+  auto_fetch_enabled: boolean;
 }
 
 const ServerStatsManager = () => {
@@ -43,12 +48,19 @@ const ServerStatsManager = () => {
     connect_enabled: true
   });
   
+  const [serverInfo, setServerInfo] = useState<ServerInfo>({
+    server_ip: '',
+    auto_fetch_enabled: false
+  });
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
     fetchCurrentStats();
     fetchConnectSettings();
+    fetchServerInfo();
   }, []);
 
   const fetchCurrentStats = async () => {
@@ -167,6 +179,111 @@ const ServerStatsManager = () => {
     }
   };
 
+  const fetchServerInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('*')
+        .in('setting_key', ['server_ip', 'auto_fetch_enabled']);
+
+      if (error) {
+        console.error('Error fetching server info:', error);
+        return;
+      }
+
+      const serverIpSetting = data?.find(s => s.setting_key === 'server_ip');
+      const autoFetchSetting = data?.find(s => s.setting_key === 'auto_fetch_enabled');
+
+      setServerInfo({
+        server_ip: String(serverIpSetting?.setting_value || ''),
+        auto_fetch_enabled: autoFetchSetting?.setting_value === true || autoFetchSetting?.setting_value === 'true'
+      });
+    } catch (error) {
+      console.error('Error fetching server info:', error);
+    }
+  };
+
+  const fetchLiveStats = async () => {
+    if (!serverInfo.server_ip) {
+      toast({
+        title: "Error",
+        description: "Server IP not configured. Please set it in server settings first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFetching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-fetch-server-stats', {
+        method: 'POST',
+        body: {}
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        await fetchCurrentStats(); // Refresh the displayed stats
+        toast({
+          title: "Success",
+          description: "Live stats fetched successfully from server",
+        });
+      } else {
+        throw new Error(data?.error || 'Failed to fetch live stats');
+      }
+    } catch (error) {
+      console.error('Error fetching live stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch live stats from server",
+        variant: "destructive",
+      });
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const saveServerInfo = async () => {
+    setSaving(true);
+    try {
+      // Save server IP
+      const { error: ipError } = await supabase
+        .from('server_settings')
+        .upsert([{
+          setting_key: 'server_ip',
+          setting_value: serverInfo.server_ip,
+          updated_at: new Date().toISOString()
+        }]);
+
+      if (ipError) throw ipError;
+
+      // Save auto fetch setting
+      const { error: autoFetchError } = await supabase
+        .from('server_settings')
+        .upsert([{
+          setting_key: 'auto_fetch_enabled',
+          setting_value: serverInfo.auto_fetch_enabled,
+          updated_at: new Date().toISOString()
+        }]);
+
+      if (autoFetchError) throw autoFetchError;
+
+      toast({
+        title: "Success",
+        description: "Server settings updated successfully",
+      });
+    } catch (error) {
+      console.error('Error saving server info:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update server settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const resetToDefaults = () => {
     setStats({
       players_online: 0,
@@ -193,117 +310,129 @@ const ServerStatsManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Server Stats Management */}
+      {/* Live Server Connection */}
       <Card className="bg-gaming-card border-gaming-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center">
-            <Users className="w-5 h-5 mr-2 text-neon-purple" />
-            Server Stats Management
+            <Globe className="w-5 h-5 mr-2 text-neon-green" />
+            Live Server Connection
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="server_ip" className="text-sm text-muted-foreground">
+                Game Server IP Address
+              </Label>
+              <Input
+                id="server_ip"
+                value={serverInfo.server_ip}
+                onChange={(e) => setServerInfo({ ...serverInfo, server_ip: e.target.value })}
+                placeholder="127.0.0.1"
+                className="bg-background border-input"
+              />
+              <p className="text-xs text-muted-foreground">
+                The IP address of your FiveM server for fetching live stats
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Auto-Fetch Mode</Label>
+              <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                  checked={serverInfo.auto_fetch_enabled}
+                  onCheckedChange={(checked) => setServerInfo({ ...serverInfo, auto_fetch_enabled: checked })}
+                />
+                <Badge variant={serverInfo.auto_fetch_enabled ? "default" : "secondary"}>
+                  {serverInfo.auto_fetch_enabled ? "Enabled" : "Disabled"}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Automatically fetch stats from server every few minutes
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button onClick={saveServerInfo} disabled={saving} className="bg-neon-green hover:bg-neon-green/80">
+              {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Settings
+            </Button>
+            <Button onClick={fetchLiveStats} disabled={fetching || !serverInfo.server_ip} className="bg-neon-purple hover:bg-neon-purple/80">
+              {fetching ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+              Fetch Live Stats Now
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Current Server Stats Display */}
+      <Card className="bg-gaming-card border-gaming-border">
+        <CardHeader>
+          <CardTitle className="text-foreground flex items-center justify-between">
+            <div className="flex items-center">
+              <Users className="w-5 h-5 mr-2 text-neon-purple" />
+              Current Server Stats
+            </div>
+            <Badge variant={stats.server_online ? "default" : "destructive"}>
+              {stats.server_online ? "Online" : "Offline"}
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="players_online" className="text-sm text-muted-foreground">
+              <Label className="text-sm text-muted-foreground">
                 <Users className="w-4 h-4 inline mr-1" />
                 Players Online
               </Label>
-              <Input
-                id="players_online"
-                type="number"
-                min="0"
-                max={stats.max_players}
-                value={stats.players_online}
-                onChange={(e) => setStats({ ...stats, players_online: parseInt(e.target.value) || 0 })}
-                className="bg-background border-input"
-              />
+              <div className="p-2 bg-background border border-input rounded text-center font-medium">
+                {stats.players_online} / {stats.max_players}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="max_players" className="text-sm text-muted-foreground">
-                <Users className="w-4 h-4 inline mr-1" />
-                Max Players
-              </Label>
-              <Input
-                id="max_players"
-                type="number"
-                min="1"
-                value={stats.max_players}
-                onChange={(e) => setStats({ ...stats, max_players: parseInt(e.target.value) || 48 })}
-                className="bg-background border-input"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="queue_count" className="text-sm text-muted-foreground">
+              <Label className="text-sm text-muted-foreground">
                 <Globe className="w-4 h-4 inline mr-1" />
                 Queue Count
               </Label>
-              <Input
-                id="queue_count"
-                type="number"
-                min="0"
-                value={stats.queue_count}
-                onChange={(e) => setStats({ ...stats, queue_count: parseInt(e.target.value) || 0 })}
-                className="bg-background border-input"
-              />
+              <div className="p-2 bg-background border border-input rounded text-center font-medium">
+                {stats.queue_count}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ping_ms" className="text-sm text-muted-foreground">
-                <Zap className="w-4 h-4 inline mr-1" />
-                Ping (ms)
-              </Label>
-              <Input
-                id="ping_ms"
-                type="number"
-                min="1"
-                value={stats.ping_ms}
-                onChange={(e) => setStats({ ...stats, ping_ms: parseInt(e.target.value) || 23 })}
-                className="bg-background border-input"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="uptime_percentage" className="text-sm text-muted-foreground">
+              <Label className="text-sm text-muted-foreground">
                 <Clock className="w-4 h-4 inline mr-1" />
-                Uptime Percentage
+                Uptime
               </Label>
-              <Input
-                id="uptime_percentage"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={stats.uptime_percentage}
-                onChange={(e) => setStats({ ...stats, uptime_percentage: parseFloat(e.target.value) || 100 })}
-                className="bg-background border-input"
-              />
+              <div className="p-2 bg-background border border-input rounded text-center font-medium">
+                {stats.uptime_percentage.toFixed(1)}%
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Server Status</Label>
-              <div className="flex items-center space-x-2 pt-2">
-                <Switch
-                  checked={stats.server_online}
-                  onCheckedChange={(checked) => setStats({ ...stats, server_online: checked })}
-                />
-                <Badge variant={stats.server_online ? "default" : "destructive"}>
-                  {stats.server_online ? "Online" : "Offline"}
-                </Badge>
+              <Label className="text-sm text-muted-foreground">
+                <Zap className="w-4 h-4 inline mr-1" />
+                Ping
+              </Label>
+              <div className="p-2 bg-background border border-input rounded text-center font-medium">
+                {stats.ping_ms}ms
               </div>
             </div>
           </div>
 
+          <div className="p-4 bg-background/50 rounded-lg border border-gaming-border">
+            <p className="text-sm text-muted-foreground mb-1">Last Updated:</p>
+            <p className="text-sm text-foreground">
+              {new Date(stats.last_updated).toLocaleString()}
+            </p>
+          </div>
+
           <div className="flex gap-3">
-            <Button onClick={saveStats} disabled={saving} className="bg-neon-purple hover:bg-neon-purple/80">
-              {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Stats
-            </Button>
-            <Button onClick={resetToDefaults} variant="outline">
-              Reset to Defaults
+            <Button onClick={fetchLiveStats} disabled={fetching || !serverInfo.server_ip} className="bg-neon-purple hover:bg-neon-purple/80">
+              {fetching ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              Refresh Stats
             </Button>
           </div>
         </CardContent>
