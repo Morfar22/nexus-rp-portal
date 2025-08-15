@@ -47,7 +47,7 @@ const Apply = () => {
           const initialFormData: Record<string, any> = {};
           const formFields = data[0].form_fields as any[];
           formFields?.forEach((field: any) => {
-            initialFormData[field.name] = field.type === 'number' ? 0 : '';
+            initialFormData[field.id] = field.type === 'number' ? 0 : '';
           });
           setFormData(initialFormData);
         }
@@ -136,7 +136,7 @@ const Apply = () => {
       const newFormData: Record<string, any> = {};
       const formFields = selectedType.form_fields as any[];
       formFields?.forEach((field: any) => {
-        newFormData[field.name] = field.type === 'number' ? 0 : '';
+        newFormData[field.id] = field.type === 'number' ? 0 : '';
       });
       setFormData(newFormData);
     }
@@ -169,10 +169,10 @@ const Apply = () => {
       // Add form field data
       const submitFormFields = selectedApplicationType.form_fields as any[];
       submitFormFields?.forEach((field: any) => {
-        if (field.name === 'age') {
-          applicationData[field.name] = parseInt(formData[field.name]) || 0;
+        if (field.id === 'age') {
+          applicationData[field.id] = parseInt(formData[field.id]) || 0;
         } else {
-          applicationData[field.name] = formData[field.name] || '';
+          applicationData[field.id] = formData[field.id] || '';
         }
       });
 
@@ -242,7 +242,7 @@ const Apply = () => {
       const resetFormData: Record<string, any> = {};
       const resetFormFields = selectedApplicationType.form_fields as any[];
       resetFormFields?.forEach((field: any) => {
-        resetFormData[field.name] = field.type === 'number' ? 0 : '';
+        resetFormData[field.id] = field.type === 'number' ? 0 : '';
       });
       setFormData(resetFormData);
       setRulesAgreed(false);
@@ -381,7 +381,7 @@ const Apply = () => {
                         <form onSubmit={handleSubmit} className="space-y-6">
                           {(selectedApplicationType?.form_fields as any[])?.map((field: any, index: number) => {
                             // Create unique field key to avoid conflicts with duplicate names
-                            const fieldKey = `${field.name}_${index}`;
+                            const fieldKey = `${field.id}_${index}`;
                             
                             return (
                               <div key={fieldKey} className="space-y-2">
@@ -393,8 +393,8 @@ const Apply = () => {
                                 {field.type === 'textarea' ? (
                                  <Textarea
                                     id={fieldKey}
-                                    value={formData[field.name] || ''}
-                                    onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                                    value={formData[field.id] || ''}
+                                    onChange={(e) => setFormData({...formData, [field.id]: e.target.value})}
                                     placeholder={field.placeholder || ''}
                                     className="bg-gaming-dark border-gaming-border focus:border-neon-purple min-h-[100px]"
                                     required={field.required}
@@ -403,8 +403,8 @@ const Apply = () => {
                                   <Input
                                     id={fieldKey}
                                     type={field.type}
-                                    value={formData[field.name] || ''}
-                                    onChange={(e) => setFormData({...formData, [field.name]: e.target.value})}
+                                    value={formData[field.id] || ''}
+                                    onChange={(e) => setFormData({...formData, [field.id]: e.target.value})}
                                     placeholder={field.placeholder || ''}
                                     className="bg-gaming-dark border-gaming-border focus:border-neon-purple"
                                     required={field.required}

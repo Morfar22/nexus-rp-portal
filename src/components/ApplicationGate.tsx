@@ -11,11 +11,6 @@ interface ApplicationGateProps {
 const ApplicationGate: React.FC<ApplicationGateProps> = ({ children }) => {
   const { settings, loading } = useServerSettings();
 
-  // Debug logging to see what's happening
-  console.log('ApplicationGate - Loading:', loading);
-  console.log('ApplicationGate - Settings:', settings);
-  console.log('ApplicationGate - Accept Applications:', settings.application_settings?.accept_applications);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
