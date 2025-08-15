@@ -731,8 +731,11 @@ const StaffPanel = () => {
   // Discord logging helper function
   const sendDiscordLog = async (type: string, data: any) => {
     try {
+      console.log('sendDiscordLog called with:', { type, data, serverSettings: serverSettings.discord_logging });
+      
       // Check if Discord logging is enabled
       if (!serverSettings.discord_logging?.enabled) {
+        console.log('Discord logging is not enabled');
         return;
       }
 
@@ -744,12 +747,17 @@ const StaffPanel = () => {
         'rule_change': serverSettings.discord_logging?.log_rule_changes,
       };
 
+      console.log('Log type enabled check:', { type, enabled: logTypeEnabled[type] });
+
       if (!logTypeEnabled[type]) {
+        console.log(`Discord logging for ${type} is disabled`);
         return;
       }
 
+      console.log('Calling discord-logger function...');
+
       // Call the Discord logger function
-      await supabase.functions.invoke('discord-logger', {
+      const { data: result, error } = await supabase.functions.invoke('discord-logger', {
         body: {
           type: `admin_${type}`,
           data: {
@@ -759,6 +767,12 @@ const StaffPanel = () => {
           }
         }
       });
+
+      if (error) {
+        console.error('Discord logger function error:', error);
+      } else {
+        console.log('Discord logger function result:', result);
+      }
     } catch (error) {
       console.error('Failed to send Discord log:', error);
     }
