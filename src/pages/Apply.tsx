@@ -219,7 +219,7 @@ const Apply = () => {
         await supabase.functions.invoke('send-application-email', {
           body: {
             type: 'submission',
-            userId: user.id,
+            userEmail: user.email,
             applicationData: {
               steam_name: applicationData.steam_name || formData.steam_name || '',
               discord_tag: applicationData.discord_tag || formData.discord_tag || '',
