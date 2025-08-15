@@ -38,11 +38,16 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     // Generate password reset link
+    const originHeader = req.headers.get('origin') || req.headers.get('referer');
+    const redirectDomain = originHeader || 'https://c2b9c9da-596f-4acf-999d-5d33f978ad1b.lovableproject.com';
+    
+    console.log("Using redirect domain:", redirectDomain);
+    
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: userEmail,
       options: {
-        redirectTo: `${req.headers.get('origin') || 'http://localhost:8080'}/auth`
+        redirectTo: `${redirectDomain}/auth`
       }
     });
 
