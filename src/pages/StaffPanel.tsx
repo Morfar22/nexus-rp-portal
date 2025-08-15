@@ -164,6 +164,41 @@ const StaffPanel = () => {
     }
   };
 
+  const testApplicationEmail = async () => {
+    const email = prompt("Enter email to test application email:");
+    if (!email) return;
+    
+    try {
+      const testApplicationData = {
+        steam_name: "Test Player",
+        age: 25,
+        discord_tag: "TestUser#1234",
+        rp_experience: "Test RP experience",
+        character_backstory: "This is a test character backstory"
+      };
+
+      const { data, error } = await supabase.functions.invoke('send-application-email', {
+        body: { 
+          type: 'rp',
+          userEmail: email,
+          applicationData: testApplicationData
+        }
+      });
+      
+      if (error) throw error;
+      toast({
+        title: "Application Email Test Sent",
+        description: `Test application email sent successfully to ${email}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Application Email Test Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
       const { error } = await supabase
@@ -317,9 +352,14 @@ const StaffPanel = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Test if your Resend API key is working correctly
                   </p>
-                  <Button onClick={testEmail} variant="outline">
-                    Test Email
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={testEmail} variant="outline">
+                      Test Basic Email
+                    </Button>
+                    <Button onClick={testApplicationEmail} variant="outline">
+                      Test Application Email
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
