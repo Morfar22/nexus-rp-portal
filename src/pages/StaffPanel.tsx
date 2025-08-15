@@ -2031,6 +2031,138 @@ const StaffPanel = () => {
                 </div>
               </Card>
 
+              {/* Discord Admin Action Logging */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <FileText className="h-5 w-5 text-neon-purple" />
+                  <h2 className="text-xl font-semibold text-foreground">Discord Admin Action Logging</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Enable Discord Logging</Label>
+                    <Switch
+                      checked={serverSettings.discord_logging?.enabled || false}
+                      onCheckedChange={(checked) => {
+                        const newSettings = {
+                          ...serverSettings.discord_logging,
+                          enabled: checked
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_logging: newSettings
+                        });
+                        handleSettingUpdate('discord_logging', newSettings);
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-foreground">Admin Actions Webhook URL</Label>
+                    <Input
+                      value={serverSettings.discord_logging?.webhook_url || ''}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...serverSettings.discord_logging,
+                          webhook_url: e.target.value
+                        };
+                        setServerSettings({
+                          ...serverSettings,
+                          discord_logging: newSettings
+                        });
+                      }}
+                      onBlur={() => handleSettingUpdate('discord_logging', {
+                        ...serverSettings.discord_logging,
+                        webhook_url: serverSettings.discord_logging?.webhook_url || ''
+                      })}
+                      placeholder="https://discord.com/api/webhooks/..."
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground">Log User Management Actions</Label>
+                      <Switch
+                        checked={serverSettings.discord_logging?.log_user_actions || true}
+                        onCheckedChange={(checked) => {
+                          const newSettings = {
+                            ...serverSettings.discord_logging,
+                            log_user_actions: checked
+                          };
+                          setServerSettings({
+                            ...serverSettings,
+                            discord_logging: newSettings
+                          });
+                          handleSettingUpdate('discord_logging', newSettings);
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground">Log Application Actions</Label>
+                      <Switch
+                        checked={serverSettings.discord_logging?.log_application_actions || true}
+                        onCheckedChange={(checked) => {
+                          const newSettings = {
+                            ...serverSettings.discord_logging,
+                            log_application_actions: checked
+                          };
+                          setServerSettings({
+                            ...serverSettings,
+                            discord_logging: newSettings
+                          });
+                          handleSettingUpdate('discord_logging', newSettings);
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground">Log System Changes</Label>
+                      <Switch
+                        checked={serverSettings.discord_logging?.log_system_changes || true}
+                        onCheckedChange={(checked) => {
+                          const newSettings = {
+                            ...serverSettings.discord_logging,
+                            log_system_changes: checked
+                          };
+                          setServerSettings({
+                            ...serverSettings,
+                            discord_logging: newSettings
+                          });
+                          handleSettingUpdate('discord_logging', newSettings);
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground">Log Rule Changes</Label>
+                      <Switch
+                        checked={serverSettings.discord_logging?.log_rule_changes || true}
+                        onCheckedChange={(checked) => {
+                          const newSettings = {
+                            ...serverSettings.discord_logging,
+                            log_rule_changes: checked
+                          };
+                          setServerSettings({
+                            ...serverSettings,
+                            discord_logging: newSettings
+                          });
+                          handleSettingUpdate('discord_logging', newSettings);
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Admin actions will be automatically logged to Discord when enabled. Make sure the webhook URL has proper permissions.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </Card>
+
               {/* Security Settings */}
               <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
                 <div className="flex items-center space-x-2 mb-6">
