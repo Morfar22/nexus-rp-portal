@@ -741,6 +741,9 @@ const StaffPanel = () => {
               <TabsTrigger value="settings" className="data-[state=active]:bg-gaming-dark">
                 Settings
               </TabsTrigger>
+              <TabsTrigger value="content" className="data-[state=active]:bg-gaming-dark">
+                Homepage Content
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -3074,6 +3077,10 @@ const StaffPanel = () => {
                 </div>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="content" className="space-y-6">
+            <HomepageContentManager userId={user?.id} />
           </TabsContent>
         </Tabs>
 

@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import ServerStats from "@/components/ServerStats";
 import { Link } from "react-router-dom";
 import { PlayCircle, Users, Shield, Map, Clock, Star } from "lucide-react";
+import DynamicIcon from "@/components/DynamicIcon";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-image.jpg";
@@ -179,17 +180,6 @@ const Index = () => {
     }
   };
 
-  const getIconComponent = (iconName: string) => {
-    const iconMap: any = {
-      Users,
-      Shield,
-      Map,
-      Clock,
-      PlayCircle,
-      Star
-    };
-    return iconMap[iconName] || Users;
-  };
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -254,16 +244,13 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {homepageFeatures.map((feature, index) => {
-              const IconComponent = getIconComponent(feature.icon);
-              return (
-                <Card key={index} className="p-6 bg-gaming-card border-gaming-border hover:border-neon-purple/50 transition-all duration-300 hover:shadow-glow-primary">
-                  <IconComponent className={`h-12 w-12 ${feature.color} mb-4`} />
-                  <h3 className="text-xl font-semibold text-foreground mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </Card>
-              );
-            })}
+            {homepageFeatures.map((feature, index) => (
+              <Card key={index} className="p-6 bg-gaming-card border-gaming-border hover:border-neon-purple/50 transition-all duration-300 hover:shadow-glow-primary">
+                <DynamicIcon name={feature.icon} className={`h-12 w-12 ${feature.color} mb-4`} />
+                <h3 className="text-xl font-semibold text-foreground mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
