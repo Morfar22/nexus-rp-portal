@@ -20,6 +20,10 @@ const Index = () => {
     status: 'online'
   });
   const [homepageFeatures, setHomepageFeatures] = useState<any[]>([]);
+  const [homepageFeaturesSection, setHomepageFeaturesSection] = useState<any>({
+    title: "Why Choose Dreamlight RP?",
+    description: "We've built the most immersive FiveM experience with attention to every detail"
+  });
   const [homepageCta, setHomepageCta] = useState<any>({
     title: "Ready to Join the Future?",
     description: "Our whitelist application ensures quality roleplay. Tell us about your character, your RP experience, and join hundreds of players in the most advanced FiveM server.",
@@ -123,12 +127,17 @@ const Index = () => {
 
   const fetchHomepageContent = async () => {
     try {
-      // Use Promise.all to fetch both content types in parallel
-      const [featuresRes, ctaRes] = await Promise.all([
+      // Use Promise.all to fetch all content types in parallel
+      const [featuresRes, featuresSectionRes, ctaRes] = await Promise.all([
         supabase
           .from('server_settings')
           .select('setting_value')
           .eq('setting_key', 'homepage_features')
+          .maybeSingle(),
+        supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'homepage_features_section')
           .maybeSingle(),
         supabase
           .from('server_settings')
@@ -167,6 +176,10 @@ const Index = () => {
             color: "text-yellow-400"
           }
         ]);
+      }
+
+      if (featuresSectionRes.data?.setting_value) {
+        setHomepageFeaturesSection(featuresSectionRes.data.setting_value);
       }
 
       if (ctaRes.data?.setting_value) {
@@ -245,10 +258,10 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
-              {homepageCta.title || "Why Choose Dreamlight RP?"}
+              {homepageFeaturesSection.title}
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              {homepageCta.description || "We've built the most immersive FiveM experience with attention to every detail"}
+              {homepageFeaturesSection.description}
             </p>
           </div>
           

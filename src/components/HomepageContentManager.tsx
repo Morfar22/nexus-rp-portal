@@ -28,6 +28,10 @@ interface HomepageContentManagerProps {
 
 const HomepageContentManager = ({ userId }: HomepageContentManagerProps) => {
   const [homepageFeatures, setHomepageFeatures] = useState<Feature[]>([]);
+  const [homepageFeaturesSection, setHomepageFeaturesSection] = useState({
+    title: "Why Choose Dreamlight RP?",
+    description: "We've built the most immersive FiveM experience with attention to every detail"
+  });
   const [homepageCta, setHomepageCta] = useState<CtaSection>({
     title: "",
     description: "",
@@ -49,11 +53,16 @@ const HomepageContentManager = ({ userId }: HomepageContentManagerProps) => {
 
   const fetchHomepageContent = async () => {
     try {
-      const [featuresRes, ctaRes] = await Promise.all([
+      const [featuresRes, featuresSectionRes, ctaRes] = await Promise.all([
         supabase
           .from('server_settings')
           .select('setting_value')
           .eq('setting_key', 'homepage_features')
+          .maybeSingle(),
+        supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'homepage_features_section')
           .maybeSingle(),
         supabase
           .from('server_settings')
@@ -64,6 +73,9 @@ const HomepageContentManager = ({ userId }: HomepageContentManagerProps) => {
 
       if (featuresRes.data?.setting_value) {
         setHomepageFeatures(featuresRes.data.setting_value as any);
+      }
+      if (featuresSectionRes.data?.setting_value) {
+        setHomepageFeaturesSection(featuresSectionRes.data.setting_value as any);
       }
       if (ctaRes.data?.setting_value) {
         setHomepageCta(ctaRes.data.setting_value as any);
@@ -96,6 +108,34 @@ const HomepageContentManager = ({ userId }: HomepageContentManagerProps) => {
       toast({
         title: "Error",
         description: "Failed to update homepage features",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveHomepageFeaturesSection = async () => {
+    try {
+      const { error } = await supabase
+        .from('server_settings')
+        .upsert({
+          setting_key: 'homepage_features_section',
+          setting_value: homepageFeaturesSection as any,
+          created_by: userId
+        }, {
+          onConflict: 'setting_key'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Features section header updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating features section header:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update features section header",
         variant: "destructive",
       });
     }
@@ -174,12 +214,45 @@ const HomepageContentManager = ({ userId }: HomepageContentManagerProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Features Section Header Management */}
+      <Card className="bg-gaming-card border-gaming-border">
+        <CardHeader>
+          <CardTitle className="text-foreground">"Why Choose [Server Name]?" Section</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="features-section-title">Section Title</Label>
+            <Input
+              id="features-section-title"
+              value={homepageFeaturesSection.title}
+              onChange={(e) => setHomepageFeaturesSection({...homepageFeaturesSection, title: e.target.value})}
+              className="bg-background border-input"
+              placeholder="Why Choose Dreamlight RP?"
+            />
+          </div>
+          <div>
+            <Label htmlFor="features-section-description">Section Description</Label>
+            <Textarea
+              id="features-section-description"
+              value={homepageFeaturesSection.description}
+              onChange={(e) => setHomepageFeaturesSection({...homepageFeaturesSection, description: e.target.value})}
+              className="bg-background border-input"
+              rows={3}
+              placeholder="We've built the most immersive FiveM experience..."
+            />
+          </div>
+          <Button onClick={handleSaveHomepageFeaturesSection} className="w-full">
+            Save Section Header
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Features Section */}
+        {/* Features Cards */}
         <Card className="bg-gaming-card border-gaming-border">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center justify-between">
-              Why Choose Dreamlight RP? Features
+              Feature Cards
               <Button
                 onClick={() => {
                   setNewFeature({ title: "", description: "", icon: "Users", color: "text-neon-purple" });
