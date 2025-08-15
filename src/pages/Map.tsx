@@ -51,6 +51,7 @@ const Map = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState('');
   const [isTokenSet, setIsTokenSet] = useState(false);
+  const [isMapLoading, setIsMapLoading] = useState(true);
   const [servers, setServers] = useState<ServerLocation[]>([]);
   const [players, setPlayers] = useState<PlayerLocation[]>([]);
   const [showPlayers, setShowPlayers] = useState(true);
@@ -169,6 +170,7 @@ const Map = () => {
         if (data?.token) {
           setMapboxToken(data.token);
           setIsTokenSet(true);
+          setIsMapLoading(true);
           initMap(data.token);
         } else {
           // Fallback to localStorage for development
@@ -176,7 +178,10 @@ const Map = () => {
           if (storedToken) {
             setMapboxToken(storedToken);
             setIsTokenSet(true);
+            setIsMapLoading(true);
             initMap(storedToken);
+          } else {
+            setIsMapLoading(false);
           }
         }
       } catch (error) {
@@ -186,7 +191,10 @@ const Map = () => {
         if (storedToken) {
           setMapboxToken(storedToken);
           setIsTokenSet(true);
+          setIsMapLoading(true);
           initMap(storedToken);
+        } else {
+          setIsMapLoading(false);
         }
       }
     };
@@ -245,6 +253,9 @@ const Map = () => {
       // Add custom sources and layers for servers and players
       addServerMarkers();
       addPlayerMarkers();
+      
+      // Map is fully loaded
+      setIsMapLoading(false);
     });
   };
 
@@ -390,6 +401,7 @@ const Map = () => {
 
     localStorage.setItem('mapbox_token', mapboxToken);
     setIsTokenSet(true);
+    setIsMapLoading(true);
     initMap(mapboxToken);
     
     toast({
@@ -698,8 +710,8 @@ const Map = () => {
         <div ref={mapContainer} className="absolute inset-0" />
         
         {/* Map Overlay for loading */}
-        {!map.current && (
-          <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+        {isMapLoading && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-20">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neon-purple mx-auto mb-4"></div>
               <p className="text-foreground">Loading map...</p>
