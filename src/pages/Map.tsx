@@ -59,27 +59,27 @@ const Map = () => {
   const [refreshInterval, setRefreshInterval] = useState(30);
   const { toast } = useToast();
 
-  // Mock FiveM RP server data - Los Santos coordinates
+  // Mock FiveM RP server data - GTA V Los Santos coordinates
   const mockServers: ServerLocation[] = [
     {
       id: '1',
       name: 'Dreamlight RP - Main',
-      coordinates: [-118.2437, 34.0522], // Los Santos (Los Angeles coords)
+      coordinates: [0, 0], // GTA V Los Santos center
       playerCount: 156,
       maxPlayers: 200,
       status: 'online',
       description: 'Main FiveM RP server - Los Santos',
-      region: 'US West'
+      region: 'GTA V'
     }
   ];
 
-  // Mock FiveM player data with jobs - Los Santos locations
+  // Mock FiveM player data with jobs - GTA V Los Santos locations
   const mockPlayers: PlayerLocation[] = [
     // Police Officers
     {
       id: 'police1',
       name: 'Officer Johnson',
-      coordinates: [-118.2437, 34.0522], // Mission Row PD
+      coordinates: [400, -600], // Mission Row PD area
       lastSeen: new Date().toISOString(),
       vehicle: 'Police Cruiser',
       job: 'police',
@@ -91,7 +91,7 @@ const Map = () => {
     {
       id: 'police2',
       name: 'Sgt. Williams',
-      coordinates: [-118.2490, 34.0580], // Vinewood PD
+      coordinates: [200, 800], // Vinewood area
       lastSeen: new Date().toISOString(),
       vehicle: 'Police SUV',
       job: 'police',
@@ -104,7 +104,7 @@ const Map = () => {
     {
       id: 'ems1',
       name: 'Dr. Smith',
-      coordinates: [-118.2300, 34.0600], // Pillbox Medical
+      coordinates: [300, -200], // Pillbox Medical area
       lastSeen: new Date().toISOString(),
       vehicle: 'Ambulance',
       job: 'ems',
@@ -116,7 +116,7 @@ const Map = () => {
     {
       id: 'ems2',
       name: 'Nurse Davis',
-      coordinates: [-118.2320, 34.0610], // Near Hospital
+      coordinates: [350, -150], // Near Hospital
       lastSeen: new Date().toISOString(),
       job: 'ems',
       jobGrade: 'EMT',
@@ -127,7 +127,7 @@ const Map = () => {
     {
       id: 'civ1',
       name: 'John Doe',
-      coordinates: [-118.2000, 34.0400], // Sandy Shores
+      coordinates: [1200, 2000], // Sandy Shores area
       lastSeen: new Date().toISOString(),
       vehicle: 'Personal Car',
       job: 'civilian',
@@ -138,7 +138,7 @@ const Map = () => {
     {
       id: 'civ2',
       name: 'Jane Smith',
-      coordinates: [-118.1900, 34.0500], // Paleto Bay
+      coordinates: [-200, 2500], // Paleto Bay area
       lastSeen: new Date().toISOString(),
       job: 'civilian',
       status: 'idle',
@@ -148,7 +148,7 @@ const Map = () => {
     {
       id: 'mech1',
       name: 'Tony Wrench',
-      coordinates: [-118.2600, 34.0300], // Auto Shop
+      coordinates: [-500, -800], // Auto Shop area
       lastSeen: new Date().toISOString(),
       vehicle: 'Tow Truck',
       job: 'mechanic',
@@ -213,12 +213,15 @@ const Map = () => {
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      projection: 'mercator', // Better for city-level maps
-      zoom: 10, // Zoom to city level for Los Santos
-      center: [-118.2437, 34.0522], // Los Santos center
+      // Use satellite view as base for GTA V Los Santos feel
+      style: 'mapbox://styles/mapbox/satellite-v9',
+      projection: 'mercator',
+      zoom: 11, // Good zoom level for Los Santos
+      center: [0, 0], // GTA V Los Santos coordinates (custom coordinate system)
       pitch: 0,
-      bearing: 0
+      bearing: 0,
+      // Custom bounds for Los Santos map area
+      maxBounds: [[-4000, -4000], [4000, 4000]] // GTA V coordinate bounds
     });
 
     // Add navigation controls
@@ -232,12 +235,34 @@ const Map = () => {
     // Add fullscreen control
     map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
-    // Set up atmosphere
+    // Set up custom Los Santos overlay
     map.current.on('style.load', () => {
+      // Add Los Santos map overlay
+      map.current?.addSource('los-santos-overlay', {
+        type: 'image',
+        url: '/lovable-uploads/df24999b-488c-4deb-a95f-b1932d3d9c8c.png',
+        coordinates: [
+          [-3000, 3000], // Top left
+          [3000, 3000],  // Top right  
+          [3000, -3000], // Bottom right
+          [-3000, -3000] // Bottom left
+        ]
+      });
+
+      map.current?.addLayer({
+        id: 'los-santos-overlay-layer',
+        type: 'raster',
+        source: 'los-santos-overlay',
+        paint: {
+          'raster-opacity': 0.9
+        }
+      });
+
+      // Add atmosphere for GTA V feel
       map.current?.setFog({
-        color: 'rgb(20, 20, 30)',
-        'high-color': 'rgb(40, 40, 60)',
-        'horizon-blend': 0.1,
+        color: 'rgb(30, 30, 40)',
+        'high-color': 'rgb(50, 50, 70)',
+        'horizon-blend': 0.2,
       });
 
       // Add custom sources and layers for servers and players
@@ -626,8 +651,8 @@ const Map = () => {
                 onClick={() => {
                   if (map.current) {
                     map.current.flyTo({
-                      center: [-118.2437, 34.0522],
-                      zoom: 10,
+                      center: [0, 0],
+                      zoom: 11,
                       duration: 2000
                     });
                   }

@@ -47,8 +47,8 @@ const handler = async (req: Request): Promise<Response> => {
         name: "Dreamlight RP - Main",
         ip: "YOUR_SERVER_IP", // Replace with your actual server IP
         port: 30120, // Replace with your actual server port
-        coordinates: [-118.2437, 34.0522], // Los Santos coordinates
-        region: "US West"
+        coordinates: [0, 0], // GTA V Los Santos center coordinates
+        region: "GTA V"
       }
       // Add more servers if needed
     ];
@@ -88,10 +88,10 @@ const handler = async (req: Request): Promise<Response> => {
             // This depends on your server's setup - you may need to adjust this
             const jobData = extractJobFromPlayer(player, serverInfo.vars);
             
-            // Generate random positions within Los Santos for demo
+            // Generate random positions within GTA V Los Santos for demo
             // In reality, this would come from your server's player position system
             const baseCoords = server.coordinates;
-            const randomOffset = 0.05; // ~5km radius
+            const randomOffset = 2000; // GTA V coordinate range
             
             return {
               id: `${server.id}_${player.id}`,
