@@ -72,7 +72,7 @@ const ServerStatsManager = () => {
           queue_count: data.queue_count,
           uptime_percentage: data.uptime_percentage,
           ping_ms: data.ping_ms,
-          server_online: data.server_online ?? true,
+          server_online: (data as any).server_online ?? true, // Type assertion to handle missing types
           last_updated: data.last_updated
         });
       }
@@ -111,9 +111,14 @@ const ServerStatsManager = () => {
       const { error } = await supabase
         .from('server_stats')
         .upsert([{
-          ...stats,
+          players_online: stats.players_online,
+          max_players: stats.max_players,
+          queue_count: stats.queue_count,
+          uptime_percentage: stats.uptime_percentage,
+          ping_ms: stats.ping_ms,
+          server_online: stats.server_online,
           last_updated: new Date().toISOString()
-        }]);
+        } as any]); // Type assertion to handle missing types
 
       if (error) throw error;
 
