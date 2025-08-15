@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Eye, Clock, RotateCcw } from "lucide-react";
 
@@ -19,15 +20,22 @@ interface ClosedApplication {
 const ClosedApplications = () => {
   const [closedApplications, setClosedApplications] = useState<ClosedApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchClosedApplications();
-  }, []);
+    if (user) {
+      fetchClosedApplications();
+    }
+  }, [user]);
 
   const fetchClosedApplications = async () => {
     try {
       console.log('Fetching closed applications...');
+      console.log('Current user:', user);
+      setError('');
+      
       const { data, error } = await supabase
         .from('applications')
         .select('*')
@@ -38,13 +46,29 @@ const ClosedApplications = () => {
       
       if (error) {
         console.error('Database error:', error);
-        throw error;
+        setError(`Database error: ${error.message}`);
+        toast({
+          title: "Error",
+          description: `Failed to fetch closed applications: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
       }
       
       console.log('Found closed applications:', data?.length || 0);
       setClosedApplications(data || []);
-    } catch (error) {
+      
+      if (!data || data.length === 0) {
+        console.log('No closed applications found - this might be a permissions issue');
+      }
+    } catch (error: any) {
       console.error('Error fetching closed applications:', error);
+      setError(`Error: ${error.message}`);
+      toast({
+        title: "Error",
+        description: `Failed to fetch closed applications: ${error.message}`,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
