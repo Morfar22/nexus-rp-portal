@@ -81,6 +81,7 @@ const Navbar = () => {
           filter: 'setting_key=eq.navbar_config'
         },
         (payload) => {
+          console.log('Navbar config updated:', payload);
           if (payload.new && (payload.new as any).setting_value) {
             setNavbarConfig((payload.new as any).setting_value as typeof navbarConfig);
           }
@@ -92,6 +93,11 @@ const Navbar = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Add a separate effect to force re-render when config changes
+  useEffect(() => {
+    console.log('Navbar config updated in component:', navbarConfig);
+  }, [navbarConfig]);
 
   const NavLinks = () => {
     // Filter and sort navigation items based on configuration
