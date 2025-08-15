@@ -2044,12 +2044,34 @@ const StaffPanel = () => {
                         <Button
                           onClick={async () => {
                             try {
-                              const { error } = await supabase
+                              // First try to update existing record
+                              const { data: existingData } = await supabase
                                 .from('server_settings')
-                                .upsert({
-                                  setting_key: 'server_join_link',
-                                  setting_value: serverJoinLink
-                                });
+                                .select('id')
+                                .eq('setting_key', 'server_join_link')
+                                .single();
+
+                              if (existingData) {
+                                // Update existing record
+                                const { error } = await supabase
+                                  .from('server_settings')
+                                  .update({
+                                    setting_value: serverJoinLink,
+                                    updated_at: new Date().toISOString()
+                                  })
+                                  .eq('setting_key', 'server_join_link');
+                                if (error) throw error;
+                              } else {
+                                // Insert new record
+                                const { error } = await supabase
+                                  .from('server_settings')
+                                  .insert({
+                                    setting_key: 'server_join_link',
+                                    setting_value: serverJoinLink,
+                                    created_by: user?.id
+                                  });
+                                if (error) throw error;
+                              }
                               
                               if (error) throw error;
                               
