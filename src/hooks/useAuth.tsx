@@ -136,9 +136,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (profile?.banned) {
         setIsBanned(true);
-        // Force sign out banned users
-        console.log('🚨 User is banned, signing out...');
-        await signOut();
+        // Only auto-signout if NOT on the auth page (let auth page handle it)
+        if (window.location.pathname !== '/auth') {
+          console.log('🚨 User is banned, signing out...');
+          await signOut();
+        } else {
+          console.log('🚨 User is banned but on auth page, letting auth page handle it');
+        }
       } else {
         setIsBanned(false);
       }
