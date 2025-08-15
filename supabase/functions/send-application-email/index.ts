@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,10 +14,13 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(null, { status: 200, headers: corsHeaders });
     }
 
-    console.log('Email function called');
+    console.log('Email function called - basic test');
     
     // Check API key
     const apiKey = Deno.env.get("RESEND_API_KEY");
+    console.log('API key exists:', !!apiKey);
+    console.log('API key length:', apiKey?.length || 0);
+    
     if (!apiKey) {
       console.error('RESEND_API_KEY not found');
       return new Response(
@@ -27,48 +29,33 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('API key found, initializing Resend');
-    const resend = new Resend(apiKey);
-
     const body = await req.json();
-    console.log('Request body:', body);
+    console.log('Request body received:', Object.keys(body));
 
-    const { type, userEmail, applicationData } = body;
-
-    // Simple email template
-    const subject = 'Application Received - Nexus RP Portal';
-    const html = `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h1>Application Received!</h1>
-        <p>Thank you for your application to Nexus RP.</p>
-        <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
-        <p>We'll review your application and get back to you soon.</p>
-        <p>Best regards,<br>The Nexus RP Team</p>
-      </div>
-    `;
-
-    console.log('Sending email to:', userEmail);
-
-    const emailResponse = await resend.emails.send({
-      from: "Nexus RP Portal <noreply@mmorfar.dk>",
-      to: [userEmail],
-      subject: subject,
-      html: html,
-    });
-
-    console.log('Email sent successfully:', emailResponse);
+    // Don't try to send email yet, just return success
+    console.log('Function completed successfully');
 
     return new Response(
-      JSON.stringify({ success: true, emailResponse }),
+      JSON.stringify({ 
+        success: true, 
+        message: "Function works - email sending disabled for testing",
+        apiKeyExists: !!apiKey,
+        requestData: Object.keys(body)
+      }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
 
   } catch (error: any) {
     console.error('Email function error:', error);
+    console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     
     return new Response(
-      JSON.stringify({ error: error.message, details: error.toString() }),
+      JSON.stringify({ 
+        error: error.message, 
+        details: error.toString(),
+        stack: error.stack 
+      }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
