@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, CheckCircle, XCircle, Clock, Trash2 } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Clock, Trash2, Webhook, Settings } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import ApplicationTypesManager from "./ApplicationTypesManager";
 
 const ApplicationManager = () => {
@@ -17,10 +19,18 @@ const ApplicationManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
+  const [discordSettings, setDiscordSettings] = useState<any>({
+    enabled: false,
+    webhook_url: "",
+    notify_submissions: true,
+    notify_approvals: true,
+    notify_denials: true
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     fetchApplications();
+    fetchDiscordSettings();
   }, []);
 
   const fetchApplications = async () => {
@@ -42,6 +52,71 @@ const ApplicationManager = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchDiscordSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'application_discord_settings')
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data?.setting_value) {
+        setDiscordSettings(data.setting_value);
+      }
+    } catch (error) {
+      console.error('Error fetching Discord settings:', error);
+    }
+  };
+
+  const updateDiscordSettings = async (newSettings: any) => {
+    try {
+      const { data: existingData } = await supabase
+        .from('server_settings')
+        .select('id')
+        .eq('setting_key', 'application_discord_settings')
+        .maybeSingle();
+
+      if (existingData) {
+        const { error } = await supabase
+          .from('server_settings')
+          .update({
+            setting_value: newSettings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('setting_key', 'application_discord_settings');
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('server_settings')
+          .insert({
+            setting_key: 'application_discord_settings',
+            setting_value: newSettings,
+            created_by: (await supabase.auth.getUser()).data.user?.id
+          });
+
+        if (error) throw error;
+      }
+
+      setDiscordSettings(newSettings);
+      toast({
+        title: "Success",
+        description: "Discord settings updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating Discord settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update Discord settings",
+        variant: "destructive",
+      });
     }
   };
 
@@ -171,8 +246,9 @@ const ApplicationManager = () => {
 
   return (
     <Tabs defaultValue="applications" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-2 bg-gaming-card border-gaming-border">
+      <TabsList className="grid w-full grid-cols-3 bg-gaming-card border-gaming-border">
         <TabsTrigger value="applications">Applications</TabsTrigger>
+        <TabsTrigger value="discord">Discord Settings</TabsTrigger>
         <TabsTrigger value="types">Application Types</TabsTrigger>
       </TabsList>
 
@@ -182,6 +258,13 @@ const ApplicationManager = () => {
           updateApplicationStatus={updateApplicationStatus}
           deleteApplication={deleteApplication}
           getStatusColor={getStatusColor}
+        />
+      </TabsContent>
+
+      <TabsContent value="discord">
+        <DiscordSettingsPanel 
+          settings={discordSettings}
+          onUpdate={updateDiscordSettings}
         />
       </TabsContent>
 
@@ -365,6 +448,113 @@ const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplica
               </div>
             </Card>
           ))
+        )}
+      </div>
+    </Card>
+  );
+};
+
+const DiscordSettingsPanel = ({ settings, onUpdate }: any) => {
+  const [localSettings, setLocalSettings] = useState(settings);
+
+  useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
+
+  const handleSave = () => {
+    onUpdate(localSettings);
+  };
+
+  const handleSettingChange = (key: string, value: any) => {
+    setLocalSettings({
+      ...localSettings,
+      [key]: value
+    });
+  };
+
+  return (
+    <Card className="p-6 bg-gaming-card border-gaming-border">
+      <div className="flex items-center space-x-3 mb-6">
+        <Webhook className="h-6 w-6 text-neon-purple" />
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">Discord Application Notifications</h2>
+          <p className="text-sm text-muted-foreground">Configure Discord webhooks for application status updates</p>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-foreground">Enable Discord Notifications</Label>
+            <p className="text-sm text-muted-foreground">Send notifications to Discord when applications are processed</p>
+          </div>
+          <Switch
+            checked={localSettings.enabled}
+            onCheckedChange={(checked) => handleSettingChange('enabled', checked)}
+          />
+        </div>
+
+        {localSettings.enabled && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="webhook-url" className="text-foreground">Discord Webhook URL</Label>
+              <Input
+                id="webhook-url"
+                type="url"
+                placeholder="https://discord.com/api/webhooks/..."
+                value={localSettings.webhook_url}
+                onChange={(e) => handleSettingChange('webhook_url', e.target.value)}
+                className="bg-gaming-dark border-gaming-border text-foreground"
+              />
+              <p className="text-xs text-muted-foreground">
+                Create a webhook in your Discord server settings → Integrations → Webhooks
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-foreground">Notification Types</Label>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-foreground">New Applications</Label>
+                  <p className="text-sm text-muted-foreground">Notify when new applications are submitted</p>
+                </div>
+                <Switch
+                  checked={localSettings.notify_submissions}
+                  onCheckedChange={(checked) => handleSettingChange('notify_submissions', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-foreground">Application Approvals</Label>
+                  <p className="text-sm text-muted-foreground">Notify when applications are approved</p>
+                </div>
+                <Switch
+                  checked={localSettings.notify_approvals}
+                  onCheckedChange={(checked) => handleSettingChange('notify_approvals', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-foreground">Application Denials</Label>
+                  <p className="text-sm text-muted-foreground">Notify when applications are denied</p>
+                </div>
+                <Switch
+                  checked={localSettings.notify_denials}
+                  onCheckedChange={(checked) => handleSettingChange('notify_denials', checked)}
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gaming-border">
+              <Button onClick={handleSave} className="w-full">
+                <Settings className="h-4 w-4 mr-2" />
+                Save Discord Settings
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </Card>

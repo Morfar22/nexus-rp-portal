@@ -31,11 +31,40 @@ serve(async (req) => {
     console.log("Discord logger request:", { type, data: !!data, settings: !!settings })
     console.log("FULL DATA RECEIVED:", JSON.stringify(data, null, 2))
 
-    // Get webhook URL from database settings
+    // Get webhook URL - check application-specific settings first for application notifications
     let webhookUrl = Deno.env.get('DISCORD_WEBHOOK_URL');
+    let useApplicationWebhook = false;
     
-    // Try to get from database discord settings if not in env
-    if (!webhookUrl) {
+    // For application-related notifications, check application-specific settings first
+    if (type.includes('application_')) {
+      try {
+        const { data: appSettingsData, error: appError } = await supabaseAdmin
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'application_discord_settings')
+          .single();
+
+        if (!appError && appSettingsData?.setting_value?.enabled && appSettingsData.setting_value.webhook_url) {
+          // Check if this specific notification type is enabled
+          const settings = appSettingsData.setting_value;
+          const shouldNotify = 
+            (type === 'application_submitted' && settings.notify_submissions) ||
+            (type === 'application_approved' && settings.notify_approvals) ||
+            (type === 'application_denied' && settings.notify_denials);
+          
+          if (shouldNotify) {
+            webhookUrl = settings.webhook_url;
+            useApplicationWebhook = true;
+            console.log("Using application-specific webhook URL");
+          }
+        }
+      } catch (appError) {
+        console.error("Error fetching application Discord settings:", appError);
+      }
+    }
+    
+    // Fallback to general Discord settings if no application webhook is configured
+    if (!useApplicationWebhook && !webhookUrl) {
       try {
         const { data: settingsData, error } = await supabaseAdmin
           .from('server_settings')
