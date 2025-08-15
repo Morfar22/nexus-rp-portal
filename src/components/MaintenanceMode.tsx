@@ -3,15 +3,44 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Settings, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const MaintenanceMode = () => {
   const { settings } = useServerSettings();
   const { user } = useAuth();
+  const [isStaff, setIsStaff] = useState(false);
+  const [checkingStaff, setCheckingStaff] = useState(true);
 
-  // Check if user is staff
-  const isStaff = user?.app_metadata?.role === 'admin' || user?.app_metadata?.role === 'moderator';
+  // Check if user is staff using the correct RPC function
+  useEffect(() => {
+    const checkStaffStatus = async () => {
+      if (!user?.id) {
+        setIsStaff(false);
+        setCheckingStaff(false);
+        return;
+      }
+
+      try {
+        const { data } = await supabase.rpc('is_staff', { _user_id: user.id });
+        setIsStaff(!!data);
+      } catch (error) {
+        console.error('Error checking staff status:', error);
+        setIsStaff(false);
+      } finally {
+        setCheckingStaff(false);
+      }
+    };
+
+    checkStaffStatus();
+  }, [user?.id]);
 
   if (!settings.general_settings?.maintenance_mode) {
+    return null;
+  }
+
+  // Show loading state while checking staff status
+  if (checkingStaff) {
     return null;
   }
 
