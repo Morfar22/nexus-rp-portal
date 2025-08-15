@@ -76,12 +76,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Real-time ban checking - listen for profile changes
+  // Real-time ban detection - immediately kick out users when banned
   useEffect(() => {
     if (!user?.id) return;
 
+    console.log(`🔄 Setting up real-time ban detection for user: ${user.id}`);
+
     const channel = supabase
-      .channel('profile-changes')
+      .channel('ban-detection')
       .on(
         'postgres_changes',
         {
@@ -91,18 +93,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           filter: `id=eq.${user.id}`,
         },
         async (payload) => {
-          console.log('🔄 Profile updated:', payload);
-          // Check if the user was banned
+          console.log('🔄 Profile updated for current user:', payload);
+          
+          // Check if the user was just banned (banned changed from false to true)
           if (payload.new?.banned && !payload.old?.banned) {
-            console.log('🚨 User was banned, signing out...');
+            console.log('🚨 User was banned in real-time, immediately signing out...');
             setIsBanned(true);
-            await signOut();
+            
+            // Immediately sign out and redirect
+            try {
+              await supabase.auth.signOut({ scope: 'global' });
+              Object.keys(localStorage).forEach((key) => {
+                if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+                  localStorage.removeItem(key);
+                }
+              });
+              window.location.href = '/auth';
+            } catch (error) {
+              console.error('Error during emergency signout:', error);
+              // Force refresh as fallback
+              window.location.reload();
+            }
           }
         }
       )
       .subscribe();
 
     return () => {
+      console.log('🔄 Cleaning up real-time ban detection');
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
