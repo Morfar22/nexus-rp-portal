@@ -128,6 +128,21 @@ const ApplicationForm = () => {
 
       if (error) throw error;
 
+      // Send confirmation email
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: selectedType.name,
+            userEmail: user?.email,
+            applicationData: formData
+          }
+        });
+        console.log('Application email sent successfully');
+      } catch (emailError) {
+        console.error('Failed to send application email:', emailError);
+        // Don't fail the whole process if email fails
+      }
+
       toast({
         title: "Success",
         description: "Your application has been submitted successfully!",
