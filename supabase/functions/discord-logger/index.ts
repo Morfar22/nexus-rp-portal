@@ -44,18 +44,30 @@ serve(async (req) => {
           .eq('setting_key', 'application_discord_settings')
           .single();
 
-        if (!appError && appSettingsData?.setting_value?.enabled && appSettingsData.setting_value.webhook_url) {
-          // Check if this specific notification type is enabled
+        if (!appError && appSettingsData?.setting_value?.enabled) {
           const settings = appSettingsData.setting_value;
+          
+          // Check if this specific notification type is enabled
           const shouldNotify = 
             (type === 'application_submitted' && settings.notify_submissions) ||
             (type === 'application_approved' && settings.notify_approvals) ||
             (type === 'application_denied' && settings.notify_denials);
           
           if (shouldNotify) {
-            webhookUrl = settings.webhook_url;
-            useApplicationWebhook = true;
-            console.log("Using application-specific webhook URL");
+            // Route to appropriate webhook based on notification type
+            if (type === 'application_submitted') {
+              // Staff notifications go to staff webhook
+              webhookUrl = settings.staff_webhook_url;
+              console.log("Using staff webhook for application submission");
+            } else {
+              // Approval/denial notifications go to public webhook
+              webhookUrl = settings.public_webhook_url;
+              console.log("Using public webhook for application status update");
+            }
+            
+            if (webhookUrl) {
+              useApplicationWebhook = true;
+            }
           }
         }
       } catch (appError) {

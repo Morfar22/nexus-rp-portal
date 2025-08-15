@@ -21,7 +21,8 @@ const ApplicationManager = () => {
   const [reviewNotes, setReviewNotes] = useState("");
   const [discordSettings, setDiscordSettings] = useState<any>({
     enabled: false,
-    webhook_url: "",
+    staff_webhook_url: "",
+    public_webhook_url: "",
     notify_submissions: true,
     notify_approvals: true,
     notify_denials: true
@@ -497,22 +498,40 @@ const DiscordSettingsPanel = ({ settings, onUpdate }: any) => {
 
         {localSettings.enabled && (
           <>
-            <div className="space-y-2">
-              <Label htmlFor="webhook-url" className="text-foreground">Staff Discord Webhook URL</Label>
-              <Input
-                id="webhook-url"
-                type="url"
-                placeholder="https://discord.com/api/webhooks/..."
-                value={localSettings.webhook_url}
-                onChange={(e) => handleSettingChange('webhook_url', e.target.value)}
-                className="bg-gaming-dark border-gaming-border text-foreground"
-              />
-              <div className="space-y-1">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="staff-webhook-url" className="text-foreground">Staff Discord Webhook URL</Label>
+                <Input
+                  id="staff-webhook-url"
+                  type="url"
+                  placeholder="https://discord.com/api/webhooks/... (Staff Channel)"
+                  value={localSettings.staff_webhook_url}
+                  onChange={(e) => handleSettingChange('staff_webhook_url', e.target.value)}
+                  className="bg-gaming-dark border-gaming-border text-foreground"
+                />
                 <p className="text-xs text-muted-foreground">
-                  Create a webhook in your <strong>staff Discord channel</strong> → Settings → Integrations → Webhooks
+                  For new application submissions - Use a <strong>private staff channel</strong>
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="public-webhook-url" className="text-foreground">Public Discord Webhook URL</Label>
+                <Input
+                  id="public-webhook-url"
+                  type="url"
+                  placeholder="https://discord.com/api/webhooks/... (Public Channel)"
+                  value={localSettings.public_webhook_url}
+                  onChange={(e) => handleSettingChange('public_webhook_url', e.target.value)}
+                  className="bg-gaming-dark border-gaming-border text-foreground"
+                />
+                <p className="text-xs text-muted-foreground">
+                  For approvals/denials - Can be a <strong>public channel</strong>
+                </p>
+              </div>
+
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                 <p className="text-xs text-amber-400">
-                  🔒 <strong>Important:</strong> Use a private staff channel - this contains applicant personal information
+                  <strong>Setup Guide:</strong> Create webhooks in Discord → Server Settings → Integrations → Webhooks
                 </p>
               </div>
             </div>
@@ -530,7 +549,7 @@ const DiscordSettingsPanel = ({ settings, onUpdate }: any) => {
                     <div>
                       <Label className="text-foreground">New Application Submissions</Label>
                       <p className="text-sm text-muted-foreground">Notify staff when new applications are submitted</p>
-                      <p className="text-xs text-neon-blue">🔒 Staff Only - Not visible to applicants</p>
+                      <p className="text-xs text-neon-blue">📨 Sent to: <strong>Staff Webhook</strong> (Private)</p>
                     </div>
                     <Switch
                       checked={localSettings.notify_submissions}
@@ -551,6 +570,7 @@ const DiscordSettingsPanel = ({ settings, onUpdate }: any) => {
                       <div>
                         <Label className="text-foreground">Application Approvals</Label>
                         <p className="text-sm text-muted-foreground">Notify when applications are approved</p>
+                        <p className="text-xs text-neon-green">📢 Sent to: <strong>Public Webhook</strong> (Community)</p>
                       </div>
                       <Switch
                         checked={localSettings.notify_approvals}
@@ -562,6 +582,7 @@ const DiscordSettingsPanel = ({ settings, onUpdate }: any) => {
                       <div>
                         <Label className="text-foreground">Application Denials</Label>
                         <p className="text-sm text-muted-foreground">Notify when applications are denied</p>
+                        <p className="text-xs text-red-400">📢 Sent to: <strong>Public Webhook</strong> (Community)</p>
                       </div>
                       <Switch
                         checked={localSettings.notify_denials}
