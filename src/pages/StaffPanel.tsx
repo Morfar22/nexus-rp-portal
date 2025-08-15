@@ -40,6 +40,9 @@ import ClosedApplications from "@/components/ClosedApplications";
 import LogsViewer from "@/components/LogsViewer";
 import DiscordBotManager from "@/components/DiscordBotManager";
 import IPWhitelistManager from "@/components/IPWhitelistManager";
+import ApplicationManager from "@/components/ApplicationManager";
+import RulesManager from "@/components/RulesManager";
+import StaffManager from "@/components/StaffManager";
 
 const StaffPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -242,30 +245,15 @@ const StaffPanel = () => {
           </TabsContent>
 
           <TabsContent value="applications" className="space-y-6">
-            <Card className="p-6 bg-gaming-card border-gaming-border">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Application Management</h2>
-              <p className="text-muted-foreground">
-                Application management functionality would be implemented here.
-              </p>
-            </Card>
+            <ApplicationManager />
           </TabsContent>
 
           <TabsContent value="rules" className="space-y-6">
-            <Card className="p-6 bg-gaming-card border-gaming-border">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Server Rules</h2>
-              <p className="text-muted-foreground">
-                Rules management functionality would be implemented here.
-              </p>
-            </Card>
+            <RulesManager />
           </TabsContent>
 
           <TabsContent value="staff" className="space-y-6">
-            <Card className="p-6 bg-gaming-card border-gaming-border">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Staff Management</h2>
-              <p className="text-muted-foreground">
-                Staff management functionality would be implemented here.
-              </p>
-            </Card>
+            <StaffManager />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
