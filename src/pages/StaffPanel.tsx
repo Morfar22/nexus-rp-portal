@@ -27,6 +27,7 @@ import {
   Edit, 
   Settings 
 } from "lucide-react";
+import HomepageContentManager from "@/components/HomepageContentManager";
 
 const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
@@ -81,6 +82,22 @@ const StaffPanel = () => {
   });
   const [showApplicationTypeDialog, setShowApplicationTypeDialog] = useState(false);
   const [editingApplicationType, setEditingApplicationType] = useState<any>(null);
+
+  // Homepage Content Management
+  const [homepageFeatures, setHomepageFeatures] = useState<any[]>([]);
+  const [homepageCta, setHomepageCta] = useState<any>({
+    title: "",
+    description: "",
+    features: []
+  });
+  const [editingFeature, setEditingFeature] = useState<any>(null);
+  const [showFeatureDialog, setShowFeatureDialog] = useState(false);
+  const [newFeature, setNewFeature] = useState({
+    title: "",
+    description: "",
+    icon: "Users",
+    color: "text-neon-purple"
+  });
 
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -144,6 +161,19 @@ const StaffPanel = () => {
         supabase.from('server_stats').select('*').order('last_updated', { ascending: false }).limit(1).maybeSingle()
       ]);
 
+      // Get homepage content settings
+      const homepageFeaturesRes = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'homepage_features')
+        .maybeSingle();
+
+      const homepageCtaRes = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'homepage_cta_section')
+        .maybeSingle();
+
       // Get server join link from settings
       const joinLinkSetting = await supabase
         .from('server_settings')
@@ -183,6 +213,14 @@ const StaffPanel = () => {
           configSettings[setting.setting_key] = setting.setting_value;
         });
         setServerSettings(prev => ({ ...prev, ...configSettings }));
+      }
+
+      // Set homepage content
+      if (homepageFeaturesRes.data) {
+        setHomepageFeatures(homepageFeaturesRes.data.setting_value as any[]);
+      }
+      if (homepageCtaRes.data) {
+        setHomepageCta(homepageCtaRes.data.setting_value);
       }
       
     } catch (error) {

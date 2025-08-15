@@ -17,11 +17,22 @@ const Index = () => {
     discordUrl: '',
     status: 'online'
   });
+  const [homepageFeatures, setHomepageFeatures] = useState<any[]>([]);
+  const [homepageCta, setHomepageCta] = useState<any>({
+    title: "Ready to Join the Future?",
+    description: "Our whitelist application ensures quality roleplay. Tell us about your character, your RP experience, and join hundreds of players in the most advanced FiveM server.",
+    features: [
+      "Professional development team",
+      "Weekly content updates", 
+      "Active Discord community"
+    ]
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     fetchServerJoinLink();
     fetchServerInfo();
+    fetchHomepageContent();
   }, []);
 
   const fetchServerJoinLink = async () => {
@@ -100,6 +111,61 @@ const Index = () => {
     }
   };
 
+  const fetchHomepageContent = async () => {
+    try {
+      const [featuresRes, ctaRes] = await Promise.all([
+        supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'homepage_features')
+          .maybeSingle(),
+        supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'homepage_cta_section')
+          .maybeSingle()
+      ]);
+
+      if (featuresRes.data?.setting_value) {
+        setHomepageFeatures(featuresRes.data.setting_value as any[]);
+      } else {
+        // Fallback to default features
+        setHomepageFeatures([
+          {
+            title: "Professional RP Community",
+            description: "Join 300+ serious roleplayers in our whitelist-only server",
+            icon: "Users",
+            color: "text-neon-purple"
+          },
+          {
+            title: "Experienced Staff Team",
+            description: "24/7 moderation ensuring fair and immersive gameplay",
+            icon: "Shield",
+            color: "text-neon-blue"
+          },
+          {
+            title: "Custom Content",
+            description: "Unique jobs, vehicles, and locations for endless possibilities",
+            icon: "Map",
+            color: "text-neon-green"
+          },
+          {
+            title: "99.9% Uptime",
+            description: "Reliable server infrastructure for uninterrupted gameplay",
+            icon: "Clock",
+            color: "text-yellow-400"
+          }
+        ]);
+      }
+
+      if (ctaRes.data?.setting_value) {
+        setHomepageCta(ctaRes.data.setting_value);
+      }
+    } catch (error) {
+      console.error('Error fetching homepage content:', error);
+    }
+  };
+
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'online':
@@ -113,32 +179,17 @@ const Index = () => {
     }
   };
 
-  const features = [
-    {
-      icon: Users,
-      title: "Professional RP Community",
-      description: "Join 300+ serious roleplayers in our whitelist-only server",
-      color: "text-neon-purple"
-    },
-    {
-      icon: Shield,
-      title: "Experienced Staff Team",
-      description: "24/7 moderation ensuring fair and immersive gameplay",
-      color: "text-neon-blue"
-    },
-    {
-      icon: Map,
-      title: "Custom Content",
-      description: "Unique jobs, vehicles, and locations for endless possibilities",
-      color: "text-neon-green"
-    },
-    {
-      icon: Clock,
-      title: "99.9% Uptime",
-      description: "Reliable server infrastructure for uninterrupted gameplay",
-      color: "text-yellow-400"
-    }
-  ];
+  const getIconComponent = (iconName: string) => {
+    const iconMap: any = {
+      Users,
+      Shield,
+      Map,
+      Clock,
+      PlayCircle,
+      Star
+    };
+    return iconMap[iconName] || Users;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -203,8 +254,8 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {features.map((feature, index) => {
-              const IconComponent = feature.icon;
+            {homepageFeatures.map((feature, index) => {
+              const IconComponent = getIconComponent(feature.icon);
               return (
                 <Card key={index} className="p-6 bg-gaming-card border-gaming-border hover:border-neon-purple/50 transition-all duration-300 hover:shadow-glow-primary">
                   <IconComponent className={`h-12 w-12 ${feature.color} mb-4`} />
@@ -223,25 +274,29 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="text-center lg:text-left">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Ready to Join the <span className="bg-gradient-primary bg-clip-text text-transparent">Future</span>?
+                {homepageCta.title?.includes("Future") ? (
+                  <>
+                    {homepageCta.title.split("Future")[0]}
+                    <span className="bg-gradient-primary bg-clip-text text-transparent">Future</span>
+                    {homepageCta.title.split("Future")[1]}
+                  </>
+                ) : (
+                  homepageCta.title
+                )}
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground mb-8">
-                Our whitelist application ensures quality roleplay. Tell us about your character, 
-                your RP experience, and join hundreds of players in the most advanced FiveM server.
+                {homepageCta.description}
               </p>
               <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-neon-green rounded-full" />
-                  <span className="text-foreground">Professional development team</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-neon-blue rounded-full" />
-                  <span className="text-foreground">Weekly content updates</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-neon-purple rounded-full" />
-                  <span className="text-foreground">Active Discord community</span>
-                </div>
+                {homepageCta.features?.map((feature: string, index: number) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    <div className={`w-2 h-2 rounded-full ${
+                      index % 3 === 0 ? 'bg-neon-green' : 
+                      index % 3 === 1 ? 'bg-neon-blue' : 'bg-neon-purple'
+                    }`} />
+                    <span className="text-foreground">{feature}</span>
+                  </div>
+                ))}
               </div>
             </div>
             
