@@ -199,6 +199,28 @@ const StaffPanel = () => {
     }
   };
 
+  const testSimpleFunction = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('simple-test', {
+        body: { test: 'simple function test' }
+      });
+      
+      if (error) throw error;
+      toast({
+        title: "Simple Test Success",
+        description: `Function working! Has Resend key: ${data.environment?.hasResendKey}`,
+      });
+      console.log('Simple test response:', data);
+    } catch (error: any) {
+      toast({
+        title: "Simple Test Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+      console.error('Simple test error:', error);
+    }
+  };
+
   const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
       const { error } = await supabase
@@ -352,7 +374,10 @@ const StaffPanel = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Test if your Resend API key is working correctly
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Button onClick={testSimpleFunction} variant="outline">
+                      Test Simple Function
+                    </Button>
                     <Button onClick={testEmail} variant="outline">
                       Test Basic Email
                     </Button>
