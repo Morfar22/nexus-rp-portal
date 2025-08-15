@@ -88,3 +88,12 @@ verify_jwt = false
 
 [functions.fetch-individual-server-stats]
 verify_jwt = false
+
+[functions.test-email]
+verify_jwt = false
+
+[functions.simple-test]
+verify_jwt = false
+
+[functions.minimal-test]
+verify_jwt = false

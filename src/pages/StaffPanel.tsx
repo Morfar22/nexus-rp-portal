@@ -221,6 +221,26 @@ const StaffPanel = () => {
     }
   };
 
+  const testMinimalFunction = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('minimal-test');
+      
+      if (error) throw error;
+      toast({
+        title: "Minimal Test Success",
+        description: "Basic edge function is working!",
+      });
+      console.log('Minimal test response:', data);
+    } catch (error: any) {
+      toast({
+        title: "Minimal Test Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+      console.error('Minimal test error:', error);
+    }
+  };
+
   const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
       const { error } = await supabase
@@ -375,6 +395,9 @@ const StaffPanel = () => {
                     Test if your Resend API key is working correctly
                   </p>
                   <div className="flex gap-2 flex-wrap">
+                    <Button onClick={testMinimalFunction} variant="outline">
+                      Test Minimal Function
+                    </Button>
                     <Button onClick={testSimpleFunction} variant="outline">
                       Test Simple Function
                     </Button>
