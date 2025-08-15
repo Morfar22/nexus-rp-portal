@@ -265,7 +265,7 @@ const Index = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-fr">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-fr justify-items-center place-content-center">
             {homepageFeatures.map((feature, index) => (
               <Card key={index} className="group p-6 bg-gaming-card/80 backdrop-blur-sm border-gaming-border hover:border-neon-purple/50 transition-all duration-500 hover:shadow-glow-primary hover:scale-105 animate-fade-in flex flex-col h-full">
                 <div className="flex flex-col items-center text-center flex-grow">
