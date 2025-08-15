@@ -2240,7 +2240,7 @@ const StaffPanel = () => {
                     <div className="flex items-center justify-between">
                       <Label className="text-foreground">Log User Management Actions</Label>
                       <Switch
-                        checked={serverSettings.discord_logging?.log_user_actions || true}
+                        checked={serverSettings.discord_logging?.log_user_actions || false}
                         onCheckedChange={(checked) => {
                           const newSettings = {
                             ...serverSettings.discord_logging,
@@ -2258,7 +2258,7 @@ const StaffPanel = () => {
                     <div className="flex items-center justify-between">
                       <Label className="text-foreground">Log Application Actions</Label>
                       <Switch
-                        checked={serverSettings.discord_logging?.log_application_actions || true}
+                        checked={serverSettings.discord_logging?.log_application_actions || false}
                         onCheckedChange={(checked) => {
                           const newSettings = {
                             ...serverSettings.discord_logging,
@@ -2276,7 +2276,7 @@ const StaffPanel = () => {
                     <div className="flex items-center justify-between">
                       <Label className="text-foreground">Log System Changes</Label>
                       <Switch
-                        checked={serverSettings.discord_logging?.log_system_changes || true}
+                        checked={serverSettings.discord_logging?.log_system_changes || false}
                         onCheckedChange={(checked) => {
                           const newSettings = {
                             ...serverSettings.discord_logging,
@@ -2294,7 +2294,7 @@ const StaffPanel = () => {
                     <div className="flex items-center justify-between">
                       <Label className="text-foreground">Log Rule Changes</Label>
                       <Switch
-                        checked={serverSettings.discord_logging?.log_rule_changes || true}
+                        checked={serverSettings.discord_logging?.log_rule_changes || false}
                         onCheckedChange={(checked) => {
                           const newSettings = {
                             ...serverSettings.discord_logging,
