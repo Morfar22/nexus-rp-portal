@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Server, Mail, Lock, User, AlertCircle, Shield, Ban } from "lucide-react";
+import DiscordIcon from "@/components/icons/DiscordIcon";
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 const Auth = () => {
@@ -255,6 +256,39 @@ const Auth = () => {
     } catch (error: any) {
       setError(error.message || "An unexpected error occurred");
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDiscordSignIn = async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      cleanupAuthState();
+      
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: redirectUrl,
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+        setIsLoading(false);
+      }
+      // Loading will be handled by the OAuth redirect
+    } catch (error: any) {
+      setError(error.message || "An unexpected error occurred");
       setIsLoading(false);
     }
   };
@@ -537,6 +571,26 @@ const Auth = () => {
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gaming-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-gaming-card px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDiscordSignIn}
+                  disabled={isLoading}
+                  className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white border-[#5865F2] hover:border-[#4752C4]"
+                >
+                  <DiscordIcon className="mr-2 h-4 w-4" />
+                  Sign in with Discord
+                </Button>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
@@ -635,6 +689,26 @@ const Auth = () => {
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gaming-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-gaming-card px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDiscordSignIn}
+                  disabled={isLoading}
+                  className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white border-[#5865F2] hover:border-[#4752C4]"
+                >
+                  <DiscordIcon className="mr-2 h-4 w-4" />
+                  Sign up with Discord
+                </Button>
               </TabsContent>
             </CardContent>
           </Tabs>
