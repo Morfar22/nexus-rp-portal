@@ -57,33 +57,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Check if user is banned when they sign in
-          await checkBanStatus(session.user.id);
-        } else {
-          setIsBanned(false);
-        }
-        
+        setIsBanned(false); // Reset ban status, let protected routes handle it
         setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Check if user is banned for existing session
-        await checkBanStatus(session.user.id);
-      } else {
-        setIsBanned(false);
-      }
-      
+      setIsBanned(false); // Reset ban status
       setLoading(false);
     });
 
@@ -120,36 +106,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
-
-  const checkBanStatus = async (userId: string) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('banned')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error checking ban status:', error);
-        return;
-      }
-
-      if (profile?.banned) {
-        setIsBanned(true);
-        // Only auto-signout if NOT on the auth page (let auth page handle it)
-        if (window.location.pathname !== '/auth') {
-          console.log('🚨 User is banned, signing out...');
-          await signOut();
-        } else {
-          console.log('🚨 User is banned but on auth page, letting auth page handle it');
-        }
-      } else {
-        setIsBanned(false);
-      }
-    } catch (error) {
-      console.error('Error checking ban status:', error);
-    }
-  };
 
   const value = {
     user,
