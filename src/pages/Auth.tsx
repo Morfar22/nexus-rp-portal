@@ -16,8 +16,9 @@ const Auth = () => {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [username, setUsername] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [showBannedScreen, setShowBannedScreen] = useState(false);
@@ -150,6 +151,13 @@ const Auth = () => {
     setIsLoading(true);
     setError("");
 
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Please make sure both password fields are identical.");
+      setIsLoading(false);
+      return;
+    }
+
     if (!captchaToken) {
       setError("Please complete the captcha verification");
       setIsLoading(false);
@@ -215,7 +223,7 @@ const Auth = () => {
     setIsLoading(true);
     setError("");
 
-    if (newPassword !== confirmPassword) {
+    if (newPassword !== confirmNewPassword) {
       setError("Passwords do not match");
       setIsLoading(false);
       return;
@@ -395,8 +403,8 @@ const Auth = () => {
                       id="confirm-password"
                       type="password"
                       placeholder="Confirm new password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
                       className="pl-10 bg-gaming-dark border-gaming-border focus:border-neon-purple"
                       required
                       minLength={6}
@@ -585,6 +593,26 @@ const Auth = () => {
                         minLength={6}
                       />
                     </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password" className="text-foreground">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-confirm-password"
+                        type="password"
+                        placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10 bg-gaming-dark border-gaming-border focus:border-neon-purple"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    {password && confirmPassword && password !== confirmPassword && (
+                      <p className="text-sm text-red-400">Passwords do not match</p>
+                    )}
                   </div>
                   
                   <div className="mb-4">
