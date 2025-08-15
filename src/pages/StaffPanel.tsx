@@ -414,6 +414,63 @@ const StaffPanel = () => {
               </div>
             </Card>
 
+            {/* General Settings */}
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-6">
+                <Settings className="h-5 w-5 text-neon-purple" />
+                <h2 className="text-xl font-semibold text-foreground">General Settings</h2>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-foreground">Server Name</Label>
+                  <Input
+                    value={serverSettings.general_settings?.server_name || ''}
+                    onChange={(e) => {
+                      const newSettings = {
+                        ...serverSettings.general_settings,
+                        server_name: e.target.value
+                      };
+                      setServerSettings({
+                        ...serverSettings,
+                        general_settings: newSettings
+                      });
+                    }}
+                    onBlur={() => handleSettingUpdate('general_settings', serverSettings.general_settings)}
+                    placeholder="Enter your server name..."
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This appears in the homepage hero section
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-foreground">Welcome Message</Label>
+                  <Textarea
+                    value={serverSettings.general_settings?.welcome_message || ''}
+                    onChange={(e) => {
+                      const newSettings = {
+                        ...serverSettings.general_settings,
+                        welcome_message: e.target.value
+                      };
+                      setServerSettings({
+                        ...serverSettings,
+                        general_settings: newSettings
+                      });
+                    }}
+                    onBlur={() => handleSettingUpdate('general_settings', serverSettings.general_settings)}
+                    placeholder="Enter your welcome message..."
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                    rows={3}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This appears below the server name on the homepage
+                  </p>
+                </div>
+              </div>
+            </Card>
+
             {/* Maintenance Mode */}
             <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
               <div className="flex items-center space-x-2 mb-6">
