@@ -313,12 +313,10 @@ const StaffPanel = () => {
           await sendDiscordLog('application_action', {
             action: action,
             admin: user?.email,
-            applicant: {
-              steam_name: applicationData.steam_name,
-              discord_tag: applicationData.discord_tag,
-              discord_name: applicationData.discord_name,
-              fivem_name: applicationData.fivem_name
-            },
+            steam_name: applicationData.steam_name,
+            discord_tag: applicationData.discord_tag,
+            discord_name: applicationData.discord_name,
+            fivem_name: applicationData.fivem_name,
             review_notes: reviewNotes
           });
 

@@ -239,15 +239,15 @@ serve(async (req) => {
           fields: [
             { name: "Action", value: data.action?.toUpperCase() || "Unknown", inline: true },
             { name: "Admin", value: data.admin || "Unknown", inline: true },
-            { name: "Steam Name", value: data.applicant?.steam_name || "Unknown", inline: true },
-            { name: "Discord Tag", value: data.applicant?.discord_tag || "Unknown", inline: true },
-            { name: "FiveM Name", value: data.applicant?.fivem_name || "Unknown", inline: true },
+            { name: "Steam Name", value: data.steam_name || "Unknown", inline: true },
+            { name: "Discord Tag", value: data.discord_tag || "Unknown", inline: true },
+            { name: "FiveM Name", value: data.fivem_name || "Unknown", inline: true },
             { name: "Review Notes", value: data.review_notes || "No notes provided", inline: false }
           ],
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Admin Panel" }
         }
-        content = `👨‍💼 **Admin ${data.action}** application for **${data.applicant?.steam_name || 'Unknown'}** by **${data.admin}**`
+        content = `👨‍💼 **Admin ${data.action}** application for **${data.steam_name || 'Unknown'}** by **${data.admin}**`
         break
 
       default:
