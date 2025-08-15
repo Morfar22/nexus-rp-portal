@@ -145,6 +145,70 @@ serve(async (req) => {
         content = `🔧 **System Event**: ${data.event}`
         break
 
+      case 'admin_user_action':
+        embed = {
+          title: "👥 Admin User Action",
+          color: 0xe67e22, // Orange
+          fields: [
+            { name: "Action", value: data.action || "Unknown", inline: true },
+            { name: "Admin", value: data.admin_user || "Unknown", inline: true },
+            { name: "Target", value: data.user_email || data.staff_id || "Unknown", inline: true },
+            { name: "Details", value: data.role ? `Role: ${data.role}` : "No additional details", inline: false }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: "FiveM Server Admin Panel" }
+        }
+        content = `👥 **${data.action}** by **${data.admin_user}**`
+        break
+
+      case 'admin_system_change':
+        embed = {
+          title: "⚙️ System Setting Changed",
+          color: 0x9b59b6, // Purple
+          fields: [
+            { name: "Setting", value: data.setting_key || "Unknown", inline: true },
+            { name: "Admin", value: data.admin_user || "Unknown", inline: true },
+            { name: "Action", value: data.action || "Updated", inline: true },
+            { name: "Value", value: data.setting_value ? `\`${data.setting_value.substring(0, 100)}${data.setting_value.length > 100 ? '...' : ''}\`` : "Not provided", inline: false }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: "FiveM Server Admin Panel" }
+        }
+        content = `⚙️ **Setting "${data.setting_key}" updated** by **${data.admin_user}**`
+        break
+
+      case 'admin_rule_change':
+        embed = {
+          title: "📋 Rule Management",
+          color: 0x3498db, // Blue
+          fields: [
+            { name: "Action", value: data.action || "Unknown", inline: true },
+            { name: "Admin", value: data.admin_user || "Unknown", inline: true },
+            { name: "Rule", value: data.rule?.title || data.rule_id || "Unknown", inline: true },
+            { name: "Category", value: data.rule?.category || "Not specified", inline: true }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: "FiveM Server Admin Panel" }
+        }
+        content = `📋 **${data.action}** by **${data.admin_user}**`
+        break
+
+      case 'admin_application_action':
+        embed = {
+          title: "📝 Application Management",
+          color: data.action === 'approved' ? 0x27ae60 : data.action === 'denied' ? 0xe74c3c : 0xf39c12,
+          fields: [
+            { name: "Action", value: data.action || "Unknown", inline: true },
+            { name: "Admin", value: data.admin_user || "Unknown", inline: true },
+            { name: "Applicant", value: data.steam_name || "Unknown", inline: true },
+            { name: "Notes", value: data.review_notes || "No notes", inline: false }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: "FiveM Server Admin Panel" }
+        }
+        content = `📝 **Application ${data.action}** by **${data.admin_user}** for **${data.steam_name}**`
+        break
+
       default:
         console.log("Unknown Discord log type:", type)
         return new Response(

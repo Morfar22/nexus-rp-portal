@@ -374,6 +374,13 @@ const StaffPanel = () => {
 
       if (error) throw error;
 
+      // Log rule change to Discord
+      await sendDiscordLog('rule_change', {
+        action: 'rule_deleted',
+        rule_id: ruleId,
+        admin: user?.email
+      });
+
       toast({
         title: "Success",
         description: "Rule deleted successfully",
@@ -411,6 +418,13 @@ const StaffPanel = () => {
 
         if (error) throw error;
 
+        // Log rule change to Discord
+        await sendDiscordLog('rule_change', {
+          action: 'rule_updated',
+          rule: newRule,
+          admin: user?.email
+        });
+
         toast({
           title: "Success",
           description: "Rule updated successfully",
@@ -421,6 +435,13 @@ const StaffPanel = () => {
           .insert([newRule]);
 
         if (error) throw error;
+
+        // Log rule change to Discord
+        await sendDiscordLog('rule_change', {
+          action: 'rule_created',
+          rule: newRule,
+          admin: user?.email
+        });
 
         toast({
           title: "Success",
@@ -497,6 +518,14 @@ const StaffPanel = () => {
 
       if (error) throw error;
 
+      // Log user action to Discord
+      await sendDiscordLog('user_action', {
+        action: 'staff_added',
+        user_email: newStaffEmail,
+        role: newStaffRole,
+        admin: user?.email
+      });
+
       toast({
         title: "Success",
         description: "Staff member added successfully",
@@ -527,6 +556,13 @@ const StaffPanel = () => {
         .eq('id', staffId);
 
       if (error) throw error;
+
+      // Log user action to Discord
+      await sendDiscordLog('user_action', {
+        action: 'staff_removed',
+        staff_id: staffId,
+        admin: user?.email
+      });
 
       toast({
         title: "Success",
@@ -692,6 +728,42 @@ const StaffPanel = () => {
     }
   };
 
+  // Discord logging helper function
+  const sendDiscordLog = async (type: string, data: any) => {
+    try {
+      // Check if Discord logging is enabled
+      if (!serverSettings.discord_logging?.enabled) {
+        return;
+      }
+
+      // Check specific log type settings
+      const logTypeEnabled = {
+        'user_action': serverSettings.discord_logging?.log_user_actions,
+        'application_action': serverSettings.discord_logging?.log_application_actions,
+        'system_change': serverSettings.discord_logging?.log_system_changes,
+        'rule_change': serverSettings.discord_logging?.log_rule_changes,
+      };
+
+      if (!logTypeEnabled[type]) {
+        return;
+      }
+
+      // Call the Discord logger function
+      await supabase.functions.invoke('discord-logger', {
+        body: {
+          type: `admin_${type}`,
+          data: {
+            ...data,
+            admin_user: user?.email || 'Unknown Admin',
+            timestamp: new Date().toISOString()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to send Discord log:', error);
+    }
+  };
+
   const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
       // Use upsert to handle both insert and update cases
@@ -707,6 +779,14 @@ const StaffPanel = () => {
         });
 
       if (error) throw error;
+
+      // Log system change to Discord
+      await sendDiscordLog('system_change', {
+        action: 'setting_updated',
+        setting_key: settingType,
+        setting_value: JSON.stringify(value),
+        user: user?.email
+      });
 
       toast({
         title: "Success",
