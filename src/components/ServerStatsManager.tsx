@@ -388,42 +388,95 @@ const ServerStatsManager = () => {
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">
+              <Label htmlFor="players_online" className="text-sm text-muted-foreground">
                 <Users className="w-4 h-4 inline mr-1" />
                 Players Online
               </Label>
-              <div className="p-2 bg-background border border-input rounded text-center font-medium">
-                {stats.players_online} / {stats.max_players}
-              </div>
+              <Input
+                id="players_online"
+                type="number"
+                min="0"
+                max={stats.max_players}
+                value={stats.players_online}
+                onChange={(e) => setStats({ ...stats, players_online: parseInt(e.target.value) || 0 })}
+                className="bg-background border-input"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">
+              <Label htmlFor="max_players" className="text-sm text-muted-foreground">
+                <Users className="w-4 h-4 inline mr-1" />
+                Max Players
+              </Label>
+              <Input
+                id="max_players"
+                type="number"
+                min="1"
+                value={stats.max_players}
+                onChange={(e) => setStats({ ...stats, max_players: parseInt(e.target.value) || 48 })}
+                className="bg-background border-input"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="queue_count" className="text-sm text-muted-foreground">
                 <Globe className="w-4 h-4 inline mr-1" />
                 Queue Count
               </Label>
-              <div className="p-2 bg-background border border-input rounded text-center font-medium">
-                {stats.queue_count}
-              </div>
+              <Input
+                id="queue_count"
+                type="number"
+                min="0"
+                value={stats.queue_count}
+                onChange={(e) => setStats({ ...stats, queue_count: parseInt(e.target.value) || 0 })}
+                className="bg-background border-input"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">
-                <Clock className="w-4 h-4 inline mr-1" />
-                Uptime
-              </Label>
-              <div className="p-2 bg-background border border-input rounded text-center font-medium">
-                {stats.uptime_percentage.toFixed(1)}%
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">
+              <Label htmlFor="ping_ms" className="text-sm text-muted-foreground">
                 <Zap className="w-4 h-4 inline mr-1" />
-                Ping
+                Ping (ms)
               </Label>
-              <div className="p-2 bg-background border border-input rounded text-center font-medium">
-                {stats.ping_ms}ms
+              <Input
+                id="ping_ms"
+                type="number"
+                min="1"
+                value={stats.ping_ms}
+                onChange={(e) => setStats({ ...stats, ping_ms: parseInt(e.target.value) || 23 })}
+                className="bg-background border-input"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="uptime_percentage" className="text-sm text-muted-foreground">
+                <Clock className="w-4 h-4 inline mr-1" />
+                Uptime Percentage
+              </Label>
+              <Input
+                id="uptime_percentage"
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={stats.uptime_percentage}
+                onChange={(e) => setStats({ ...stats, uptime_percentage: parseFloat(e.target.value) || 100 })}
+                className="bg-background border-input"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Server Status</Label>
+              <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                  checked={stats.server_online}
+                  onCheckedChange={(checked) => setStats({ ...stats, server_online: checked })}
+                />
+                <Badge variant={stats.server_online ? "default" : "destructive"}>
+                  {stats.server_online ? "Online" : "Offline"}
+                </Badge>
               </div>
             </div>
           </div>
@@ -435,10 +488,17 @@ const ServerStatsManager = () => {
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <Button onClick={fetchLiveStats} disabled={fetching || !serverInfo.server_ip} className="bg-neon-purple hover:bg-neon-purple/80">
+          <div className="flex gap-3 flex-wrap">
+            <Button onClick={saveStats} disabled={saving} className="bg-neon-purple hover:bg-neon-purple/80">
+              {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Manual Stats
+            </Button>
+            <Button onClick={fetchLiveStats} disabled={fetching || !serverInfo.server_ip} className="bg-neon-green hover:bg-neon-green/80">
               {fetching ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-              Refresh Stats
+              Fetch Live Stats
+            </Button>
+            <Button onClick={resetToDefaults} variant="outline">
+              Reset to Defaults
             </Button>
           </div>
         </CardContent>
