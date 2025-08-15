@@ -976,7 +976,7 @@ const StaffPanel = () => {
         )}
 
         <Tabs value={selectedApplicationView} onValueChange={setSelectedApplicationView} className="space-y-6">
-          <div className="flex justify-center overflow-x-auto">
+          <div className="flex justify-center">
             <TabsList className="bg-gaming-card border-gaming-border flex-wrap">
               <div className="mr-2">
                 <DropdownMenu>
