@@ -28,7 +28,9 @@ import {
   Edit, 
   Settings,
   RefreshCw,
-  ChevronDown
+  ChevronDown,
+  GripVertical,
+  EyeOff
 } from "lucide-react";
 import HomepageContentManager from "@/components/HomepageContentManager";
 import ClosedApplications from "@/components/ClosedApplications";
@@ -107,6 +109,19 @@ const StaffPanel = () => {
     description: "",
     icon: "Users",
     color: "text-neon-purple"
+  });
+
+  // Navbar Management State
+  const [navbarConfig, setNavbarConfig] = useState({
+    items: [
+      { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false },
+      { id: 'apply', label: 'Apply', path: '/apply', visible: true, order: 1, staffOnly: false },
+      { id: 'rules', label: 'Rules', path: '/rules', visible: true, order: 2, staffOnly: false },
+      { id: 'team', label: 'Our Team', path: '/team', visible: true, order: 3, staffOnly: false },
+      { id: 'staff', label: 'Staff Panel', path: '/staff', visible: true, order: 4, staffOnly: true },
+      { id: 'servers', label: 'Servers', path: '/servers', visible: true, order: 5, staffOnly: true },
+      { id: 'users', label: 'Users', path: '/users', visible: true, order: 6, staffOnly: true }
+    ]
   });
 
   const { toast } = useToast();
@@ -258,7 +273,18 @@ const StaffPanel = () => {
       setError('Failed to load data');
     } finally {
       setIsLoading(false);
-    }
+      }
+      
+      // Load navbar configuration
+      const navbarConfigRes = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'navbar_config')
+        .maybeSingle();
+        
+      if (navbarConfigRes.data) {
+        setNavbarConfig(navbarConfigRes.data.setting_value as typeof navbarConfig);
+      }
   };
 
   const handleApplicationAction = async (applicationId: string, action: string) => {
@@ -879,6 +905,53 @@ const StaffPanel = () => {
       title: "States Reset",
       description: "UI states have been reset. Buttons should work now.",
     });
+  };
+
+  // Navbar configuration functions
+  const handleNavbarConfigUpdate = async (newConfig: typeof navbarConfig) => {
+    try {
+      setNavbarConfig(newConfig);
+      await handleSettingUpdate('navbar_config', newConfig);
+      toast({
+        title: "Success",
+        description: "Navbar configuration updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating navbar config:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update navbar configuration",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleNavbarItemVisibility = (itemId: string) => {
+    const newConfig = {
+      ...navbarConfig,
+      items: navbarConfig.items.map(item =>
+        item.id === itemId ? { ...item, visible: !item.visible } : item
+      )
+    };
+    handleNavbarConfigUpdate(newConfig);
+  };
+
+  const moveNavbarItem = (fromIndex: number, toIndex: number) => {
+    const newItems = [...navbarConfig.items];
+    const [movedItem] = newItems.splice(fromIndex, 1);
+    newItems.splice(toIndex, 0, movedItem);
+    
+    // Update order values
+    const reorderedItems = newItems.map((item, index) => ({
+      ...item,
+      order: index
+    }));
+
+    const newConfig = {
+      ...navbarConfig,
+      items: reorderedItems
+    };
+    handleNavbarConfigUpdate(newConfig);
   };
 
   if (isLoading) {
@@ -3019,6 +3092,98 @@ const StaffPanel = () => {
                     >
                       Save Server Information
                     </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Navbar Configuration */}
+              <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                <div className="flex items-center space-x-2 mb-6">
+                  <Settings className="h-5 w-5 text-neon-purple" />
+                  <h2 className="text-xl font-semibold text-foreground">Navigation Menu Configuration</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <p className="text-muted-foreground text-sm">
+                    Configure which navigation items are visible and reorder them. Changes are applied immediately.
+                  </p>
+                  
+                  <div className="space-y-2">
+                    {navbarConfig.items
+                      .sort((a, b) => a.order - b.order)
+                      .map((item, index) => (
+                        <div 
+                          key={item.id} 
+                          className="flex items-center justify-between p-3 bg-gaming-dark rounded-lg border-gaming-border border"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="cursor-move p-1 h-8 w-8"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                // Simple drag handling for reordering
+                              }}
+                            >
+                              <GripVertical className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            
+                            <div className="flex flex-col">
+                              <span className="text-foreground font-medium">{item.label}</span>
+                              <span className="text-xs text-muted-foreground">{item.path}</span>
+                              {item.staffOnly && (
+                                <span className="text-xs text-neon-purple">Staff Only</span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <div className="flex space-x-1">
+                              {index > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => moveNavbarItem(index, index - 1)}
+                                  className="h-8 w-8 p-0 hover:bg-gaming-card"
+                                >
+                                  ↑
+                                </Button>
+                              )}
+                              {index < navbarConfig.items.length - 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => moveNavbarItem(index, index + 1)}
+                                  className="h-8 w-8 p-0 hover:bg-gaming-card"
+                                >
+                                  ↓
+                                </Button>
+                              )}
+                            </div>
+                            
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleNavbarItemVisibility(item.id)}
+                              className={`h-8 w-8 p-0 ${
+                                item.visible 
+                                  ? 'text-neon-green hover:text-neon-green/80' 
+                                  : 'text-red-400 hover:text-red-300'
+                              }`}
+                            >
+                              {item.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-gaming-dark/50 rounded-lg border border-gaming-border">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Note:</strong> Hidden items will not appear in the navigation menu for regular users. 
+                      Staff-only items will only be visible to users with staff privileges.
+                    </p>
                   </div>
                 </div>
               </Card>
