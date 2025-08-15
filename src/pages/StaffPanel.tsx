@@ -721,8 +721,8 @@ const StaffPanel = () => {
         )}
 
         <Tabs defaultValue="pending" className="space-y-6">
-          <div className="flex justify-center">
-            <TabsList className="bg-gaming-card border-gaming-border">
+          <div className="flex justify-center overflow-x-auto">
+            <TabsList className="bg-gaming-card border-gaming-border flex-wrap">
               <TabsTrigger value="pending" className="data-[state=active]:bg-gaming-dark">
                 Pending Applications ({pendingApplications.length})
               </TabsTrigger>
@@ -741,8 +741,8 @@ const StaffPanel = () => {
               <TabsTrigger value="settings" className="data-[state=active]:bg-gaming-dark">
                 Settings
               </TabsTrigger>
-              <TabsTrigger value="content" className="data-[state=active]:bg-gaming-dark">
-                Homepage Content
+              <TabsTrigger value="content" className="data-[state=active]:bg-gaming-dark text-neon-purple">
+                🎨 Homepage Content
               </TabsTrigger>
             </TabsList>
           </div>
