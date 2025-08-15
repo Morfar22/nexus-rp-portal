@@ -9,7 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Search, UserCheck, Crown, Shield, User, Calendar, Mail, UserX, Trash2, Ban, UserMinus } from 'lucide-react';
+import { Users, Search, UserCheck, Crown, Shield, User, Calendar, Mail, UserX, Trash2, Ban, UserMinus, MoreVertical, KeyRound } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 
@@ -210,6 +211,39 @@ export default function UserManagement() {
         description: `Failed to ${ban ? 'ban' : 'unban'} user`,
         variant: "destructive",
       });
+    }
+  };
+
+  const resetUserPassword = async (userId: string, userEmail: string) => {
+    try {
+      setLoading(true);
+      
+      // Use Supabase admin to send password reset email
+      const { error } = await supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email: userEmail,
+        options: {
+          redirectTo: `${window.location.origin}/auth`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Password Reset Sent",
+        description: `Password reset email sent to ${userEmail}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending password reset:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send password reset email",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -473,7 +507,27 @@ export default function UserManagement() {
                             Ban
                           </>
                         )}
-                      </Button>
+                       </Button>
+
+                       {/* Password Management Dropdown */}
+                       {userProfile.email && (
+                         <DropdownMenu>
+                           <DropdownMenuTrigger asChild>
+                             <Button variant="outline" size="sm">
+                               <MoreVertical className="w-4 h-4" />
+                             </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent className="bg-gaming-card border-gaming-border">
+                             <DropdownMenuItem 
+                               onClick={() => resetUserPassword(userProfile.id, userProfile.email!)}
+                               className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
+                             >
+                               <KeyRound className="w-4 h-4 mr-2" />
+                               Reset Password
+                             </DropdownMenuItem>
+                           </DropdownMenuContent>
+                         </DropdownMenu>
+                       )}
 
                       <AlertDialog open={isDeleteDialogOpen && selectedUser?.id === userProfile.id} onOpenChange={(open) => {
                         setIsDeleteDialogOpen(open);
