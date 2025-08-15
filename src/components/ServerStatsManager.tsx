@@ -155,11 +155,13 @@ const ServerStatsManager = () => {
     try {
       const { error } = await supabase
         .from('server_settings')
-        .upsert([{
+        .upsert({
           setting_key: 'connect_info',
           setting_value: JSON.stringify(connectSettings),
           updated_at: new Date().toISOString()
-        }]);
+        }, {
+          onConflict: 'setting_key'
+        });
 
       if (error) throw error;
 
@@ -249,22 +251,26 @@ const ServerStatsManager = () => {
       // Save server IP
       const { error: ipError } = await supabase
         .from('server_settings')
-        .upsert([{
+        .upsert({
           setting_key: 'server_ip',
           setting_value: serverInfo.server_ip,
           updated_at: new Date().toISOString()
-        }]);
+        }, {
+          onConflict: 'setting_key'
+        });
 
       if (ipError) throw ipError;
 
       // Save auto fetch setting
       const { error: autoFetchError } = await supabase
         .from('server_settings')
-        .upsert([{
+        .upsert({
           setting_key: 'auto_fetch_enabled',
           setting_value: serverInfo.auto_fetch_enabled,
           updated_at: new Date().toISOString()
-        }]);
+        }, {
+          onConflict: 'setting_key'
+        });
 
       if (autoFetchError) throw autoFetchError;
 
