@@ -141,6 +141,29 @@ const StaffPanel = () => {
     }
   };
 
+  const testEmail = async () => {
+    const email = prompt("Enter email to test:");
+    if (!email) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('test-email', {
+        body: { testEmail: email }
+      });
+      
+      if (error) throw error;
+      toast({
+        title: "Test Email Sent",
+        description: `Email sent successfully to ${email}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Email Test Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
       const { error } = await supabase
@@ -281,6 +304,26 @@ const StaffPanel = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
+            {/* Email Test */}
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-6">
+                <Settings className="h-5 w-5 text-neon-green" />
+                <h2 className="text-xl font-semibold text-foreground">Email Testing</h2>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-foreground text-base">Test Email Function</Label>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Test if your Resend API key is working correctly
+                  </p>
+                  <Button onClick={testEmail} variant="outline">
+                    Test Email
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
             {/* Maintenance Mode */}
             <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
               <div className="flex items-center space-x-2 mb-6">
