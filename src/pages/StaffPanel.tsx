@@ -617,6 +617,31 @@ const StaffPanel = () => {
     }
   };
 
+  const handleToggleApplicationType = async (typeId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('application_types')
+        .update({ is_active: !currentStatus })
+        .eq('id', typeId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Application type ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error toggling application type:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to update application type status",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteApplicationType = async (typeId: string) => {
     try {
       const { error } = await supabase
@@ -1276,7 +1301,12 @@ const StaffPanel = () => {
                   applicationTypes.map((type) => (
                     <Card key={type.id} className="p-4 bg-gaming-dark border-gaming-border">
                       <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-semibold text-foreground">{type.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-foreground">{type.name}</h3>
+                          <Badge variant={type.is_active ? "default" : "secondary"} className="text-xs">
+                            {type.is_active ? "Active" : "Closed"}
+                          </Badge>
+                        </div>
                         <div className="flex gap-1">
                           <Button
                             variant="outline"
@@ -1293,6 +1323,19 @@ const StaffPanel = () => {
                             className="h-8 w-8 p-0 border-gaming-border hover:border-neon-purple/50"
                           >
                             <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleApplicationType(type.id, type.is_active)}
+                            className={`h-8 w-8 p-0 border-gaming-border ${
+                              type.is_active 
+                                ? 'text-yellow-500 hover:bg-yellow-500/10 hover:border-yellow-500/50' 
+                                : 'text-green-500 hover:bg-green-500/10 hover:border-green-500/50'
+                            }`}
+                            title={type.is_active ? 'Close Application Type' : 'Open Application Type'}
+                          >
+                            {type.is_active ? <XCircle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
