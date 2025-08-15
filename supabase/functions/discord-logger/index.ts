@@ -29,6 +29,7 @@ serve(async (req) => {
   try {
     const { type, data, settings } = await req.json()
     console.log("Discord logger request:", { type, data: !!data, settings: !!settings })
+    console.log("FULL DATA RECEIVED:", JSON.stringify(data, null, 2))
 
     // Get webhook URL from database settings
     let webhookUrl = Deno.env.get('DISCORD_WEBHOOK_URL');
