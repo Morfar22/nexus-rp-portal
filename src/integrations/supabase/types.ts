@@ -87,6 +87,9 @@ export type Database = {
           age: number
           application_type_id: string
           character_backstory: string
+          closed: boolean
+          closed_at: string | null
+          closed_by: string | null
           created_at: string
           discord_name: string | null
           discord_tag: string
@@ -104,6 +107,9 @@ export type Database = {
           age: number
           application_type_id: string
           character_backstory: string
+          closed?: boolean
+          closed_at?: string | null
+          closed_by?: string | null
           created_at?: string
           discord_name?: string | null
           discord_tag: string
@@ -121,6 +127,9 @@ export type Database = {
           age?: number
           application_type_id?: string
           character_backstory?: string
+          closed?: boolean
+          closed_at?: string | null
+          closed_by?: string | null
           created_at?: string
           discord_name?: string | null
           discord_tag?: string

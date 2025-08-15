@@ -25,7 +25,8 @@ import {
   Users, 
   Plus, 
   Edit, 
-  Settings 
+  Settings,
+  RefreshCw
 } from "lucide-react";
 import HomepageContentManager from "@/components/HomepageContentManager";
 
@@ -153,7 +154,7 @@ const StaffPanel = () => {
       console.log('Final processed staff members:', processedStaffMembers);
 
       const [applicationsRes, rulesRes, typesRes, settingsRes, teamMembersRes, serverStatsRes] = await Promise.all([
-        supabase.from('applications').select('*').order('created_at', { ascending: false }),
+        supabase.from('applications').select('*').eq('closed', false).order('created_at', { ascending: false }),
         supabase.from('rules').select('*').order('category', { ascending: true }),
         supabase.from('application_types').select('*'),
         supabase.from('server_settings').select('*').maybeSingle(),
@@ -319,6 +320,43 @@ const StaffPanel = () => {
       toast({
         title: "Error",
         description: "Failed to update application",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseApplication = async (applicationId: string) => {
+    if (!user) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      const { error } = await supabase
+        .from('applications')
+        .update({ 
+          closed: true,
+          closed_at: new Date().toISOString(),
+          closed_by: user.id
+        })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Application closed successfully",
+      });
+
+      setSelectedApplication(null);
+      fetchData();
+      
+    } catch (error) {
+      console.error('Error closing application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to close application",
         variant: "destructive",
       });
     } finally {
@@ -727,7 +765,10 @@ const StaffPanel = () => {
                 Pending Applications ({pendingApplications.length})
               </TabsTrigger>
               <TabsTrigger value="all-applications" className="data-[state=active]:bg-gaming-dark">
-                All Applications ({applications.length})
+                Active Applications ({applications.filter(app => !app.closed).length})
+              </TabsTrigger>
+              <TabsTrigger value="closed-applications" className="data-[state=active]:bg-gaming-dark">
+                Closed Applications ({applications.filter(app => app.closed).length})
               </TabsTrigger>
               <TabsTrigger value="app-types" className="data-[state=active]:bg-gaming-dark">
                 Application Types
@@ -809,17 +850,20 @@ const StaffPanel = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-foreground">All Applications</h2>
               <div className="flex gap-2">
-                <Badge variant="outline" className="border-green-500 text-green-500">
-                  Approved: {applications.filter(app => app.status === 'approved').length}
+               <Badge variant="outline" className="border-green-500 text-green-500">
+                  Approved: {applications.filter(app => app.status === 'approved' && !app.closed).length}
                 </Badge>
                 <Badge variant="outline" className="border-red-500 text-red-500">
-                  Denied: {applications.filter(app => app.status === 'denied').length}
+                  Denied: {applications.filter(app => app.status === 'denied' && !app.closed).length}
                 </Badge>
                 <Badge variant="outline" className="border-yellow-500 text-yellow-500">
-                  Pending: {applications.filter(app => app.status === 'pending').length}
+                  Pending: {applications.filter(app => app.status === 'pending' && !app.closed).length}
                 </Badge>
                 <Badge variant="outline" className="border-blue-500 text-blue-500">
-                  Under Review: {applications.filter(app => app.status === 'under_review').length}
+                  Under Review: {applications.filter(app => app.status === 'under_review' && !app.closed).length}
+                </Badge>
+                <Badge variant="outline" className="border-gray-500 text-gray-500">
+                  Closed: {applications.filter(app => app.closed).length}
                 </Badge>
               </div>
             </div>
@@ -831,7 +875,7 @@ const StaffPanel = () => {
                 <p className="text-muted-foreground">No applications have been submitted yet.</p>
               </Card>
             ) : (
-              applications.map((application) => (
+              applications.filter(app => !app.closed).map((application) => (
                 <Card key={application.id} className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -931,6 +975,118 @@ const StaffPanel = () => {
                       <p className="text-foreground text-sm mt-1">{application.review_notes}</p>
                     </div>
                   )}
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          {/* Closed Applications Tab */}
+          <TabsContent value="closed-applications" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Closed Applications</h2>
+              <Badge variant="outline" className="border-gray-500 text-gray-500">
+                Total: {applications.filter(app => app.closed).length}
+              </Badge>
+            </div>
+            
+            {applications.filter(app => app.closed).length === 0 ? (
+              <Card className="p-8 text-center bg-gaming-card border-gaming-border shadow-gaming">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Closed Applications</h3>
+                <p className="text-muted-foreground">No applications have been closed yet.</p>
+              </Card>
+            ) : (
+              applications.filter(app => app.closed).map((application) => (
+                <Card key={application.id} className="p-6 bg-gaming-card border-gaming-border shadow-gaming opacity-75">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold text-foreground">{application.steam_name}</h3>
+                        <Badge variant="outline" className="border-gray-500 text-gray-500">
+                          <XCircle className="h-3 w-3 mr-1" />
+                          Closed
+                        </Badge>
+                        <Badge 
+                          variant="outline" 
+                          className={
+                            application.status === 'approved' 
+                              ? "border-green-500 text-green-500" 
+                              : application.status === 'denied'
+                              ? "border-red-500 text-red-500"
+                              : application.status === 'under_review'
+                              ? "border-blue-500 text-blue-500"
+                              : "border-yellow-500 text-yellow-500"
+                          }
+                        >
+                          {application.status.charAt(0).toUpperCase() + application.status.slice(1).replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      <p className="text-muted-foreground text-sm">
+                        Submitted {new Date(application.created_at).toLocaleDateString()}
+                        {application.closed_at && (
+                          <span> • Closed {new Date(application.closed_at).toLocaleDateString()}</span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedApplication(application)}
+                        className="border-gaming-border hover:bg-gaming-dark"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const { error } = await supabase
+                              .from('applications')
+                              .update({ 
+                                closed: false,
+                                closed_at: null,
+                                closed_by: null
+                              })
+                              .eq('id', application.id);
+
+                            if (error) throw error;
+
+                            toast({
+                              title: "Success",
+                              description: "Application reopened successfully",
+                            });
+
+                            fetchData();
+                          } catch (error) {
+                            console.error('Error reopening application:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to reopen application",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        className="border-green-500 text-green-500 hover:bg-green-500/10"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Reopen
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Discord:</span>
+                      <p className="text-foreground">{application.discord_tag}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">FiveM:</span>
+                      <p className="text-foreground">{application.fivem_name}</p>
+                    </div>
+                  </div>
                 </Card>
               ))
             )}
