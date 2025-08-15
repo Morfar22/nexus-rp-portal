@@ -116,10 +116,19 @@ const StaffPanel = () => {
   }, [user, authLoading]);
 
   const fetchData = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, cannot fetch data');
+      return;
+    }
+    
+    console.log('Fetching data for user:', user.id, user.email);
     
     try {
       setIsLoading(true);
+      
+      // Test authentication and staff status
+      const { data: authTest } = await supabase.rpc('is_staff', { _user_id: user.id });
+      console.log('Authentication test - User ID:', user.id, 'Is Staff:', authTest);
       
       // Fetch staff members using a working approach
       const { data: staffRolesData, error: staffError } = await supabase
