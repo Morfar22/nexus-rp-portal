@@ -43,6 +43,7 @@ import IPWhitelistManager from "@/components/IPWhitelistManager";
 import ApplicationManager from "@/components/ApplicationManager";
 import RulesManager from "@/components/RulesManager";
 import StaffManager from "@/components/StaffManager";
+import UserManagementSection from "@/components/UserManagementSection";
 
 const StaffPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -199,11 +200,12 @@ const StaffPanel = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 bg-gaming-card border-gaming-border">
+          <TabsList className="grid w-full grid-cols-8 bg-gaming-card border-gaming-border">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="applications">Applications</TabsTrigger>
             <TabsTrigger value="rules">Rules</TabsTrigger>
             <TabsTrigger value="staff">Staff</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
@@ -260,6 +262,10 @@ const StaffPanel = () => {
 
           <TabsContent value="staff" className="space-y-6">
             <StaffManager />
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <UserManagementSection />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

@@ -18,7 +18,6 @@ import Rules from "./pages/Rules";
 import StaffPanel from "./pages/StaffPanel";
 import OurTeam from "./pages/OurTeam";
 import ServerManagement from "./pages/ServerManagement";
-import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,11 +56,6 @@ const App = () => (
               <Route path="/servers" element={
                 <StaffProtectedRoute>
                   <ServerManagement />
-                </StaffProtectedRoute>
-              } />
-              <Route path="/users" element={
-                <StaffProtectedRoute>
-                  <UserManagement />
                 </StaffProtectedRoute>
               } />
               <Route path="/team" element={<OurTeam />} />
