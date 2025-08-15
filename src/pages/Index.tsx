@@ -265,12 +265,16 @@ const Index = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-fr">
             {homepageFeatures.map((feature, index) => (
-              <Card key={index} className="p-6 bg-gaming-card border-gaming-border hover:border-neon-purple/50 transition-all duration-300 hover:shadow-glow-primary">
-                <DynamicIcon name={feature.icon} className={`h-12 w-12 ${feature.color} mb-4`} />
-                <h3 className="text-xl font-semibold text-foreground mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+              <Card key={index} className="group p-6 bg-gaming-card/80 backdrop-blur-sm border-gaming-border hover:border-neon-purple/50 transition-all duration-500 hover:shadow-glow-primary hover:scale-105 animate-fade-in flex flex-col h-full">
+                <div className="flex flex-col items-center text-center flex-grow">
+                  <div className="mb-4 p-3 rounded-full bg-gaming-dark/50 group-hover:bg-gaming-darker transition-colors duration-300">
+                    <DynamicIcon name={feature.icon} className={`h-8 w-8 ${feature.color} group-hover:scale-110 transition-transform duration-300`} />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-3 group-hover:text-neon-purple transition-colors duration-300">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                </div>
               </Card>
             ))}
           </div>
