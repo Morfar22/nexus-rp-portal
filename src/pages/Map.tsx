@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   MapPin, 
   Users, 
@@ -19,7 +20,9 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
-  Zap
+  Zap,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 
 interface ServerLocation {
@@ -58,7 +61,9 @@ const Map = () => {
   const [showServers, setShowServers] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(30);
+  const [isControlsOpen, setIsControlsOpen] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Mock FiveM RP server data - Using LA coordinates for Los Santos reference
   const mockServers: ServerLocation[] = [
@@ -245,24 +250,31 @@ const Map = () => {
         // Use dark style as base
         style: 'mapbox://styles/mapbox/dark-v11',
         projection: 'mercator',
-        zoom: 10,
+        zoom: isMobile ? 9 : 10,
         center: [-118.2437, 34.0522], // Los Angeles coordinates for Los Santos reference
         pitch: 0,
-        bearing: 0
+        bearing: 0,
+        touchZoomRotate: true,
+        touchPitch: isMobile ? false : true,
+        dragRotate: !isMobile,
+        keyboard: !isMobile
       });
 
       console.log('🗺️ Map instance created successfully');
 
-      // Add navigation controls
+      // Add navigation controls - position differently on mobile
       map.current.addControl(
         new mapboxgl.NavigationControl({
-          visualizePitch: true,
+          visualizePitch: !isMobile,
+          showCompass: !isMobile,
         }),
-        'top-right'
+        isMobile ? 'bottom-right' : 'top-right'
       );
 
-      // Add fullscreen control
-      map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+      // Add fullscreen control only on desktop
+      if (!isMobile) {
+        map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+      }
 
       // Set up event listeners
       map.current.on('load', () => {
@@ -588,163 +600,256 @@ const Map = () => {
     <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       
-      {/* Map Controls Panel */}
-      <div className="absolute top-20 left-4 z-10 space-y-4">
-        <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">Map Controls</h3>
-              <Activity className="h-5 w-5 text-neon-purple" />
+      {/* Mobile Controls - Collapsible */}
+      {isMobile && (
+        <div className="absolute top-20 left-2 right-2 z-10">
+          <Card className="bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+            <div 
+              className="p-3 flex items-center justify-between cursor-pointer"
+              onClick={() => setIsControlsOpen(!isControlsOpen)}
+            >
+              <div className="flex items-center space-x-2">
+                <Activity className="h-4 w-4 text-neon-purple" />
+                <span className="text-sm font-semibold text-foreground">Map Controls</span>
+              </div>
+              {isControlsOpen ? (
+                <ChevronUp className="h-4 w-4 text-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-foreground" />
+              )}
             </div>
             
-            {/* Server Info */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Servers:</span>
-                <Badge variant="secondary">{servers.length}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Players:</span>
-                <Badge variant="secondary">{players.length}</Badge>
-              </div>
-            </div>
+            {isControlsOpen && (
+              <div className="px-3 pb-3 space-y-3 border-t border-gaming-border/50 mt-2 pt-3">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Servers:</span>
+                    <Badge variant="secondary">{servers.length}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Players:</span>
+                    <Badge variant="secondary">{players.length}</Badge>
+                  </div>
+                </div>
 
-            {/* Toggle Controls */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground">Show Players</span>
-                <Switch
-                  checked={showPlayers}
-                  onCheckedChange={(checked) => {
-                    setShowPlayers(checked);
-                    if (map.current) {
-                      const playerMarkers = document.querySelectorAll('.player-marker');
-                      playerMarkers.forEach(marker => marker.remove());
-                      if (checked) addPlayerMarkers();
-                    }
-                  }}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground">Show Servers</span>
-                <Switch
-                  checked={showServers}
-                  onCheckedChange={(checked) => {
-                    setShowServers(checked);
-                    if (map.current) {
-                      const serverMarkers = document.querySelectorAll('.server-marker');
-                      serverMarkers.forEach(marker => marker.remove());
-                      if (checked) addServerMarkers();
-                    }
-                  }}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground">Auto Refresh</span>
-                <Switch
-                  checked={autoRefresh}
-                  onCheckedChange={setAutoRefresh}
-                />
-              </div>
-            </div>
+                {/* Toggle Controls */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-foreground">Show Players</span>
+                    <Switch
+                      checked={showPlayers}
+                      onCheckedChange={(checked) => {
+                        setShowPlayers(checked);
+                        if (map.current) {
+                          const playerMarkers = document.querySelectorAll('.player-marker');
+                          playerMarkers.forEach(marker => marker.remove());
+                          if (checked) addPlayerMarkers();
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-foreground">Auto Refresh</span>
+                    <Switch
+                      checked={autoRefresh}
+                      onCheckedChange={setAutoRefresh}
+                    />
+                  </div>
+                </div>
 
-            {/* Refresh Interval */}
-            {autoRefresh && (
-              <div>
-                <Label className="text-sm text-foreground">Refresh Interval (seconds)</Label>
-                <Input
-                  type="number"
-                  min="5"
-                  max="300"
-                  value={refreshInterval}
-                  onChange={(e) => setRefreshInterval(parseInt(e.target.value) || 30)}
-                  className="bg-gaming-dark border-gaming-border text-foreground mt-1"
-                />
+                {/* Action Buttons */}
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    onClick={refreshMap}
+                    className="flex-1 bg-neon-purple hover:bg-neon-purple/80 text-xs"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Refresh
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (map.current) {
+                        map.current.flyTo({
+                          center: [-118.2437, 34.0522],
+                          zoom: 9,
+                          duration: 2000
+                        });
+                      }
+                    }}
+                    className="border-gaming-border text-xs"
+                  >
+                    <MapPin className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             )}
+          </Card>
+        </div>
+      )}
 
-            {/* Action Buttons */}
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                onClick={refreshMap}
-                className="flex-1 bg-neon-purple hover:bg-neon-purple/80"
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Refresh
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  if (map.current) {
-                    map.current.flyTo({
-                      center: [-118.2437, 34.0522],
-                      zoom: 10,
-                      duration: 2000
-                    });
-                  }
-                }}
-                className="border-gaming-border"
-              >
-                <MapPin className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Job Filter Panel */}
-        <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-foreground">Filter by Job</h4>
-            <div className="space-y-2">
-              {[
-                { job: 'police', icon: '🚔', color: '#3B82F6', label: 'Police' },
-                { job: 'ems', icon: '🚑', color: '#EF4444', label: 'EMS' },
-                { job: 'mechanic', icon: '🔧', color: '#F59E0B', label: 'Mechanic' },
-                { job: 'civilian', icon: '👤', color: '#10B981', label: 'Civilian' }
-              ].map(({ job, icon, color, label }) => {
-                const count = players.filter(p => p.job === job).length;
-                return (
-                  <div key={job} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-2">
-                      <span style={{ color }}>{icon}</span>
-                      <span className="text-foreground">{label}</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">{count}</Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </Card>
-
-        {/* Server Status Panel */}
-        <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-foreground">Server Status</h4>
-            {servers.map((server) => (
-              <div key={server.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-foreground">{server.name}</span>
-                  <Badge 
-                    variant={server.status === 'online' ? 'default' : 'destructive'}
-                    className="text-xs"
-                  >
-                    {server.status}
-                  </Badge>
+      {/* Desktop Controls Panel */}
+      {!isMobile && (
+        <div className="absolute top-20 left-4 z-10 space-y-4 max-w-xs">
+          <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-foreground">Map Controls</h3>
+                <Activity className="h-5 w-5 text-neon-purple" />
+              </div>
+              
+              {/* Server Info */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Servers:</span>
+                  <Badge variant="secondary">{servers.length}</Badge>
                 </div>
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Users className="h-3 w-3 mr-1" />
-                  {server.playerCount}/{server.maxPlayers}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Players:</span>
+                  <Badge variant="secondary">{players.length}</Badge>
                 </div>
               </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+
+              {/* Toggle Controls */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-foreground">Show Players</span>
+                  <Switch
+                    checked={showPlayers}
+                    onCheckedChange={(checked) => {
+                      setShowPlayers(checked);
+                      if (map.current) {
+                        const playerMarkers = document.querySelectorAll('.player-marker');
+                        playerMarkers.forEach(marker => marker.remove());
+                        if (checked) addPlayerMarkers();
+                      }
+                    }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-foreground">Show Servers</span>
+                  <Switch
+                    checked={showServers}
+                    onCheckedChange={(checked) => {
+                      setShowServers(checked);
+                      if (map.current) {
+                        const serverMarkers = document.querySelectorAll('.server-marker');
+                        serverMarkers.forEach(marker => marker.remove());
+                        if (checked) addServerMarkers();
+                      }
+                    }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-foreground">Auto Refresh</span>
+                  <Switch
+                    checked={autoRefresh}
+                    onCheckedChange={setAutoRefresh}
+                  />
+                </div>
+              </div>
+
+              {/* Refresh Interval */}
+              {autoRefresh && (
+                <div>
+                  <Label className="text-sm text-foreground">Refresh Interval (seconds)</Label>
+                  <Input
+                    type="number"
+                    min="5"
+                    max="300"
+                    value={refreshInterval}
+                    onChange={(e) => setRefreshInterval(parseInt(e.target.value) || 30)}
+                    className="bg-gaming-dark border-gaming-border text-foreground mt-1"
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  onClick={refreshMap}
+                  className="flex-1 bg-neon-purple hover:bg-neon-purple/80"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Refresh
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (map.current) {
+                      map.current.flyTo({
+                        center: [-118.2437, 34.0522],
+                        zoom: 10,
+                        duration: 2000
+                      });
+                    }
+                  }}
+                  className="border-gaming-border"
+                >
+                  <MapPin className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Job Filter Panel */}
+          <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-foreground">Filter by Job</h4>
+              <div className="space-y-2">
+                {[
+                  { job: 'police', icon: '🚔', color: '#3B82F6', label: 'Police' },
+                  { job: 'ems', icon: '🚑', color: '#EF4444', label: 'EMS' },
+                  { job: 'mechanic', icon: '🔧', color: '#F59E0B', label: 'Mechanic' },
+                  { job: 'civilian', icon: '👤', color: '#10B981', label: 'Civilian' }
+                ].map(({ job, icon, color, label }) => {
+                  const count = players.filter(p => p.job === job).length;
+                  return (
+                    <div key={job} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-2">
+                        <span style={{ color }}>{icon}</span>
+                        <span className="text-foreground">{label}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{count}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </Card>
+
+          {/* Server Status Panel */}
+          <Card className="p-4 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-foreground">Server Status</h4>
+              {servers.map((server) => (
+                <div key={server.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-foreground truncate">{server.name}</span>
+                    <Badge 
+                      variant={server.status === 'online' ? 'default' : 'destructive'}
+                      className="text-xs"
+                    >
+                      {server.status}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Users className="h-3 w-3 mr-1" />
+                    {server.playerCount}/{server.maxPlayers}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Main Map Container */}
       <div className="relative w-full h-screen">
@@ -760,18 +865,18 @@ const Map = () => {
           </div>
         )}
 
-        {/* Map Legend */}
-        <div className="absolute bottom-4 right-4 z-10">
+        {/* Map Legend - Responsive */}
+        <div className={`absolute ${isMobile ? 'bottom-20 left-2 right-2' : 'bottom-4 right-4'} z-10`}>
           <Card className="p-3 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
             <h4 className="text-sm font-semibold text-foreground mb-2">Legend</h4>
-            <div className="space-y-1 text-xs">
+            <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'space-y-1'} text-xs`}>
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                <span className="text-foreground">Online Server</span>
+                <div className="w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+                <span className="text-foreground">Online</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-                <span className="text-foreground">Offline Server</span>
+                <div className="w-3 h-3 bg-red-500 rounded-full border border-white"></div>
+                <span className="text-foreground">Offline</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span style={{ color: '#3B82F6' }}>🚔</span>
@@ -790,7 +895,7 @@ const Map = () => {
         </div>
 
         {/* Real-time Status Indicator */}
-        <div className="absolute top-4 right-4 z-10">
+        <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-4 right-4'} z-10`}>
           <Card className="p-2 bg-gaming-card/95 border-gaming-border backdrop-blur-sm">
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}></div>

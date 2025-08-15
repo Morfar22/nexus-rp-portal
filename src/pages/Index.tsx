@@ -158,18 +158,18 @@ const Index = () => {
             #1 Rated FiveM Server
           </Badge>
           
-          <h1 className="text-5xl md:text-7xl font-bold mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 px-4">
             <span className="bg-gradient-primary bg-clip-text text-transparent">
               Dreamlight RP
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-foreground/80 mb-8 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl md:text-2xl text-foreground/80 mb-8 max-w-3xl mx-auto px-4">
             Experience the ultimate GTA V roleplay in our cyberpunk-themed city. 
             Professional staff, custom content, and endless possibilities await.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 px-4">
             <Button 
               variant="hero" 
               size="lg" 
@@ -191,18 +191,18 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-gaming-dark/50">
+      <section className="py-12 sm:py-16 lg:py-20 bg-gaming-dark/50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
               Why Choose Dreamlight RP?
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
               We've built the most immersive FiveM experience with attention to every detail
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {features.map((feature, index) => {
               const IconComponent = feature.icon;
               return (
@@ -218,14 +218,14 @@ const Index = () => {
       </section>
 
       {/* Server Info Section */}
-      <section className="py-20">
+      <section className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="text-center lg:text-left">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-6">
                 Ready to Join the <span className="bg-gradient-primary bg-clip-text text-transparent">Future</span>?
               </h2>
-              <p className="text-lg text-muted-foreground mb-8">
+              <p className="text-base sm:text-lg text-muted-foreground mb-8">
                 Our whitelist application ensures quality roleplay. Tell us about your character, 
                 your RP experience, and join hundreds of players in the most advanced FiveM server.
               </p>
