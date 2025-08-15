@@ -245,10 +245,10 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
-              Why Choose Dreamlight RP?
+              {homepageCta.title || "Why Choose Dreamlight RP?"}
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              We've built the most immersive FiveM experience with attention to every detail
+              {homepageCta.description || "We've built the most immersive FiveM experience with attention to every detail"}
             </p>
           </div>
           

@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import HomepageContentManager from "@/components/HomepageContentManager";
 import ClosedApplications from "@/components/ClosedApplications";
+import LogsViewer from "@/components/LogsViewer";
 
 const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
@@ -1106,6 +1107,9 @@ const StaffPanel = () => {
               </TabsTrigger>
               <TabsTrigger value="content" className="data-[state=active]:bg-gaming-dark text-neon-purple">
                 🎨 Homepage Content
+              </TabsTrigger>
+              <TabsTrigger value="logs" className="data-[state=active]:bg-gaming-dark">
+                📋 System Logs
               </TabsTrigger>
             </TabsList>
           </div>
@@ -3877,6 +3881,10 @@ const StaffPanel = () => {
 
           <TabsContent value="content" className="space-y-6">
             <HomepageContentManager userId={user?.id} />
+          </TabsContent>
+
+          <TabsContent value="logs" className="space-y-6">
+            <LogsViewer />
           </TabsContent>
         </Tabs>
 
