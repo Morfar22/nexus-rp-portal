@@ -29,6 +29,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import HomepageContentManager from "@/components/HomepageContentManager";
+import ClosedApplications from "@/components/ClosedApplications";
 
 const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
@@ -364,7 +365,6 @@ const StaffPanel = () => {
     }
   };
 
-  const handleDeleteRule = async (ruleId: string) => {
     try {
       const { error } = await supabase
         .from('rules')
@@ -765,7 +765,7 @@ const StaffPanel = () => {
                 Pending Applications ({pendingApplications.length})
               </TabsTrigger>
               <TabsTrigger value="all-applications" className="data-[state=active]:bg-gaming-dark">
-                Active Applications ({applications.filter(app => !app.closed).length})
+                Open Applications ({applications.filter(app => !app.closed).length})
               </TabsTrigger>
               <TabsTrigger value="closed-applications" className="data-[state=active]:bg-gaming-dark">
                 Closed Applications ({applications.filter(app => app.closed).length})
@@ -917,6 +917,15 @@ const StaffPanel = () => {
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCloseApplication(application.id)}
+                        className="border-orange-500 text-orange-500 hover:bg-orange-500/10"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Close
+                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -1037,6 +1046,15 @@ const StaffPanel = () => {
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCloseApplication(application.id)}
+                        className="border-orange-500 text-orange-500 hover:bg-orange-500/10"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Close
                       </Button>
                       <Button
                         variant="outline"
@@ -3234,6 +3252,7 @@ const StaffPanel = () => {
               </Card>
             </div>
           </TabsContent>
+
 
           <TabsContent value="content" className="space-y-6">
             <HomepageContentManager userId={user?.id} />
