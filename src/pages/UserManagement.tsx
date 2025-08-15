@@ -218,13 +218,9 @@ export default function UserManagement() {
     try {
       setLoading(true);
       
-      // Use Supabase admin to send password reset email
-      const { error } = await supabase.auth.admin.generateLink({
-        type: 'recovery',
-        email: userEmail,
-        options: {
-          redirectTo: `${window.location.origin}/auth`
-        }
+      // Call our edge function to reset password with admin privileges
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: { userEmail }
       });
 
       if (error) {
