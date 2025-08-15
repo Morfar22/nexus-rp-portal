@@ -11,6 +11,7 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const [isStaff, setIsStaff] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [configLoaded, setConfigLoaded] = useState(false);
   const [navbarConfig, setNavbarConfig] = useState({
     items: [
       { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false },
@@ -60,10 +61,15 @@ const Navbar = () => {
           .maybeSingle();
           
         if (data?.setting_value) {
+          console.log('Loading navbar config from database:', data.setting_value);
           setNavbarConfig(data.setting_value as typeof navbarConfig);
+        } else {
+          console.log('No navbar config found in database, using default');
         }
+        setConfigLoaded(true);
       } catch (error) {
         console.error('Error loading navbar config:', error);
+        setConfigLoaded(true);
       }
     };
 
@@ -100,10 +106,20 @@ const Navbar = () => {
   }, [navbarConfig]);
 
   const NavLinks = () => {
+    // Don't render until config is loaded
+    if (!configLoaded) {
+      return null;
+    }
+
     // Filter and sort navigation items based on configuration
     const visibleItems = navbarConfig.items
-      .filter(item => item.visible && (!item.staffOnly || isStaff))
+      .filter(item => {
+        console.log(`Item ${item.id}: visible=${item.visible}, staffOnly=${item.staffOnly}, isStaff=${isStaff}`);
+        return item.visible && (!item.staffOnly || isStaff);
+      })
       .sort((a, b) => a.order - b.order);
+
+    console.log('Visible navigation items:', visibleItems.map(item => item.id));
 
     return (
       <>
