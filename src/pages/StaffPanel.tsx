@@ -46,6 +46,7 @@ import StaffManager from "@/components/StaffManager";
 import UserManagementSection from "@/components/UserManagementSection";
 import TeamManager from "@/components/TeamManager";
 import NavbarManager from "@/components/NavbarManager";
+import ServerStatsManager from "@/components/ServerStatsManager";
 
 const StaffPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -302,7 +303,7 @@ const StaffPanel = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-10 bg-gaming-card border-gaming-border">
+          <TabsList className="grid w-full grid-cols-11 bg-gaming-card border-gaming-border">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="applications">Applications</TabsTrigger>
             <TabsTrigger value="rules">Rules</TabsTrigger>
@@ -312,6 +313,7 @@ const StaffPanel = () => {
             <TabsTrigger value="navbar">Navbar</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="server-stats">Server Stats</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
           </TabsList>
 
@@ -549,6 +551,10 @@ const StaffPanel = () => {
 
           <TabsContent value="content" className="space-y-6">
             <HomepageContentManager />
+          </TabsContent>
+
+          <TabsContent value="server-stats" className="space-y-6">
+            <ServerStatsManager />
           </TabsContent>
 
           <TabsContent value="logs" className="space-y-6">
