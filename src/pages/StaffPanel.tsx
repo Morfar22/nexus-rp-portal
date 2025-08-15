@@ -193,7 +193,14 @@ const StaffPanel = () => {
           'fivem_server_name',
           'server_display_ip',
           'discord_url',
-          'server_status'
+          'server_status',
+          'discord_logging',
+          'discord_settings',
+          'general_settings',
+          'application_settings',
+          'security_settings',
+          'performance_settings',
+          'logging_settings'
         ]);
 
       if (applicationsRes.data) setApplications(applicationsRes.data);
