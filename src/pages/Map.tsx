@@ -39,7 +39,11 @@ interface PlayerLocation {
   coordinates: [number, number];
   lastSeen: string;
   vehicle?: string;
-  status: 'online' | 'idle' | 'in-game';
+  job: 'police' | 'ems' | 'civilian' | 'mechanic' | 'taxi' | 'admin';
+  jobGrade?: string;
+  status: 'online' | 'idle' | 'busy' | 'off-duty';
+  heading?: number;
+  serverId: string;
 }
 
 const Map = () => {
@@ -55,55 +59,103 @@ const Map = () => {
   const [refreshInterval, setRefreshInterval] = useState(30);
   const { toast } = useToast();
 
-  // Mock data for demonstration
+  // Mock FiveM RP server data - Los Santos coordinates
   const mockServers: ServerLocation[] = [
     {
       id: '1',
-      name: 'Los Santos Main',
-      coordinates: [-118.2437, 34.0522], // Los Angeles
+      name: 'Dreamlight RP - Main',
+      coordinates: [-118.2437, 34.0522], // Los Santos (Los Angeles coords)
       playerCount: 156,
       maxPlayers: 200,
       status: 'online',
-      description: 'Main FiveM server with heavy RP focus',
+      description: 'Main FiveM RP server - Los Santos',
       region: 'US West'
-    },
-    {
-      id: '2', 
-      name: 'Liberty City RP',
-      coordinates: [-74.0060, 40.7128], // New York
-      playerCount: 89,
-      maxPlayers: 150,
-      status: 'online',
-      description: 'East coast roleplay server',
-      region: 'US East'
-    },
-    {
-      id: '3',
-      name: 'European Hub',
-      coordinates: [2.3522, 48.8566], // Paris
-      playerCount: 0,
-      maxPlayers: 100,
-      status: 'maintenance',
-      description: 'European server currently under maintenance',
-      region: 'EU West'
     }
   ];
 
+  // Mock FiveM player data with jobs - Los Santos locations
   const mockPlayers: PlayerLocation[] = [
+    // Police Officers
     {
-      id: '1',
-      name: 'PlayerOne',
-      coordinates: [-118.2500, 34.0400],
+      id: 'police1',
+      name: 'Officer Johnson',
+      coordinates: [-118.2437, 34.0522], // Mission Row PD
       lastSeen: new Date().toISOString(),
       vehicle: 'Police Cruiser',
-      status: 'in-game'
+      job: 'police',
+      jobGrade: 'Officer',
+      status: 'online',
+      heading: 45,
+      serverId: '1'
     },
     {
-      id: '2',
-      name: 'AdminUser',
-      coordinates: [-74.0070, 40.7140],
-      lastSeen: new Date(Date.now() - 300000).toISOString(),
-      status: 'online'
+      id: 'police2',
+      name: 'Sgt. Williams',
+      coordinates: [-118.2490, 34.0580], // Vinewood PD
+      lastSeen: new Date().toISOString(),
+      vehicle: 'Police SUV',
+      job: 'police',
+      jobGrade: 'Sergeant',
+      status: 'busy',
+      heading: 180,
+      serverId: '1'
+    },
+    // EMS/Paramedics
+    {
+      id: 'ems1',
+      name: 'Dr. Smith',
+      coordinates: [-118.2300, 34.0600], // Pillbox Medical
+      lastSeen: new Date().toISOString(),
+      vehicle: 'Ambulance',
+      job: 'ems',
+      jobGrade: 'Paramedic',
+      status: 'online',
+      heading: 90,
+      serverId: '1'
+    },
+    {
+      id: 'ems2',
+      name: 'Nurse Davis',
+      coordinates: [-118.2320, 34.0610], // Near Hospital
+      lastSeen: new Date().toISOString(),
+      job: 'ems',
+      jobGrade: 'EMT',
+      status: 'idle',
+      serverId: '1'
+    },
+    // Civilians
+    {
+      id: 'civ1',
+      name: 'John Doe',
+      coordinates: [-118.2000, 34.0400], // Sandy Shores
+      lastSeen: new Date().toISOString(),
+      vehicle: 'Personal Car',
+      job: 'civilian',
+      status: 'online',
+      heading: 270,
+      serverId: '1'
+    },
+    {
+      id: 'civ2',
+      name: 'Jane Smith',
+      coordinates: [-118.1900, 34.0500], // Paleto Bay
+      lastSeen: new Date().toISOString(),
+      job: 'civilian',
+      status: 'idle',
+      serverId: '1'
+    },
+    // Mechanics
+    {
+      id: 'mech1',
+      name: 'Tony Wrench',
+      coordinates: [-118.2600, 34.0300], // Auto Shop
+      lastSeen: new Date().toISOString(),
+      vehicle: 'Tow Truck',
+      job: 'mechanic',
+      jobGrade: 'Mechanic',
+      status: 'busy',
+      heading: 135,
+      serverId: '1'
     }
   ];
 
@@ -147,9 +199,9 @@ const Map = () => {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
-      projection: 'globe',
-      zoom: 2,
-      center: [-40, 20],
+      projection: 'mercator', // Better for city-level maps
+      zoom: 10, // Zoom to city level for Los Santos
+      center: [-118.2437, 34.0522], // Los Santos center
       pitch: 0,
       bearing: 0
     });
@@ -237,28 +289,68 @@ const Map = () => {
   const addPlayerMarkers = () => {
     if (!map.current || !showPlayers) return;
 
+    // Get job colors and icons
+    const getJobStyle = (job: string) => {
+      switch (job) {
+        case 'police':
+          return { color: '#3B82F6', icon: '🚔', label: 'Police' };
+        case 'ems':
+          return { color: '#EF4444', icon: '🚑', label: 'EMS' };
+        case 'mechanic':
+          return { color: '#F59E0B', icon: '🔧', label: 'Mechanic' };
+        case 'taxi':
+          return { color: '#FBBF24', icon: '🚕', label: 'Taxi' };
+        case 'admin':
+          return { color: '#8B5CF6', icon: '👑', label: 'Admin' };
+        default:
+          return { color: '#10B981', icon: '👤', label: 'Civilian' };
+      }
+    };
+
     players.forEach((player) => {
-      const statusColor = player.status === 'in-game' ? '#3b82f6' : 
-                         player.status === 'online' ? '#10b981' : '#6b7280';
+      const jobStyle = getJobStyle(player.job);
+      const statusOpacity = player.status === 'online' ? '1' : 
+                           player.status === 'busy' ? '0.8' : '0.6';
       
       const markerElement = document.createElement('div');
       markerElement.className = 'player-marker';
+      markerElement.innerHTML = jobStyle.icon;
       markerElement.style.cssText = `
-        width: 20px;
-        height: 20px;
-        background-color: ${statusColor};
+        width: 24px;
+        height: 24px;
+        background-color: ${jobStyle.color};
         border: 2px solid white;
         border-radius: 50%;
         cursor: pointer;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        opacity: ${statusOpacity};
+        transition: all 0.2s ease;
+        ${player.heading ? `transform: rotate(${player.heading}deg);` : ''}
       `;
 
+      // Add pulse for busy status
+      if (player.status === 'busy') {
+        markerElement.style.animation = 'pulse 1.5s infinite';
+      }
+
       const popup = new mapboxgl.Popup({ offset: 15 }).setHTML(`
-        <div style="color: #333; font-family: sans-serif;">
-          <h4 style="margin: 0 0 8px 0;">${player.name}</h4>
-          <p style="margin: 3px 0;"><strong>Status:</strong> ${player.status}</p>
+        <div style="color: #333; font-family: sans-serif; min-width: 200px;">
+          <h4 style="margin: 0 0 8px 0; color: ${jobStyle.color};">
+            ${jobStyle.icon} ${player.name}
+          </h4>
+          <p style="margin: 3px 0;"><strong>Job:</strong> ${jobStyle.label}${player.jobGrade ? ` (${player.jobGrade})` : ''}</p>
+          <p style="margin: 3px 0;"><strong>Status:</strong> 
+            <span style="color: ${player.status === 'online' ? '#10B981' : player.status === 'busy' ? '#F59E0B' : '#6B7280'}">
+              ${player.status.toUpperCase()}
+            </span>
+          </p>
           ${player.vehicle ? `<p style="margin: 3px 0;"><strong>Vehicle:</strong> ${player.vehicle}</p>` : ''}
           <p style="margin: 3px 0; font-size: 11px;"><strong>Last seen:</strong> ${new Date(player.lastSeen).toLocaleTimeString()}</p>
+          <p style="margin: 3px 0; font-size: 11px;"><strong>Server:</strong> ${servers.find(s => s.id === player.serverId)?.name || 'Unknown'}</p>
         </div>
       `);
 
@@ -291,30 +383,64 @@ const Map = () => {
 
   const fetchLiveData = async () => {
     try {
-      // In a real implementation, this would fetch from your server APIs
-      console.log('Fetching live data...');
+      console.log('Fetching live FiveM data...');
       
-      // Simulate some player movement
+      // Call our edge function to get real server data
+      const { data, error } = await supabase.functions.invoke('fetch-fivem-data');
+      
+      if (error) {
+        console.error('Error fetching FiveM data:', error);
+        toast({
+          title: "Connection Error",
+          description: "Failed to fetch live server data. Using cached data.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data) {
+        console.log('Received FiveM data:', data);
+        setServers(data.servers || []);
+        setPlayers(data.players || []);
+        
+        // Update markers on map
+        if (map.current) {
+          // Clear existing markers
+          const markers = document.querySelectorAll('.server-marker, .player-marker');
+          markers.forEach(marker => marker.remove());
+          
+          // Re-add markers with new data
+          addServerMarkers();
+          if (showPlayers) addPlayerMarkers();
+        }
+        
+        toast({
+          title: "Data Updated",
+          description: `Updated ${data.players?.length || 0} player locations`,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching live data:', error);
+      
+      // Fallback to mock data simulation for demo
       setPlayers(prevPlayers => 
         prevPlayers.map(player => ({
           ...player,
           coordinates: [
-            player.coordinates[0] + (Math.random() - 0.5) * 0.01,
-            player.coordinates[1] + (Math.random() - 0.5) * 0.01
+            player.coordinates[0] + (Math.random() - 0.5) * 0.002, // Smaller movement for city-level
+            player.coordinates[1] + (Math.random() - 0.5) * 0.002
           ] as [number, number],
-          lastSeen: new Date().toISOString()
+          lastSeen: new Date().toISOString(),
+          status: Math.random() > 0.7 ? 'busy' : 'online' // Random status changes
         }))
       );
 
-      // Update server player counts
-      setServers(prevServers =>
-        prevServers.map(server => ({
-          ...server,
-          playerCount: Math.max(0, server.playerCount + Math.floor(Math.random() * 10 - 5))
-        }))
-      );
-    } catch (error) {
-      console.error('Error fetching live data:', error);
+      // Refresh markers with simulated data
+      if (map.current) {
+        const markers = document.querySelectorAll('.player-marker');
+        markers.forEach(marker => marker.remove());
+        if (showPlayers) addPlayerMarkers();
+      }
     }
   };
 
@@ -329,6 +455,23 @@ const Map = () => {
       if (showPlayers) addPlayerMarkers();
     }
     fetchLiveData();
+  };
+
+  const connectToFiveMServer = async (serverIp: string, serverPort: number) => {
+    try {
+      toast({
+        title: "Connecting to FiveM Server",
+        description: `Attempting to connect to ${serverIp}:${serverPort}`,
+      });
+      
+      await fetchLiveData();
+    } catch (error) {
+      toast({
+        title: "Connection Failed",
+        description: "Could not connect to FiveM server. Check server IP and port.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!isTokenSet) {
@@ -440,17 +583,26 @@ const Map = () => {
               <div className="w-4 h-4 bg-yellow-500 rounded-full border-2 border-white"></div>
               <span className="text-foreground">Server Maintenance</span>
             </div>
+            <hr className="border-gaming-border my-2" />
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-              <span className="text-foreground">Server Offline</span>
+              <div className="w-5 h-5 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-xs">🚔</div>
+              <span className="text-foreground">Police</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
-              <span className="text-foreground">Player In-Game</span>
+              <div className="w-5 h-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-xs">🚑</div>
+              <span className="text-foreground">EMS/Paramedic</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-              <span className="text-foreground">Player Online</span>
+              <div className="w-5 h-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-xs">🔧</div>
+              <span className="text-foreground">Mechanic</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-xs">👤</div>
+              <span className="text-foreground">Civilian</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 bg-purple-500 rounded-full border-2 border-white flex items-center justify-center text-xs">👑</div>
+              <span className="text-foreground">Admin</span>
             </div>
           </div>
         </Card>
