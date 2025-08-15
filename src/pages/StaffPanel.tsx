@@ -257,6 +257,48 @@ const StaffPanel = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
+            {/* Application Settings */}
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-6">
+                <FileText className="h-5 w-5 text-neon-green" />
+                <h2 className="text-xl font-semibold text-foreground">Application Settings</h2>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-foreground text-base">Accept Applications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Toggle whether new applications can be submitted
+                    </p>
+                  </div>
+                  <Switch
+                    checked={serverSettings.application_settings?.accept_applications || false}
+                    onCheckedChange={(checked) => {
+                      const newSettings = {
+                        ...serverSettings.application_settings,
+                        accept_applications: checked
+                      };
+                      setServerSettings({
+                        ...serverSettings,
+                        application_settings: newSettings
+                      });
+                      handleSettingUpdate('application_settings', newSettings);
+                    }}
+                  />
+                </div>
+                
+                <div className="p-4 bg-gaming-dark rounded border">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Status:</strong> Applications are currently{' '}
+                    <span className={serverSettings.application_settings?.accept_applications ? 'text-green-400' : 'text-red-400'}>
+                      {serverSettings.application_settings?.accept_applications ? 'OPEN' : 'CLOSED'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </Card>
+
             {/* Discord Settings */}
             <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
               <div className="flex items-center space-x-2 mb-6">
