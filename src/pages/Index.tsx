@@ -12,10 +12,16 @@ import heroImage from "@/assets/hero-image.jpg";
 
 const Index = () => {
   const [serverJoinLink, setServerJoinLink] = useState('');
+  const [serverInfo, setServerInfo] = useState({
+    displayIp: 'connect dreamlight-rp.com',
+    discordUrl: '',
+    status: 'online'
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     fetchServerJoinLink();
+    fetchServerInfo();
   }, []);
 
   const fetchServerJoinLink = async () => {
@@ -39,6 +45,35 @@ const Index = () => {
     }
   };
 
+  const fetchServerInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', ['server_display_ip', 'discord_url', 'server_status']);
+
+      if (error) {
+        console.error('Error fetching server info:', error);
+        return;
+      }
+
+      if (data) {
+        const settings: any = {};
+        data.forEach(setting => {
+          settings[setting.setting_key] = setting.setting_value;
+        });
+
+        setServerInfo({
+          displayIp: settings.server_display_ip || 'connect dreamlight-rp.com',
+          discordUrl: settings.discord_url || '',
+          status: settings.server_status || 'online'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching server info:', error);
+    }
+  };
+
   const handleConnectNow = () => {
     if (!serverJoinLink) {
       toast({
@@ -51,6 +86,31 @@ const Index = () => {
 
     // Try to open the FiveM link
     window.location.href = serverJoinLink;
+  };
+
+  const handleDiscordClick = () => {
+    if (serverInfo.discordUrl) {
+      window.open(serverInfo.discordUrl, '_blank');
+    } else {
+      toast({
+        title: "Discord Link Not Available",
+        description: "The Discord link has not been configured yet.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'online':
+        return 'bg-neon-green/20 text-neon-green border-neon-green/30';
+      case 'maintenance':
+        return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
+      case 'offline':
+        return 'bg-red-500/20 text-red-500 border-red-500/30';
+      default:
+        return 'bg-neon-green/20 text-neon-green border-neon-green/30';
+    }
   };
 
   const features = [
@@ -192,17 +252,24 @@ const Index = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Server IP:</span>
                     <code className="bg-gaming-dark px-3 py-1 rounded text-neon-purple">
-                      connect dreamlight-rp.com
+                      {serverInfo.displayIp}
                     </code>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Discord:</span>
-                    <Button variant="neon" size="sm">Join Discord</Button>
+                    <Button 
+                      variant="neon" 
+                      size="sm"
+                      onClick={handleDiscordClick}
+                      disabled={!serverInfo.discordUrl}
+                    >
+                      Join Discord
+                    </Button>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Status:</span>
-                    <Badge className="bg-neon-green/20 text-neon-green border-neon-green/30">
-                      Online
+                    <Badge className={getStatusStyle(serverInfo.status)}>
+                      {serverInfo.status.charAt(0).toUpperCase() + serverInfo.status.slice(1)}
                     </Badge>
                   </div>
                 </div>

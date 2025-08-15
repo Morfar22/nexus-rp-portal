@@ -151,11 +151,18 @@ const StaffPanel = () => {
         .eq('setting_key', 'server_join_link')
         .maybeSingle();
 
-      // Get FiveM server settings
-      const fivemSettings = await supabase
+      // Get FiveM server settings and server information
+      const allSettings = await supabase
         .from('server_settings')
         .select('setting_key, setting_value')
-        .in('setting_key', ['fivem_server_ip', 'fivem_server_port', 'fivem_server_name']);
+        .in('setting_key', [
+          'fivem_server_ip', 
+          'fivem_server_port', 
+          'fivem_server_name',
+          'server_display_ip',
+          'discord_url',
+          'server_status'
+        ]);
 
       if (applicationsRes.data) setApplications(applicationsRes.data);
       if (rulesRes.data) setRules(rulesRes.data);
@@ -169,13 +176,13 @@ const StaffPanel = () => {
       if (serverStatsRes.data) setServerStats(serverStatsRes.data);
       if (joinLinkSetting.data) setServerJoinLink(joinLinkSetting.data.setting_value as string);
       
-      // Process FiveM settings
-      if (fivemSettings.data) {
-        const fivemConfig: any = {};
-        fivemSettings.data.forEach(setting => {
-          fivemConfig[setting.setting_key] = setting.setting_value;
+      // Process all settings
+      if (allSettings.data) {
+        const configSettings: any = {};
+        allSettings.data.forEach(setting => {
+          configSettings[setting.setting_key] = setting.setting_value;
         });
-        setServerSettings(prev => ({ ...prev, ...fivemConfig }));
+        setServerSettings(prev => ({ ...prev, ...configSettings }));
       }
       
     } catch (error) {
@@ -2293,6 +2300,112 @@ const StaffPanel = () => {
                       className="bg-neon-purple hover:bg-neon-purple/80"
                     >
                       Save Server Configuration
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Server Information Management */}
+              <Card className="bg-gaming-card border-gaming-border">
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
+                    Server Information (Home Page)
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="serverDisplayIp" className="text-foreground">
+                        Server Connect Command
+                      </Label>
+                      <Input
+                        id="serverDisplayIp"
+                        value={serverSettings.server_display_ip || ''}
+                        onChange={(e) => setServerSettings(prev => ({ ...prev, server_display_ip: e.target.value }))}
+                        placeholder="connect dreamlight-rp.com"
+                        className="bg-gaming-dark border-gaming-border text-foreground mt-1"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        This will be displayed on the home page as the server connect command
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="discordUrl" className="text-foreground">
+                        Discord Invite URL
+                      </Label>
+                      <Input
+                        id="discordUrl"
+                        value={serverSettings.discord_url || ''}
+                        onChange={(e) => setServerSettings(prev => ({ ...prev, discord_url: e.target.value }))}
+                        placeholder="https://discord.gg/your-invite"
+                        className="bg-gaming-dark border-gaming-border text-foreground mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="serverStatus" className="text-foreground">
+                        Server Status
+                      </Label>
+                      <select
+                        id="serverStatus"
+                        value={serverSettings.server_status || 'online'}
+                        onChange={(e) => setServerSettings(prev => ({ ...prev, server_status: e.target.value }))}
+                        className="bg-gaming-dark border-gaming-border text-foreground mt-1 w-full rounded-md px-3 py-2"
+                      >
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="maintenance">Maintenance</option>
+                      </select>
+                    </div>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          // Save server information settings
+                          const settings = [
+                            { key: 'server_display_ip', value: serverSettings.server_display_ip },
+                            { key: 'discord_url', value: serverSettings.discord_url },
+                            { key: 'server_status', value: serverSettings.server_status }
+                          ];
+
+                          for (const setting of settings) {
+                            const { data: existingData } = await supabase
+                              .from('server_settings')
+                              .select('id')
+                              .eq('setting_key', setting.key)
+                              .maybeSingle();
+
+                            if (existingData) {
+                              await supabase
+                                .from('server_settings')
+                                .update({
+                                  setting_value: setting.value,
+                                  updated_at: new Date().toISOString()
+                                })
+                                .eq('setting_key', setting.key);
+                            } else {
+                              await supabase
+                                .from('server_settings')
+                                .insert({
+                                  setting_key: setting.key,
+                                  setting_value: setting.value,
+                                  created_by: user?.id
+                                });
+                            }
+                          }
+
+                          toast({
+                            title: "Success",
+                            description: "Server information updated successfully",
+                          });
+                        } catch (error) {
+                          console.error('Error updating server information:', error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to update server information",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      className="bg-neon-purple hover:bg-neon-purple/80"
+                    >
+                      Save Server Information
                     </Button>
                   </div>
                 </div>
