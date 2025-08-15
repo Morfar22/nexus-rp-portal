@@ -169,7 +169,7 @@ const StaffPanel = () => {
       console.log('Final processed staff members:', processedStaffMembers);
 
       const [applicationsRes, rulesRes, typesRes, settingsRes, teamMembersRes, serverStatsRes] = await Promise.all([
-        supabase.from('applications').select('*').eq('closed', false).order('created_at', { ascending: false }),
+        supabase.from('applications').select('*').order('created_at', { ascending: false }),
         supabase.from('rules').select('*').order('category', { ascending: true }),
         supabase.from('application_types').select('*'),
         supabase.from('server_settings').select('*').maybeSingle(),
@@ -217,7 +217,11 @@ const StaffPanel = () => {
           'logging_settings'
         ]);
 
-      if (applicationsRes.data) setApplications(applicationsRes.data);
+      if (applicationsRes.data) {
+        console.log('All applications:', applicationsRes.data);
+        console.log('Pending applications:', applicationsRes.data.filter(app => app.status === 'pending' && !app.closed));
+        setApplications(applicationsRes.data);
+      }
       if (rulesRes.data) setRules(rulesRes.data);
       if (processedStaffMembers) {
         console.log('Staff members loaded:', processedStaffMembers);
