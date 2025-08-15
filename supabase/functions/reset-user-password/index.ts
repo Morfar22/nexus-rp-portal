@@ -21,7 +21,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log("Password reset function called");
     const { userEmail }: ResetPasswordRequest = await req.json();
+    console.log("Attempting to reset password for email:", userEmail);
 
     // Create admin client with service role key
     const supabaseAdmin = createClient(
