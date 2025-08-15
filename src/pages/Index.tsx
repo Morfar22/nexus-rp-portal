@@ -31,9 +31,16 @@ const Index = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchServerJoinLink();
-    fetchServerInfo();
-    fetchHomepageContent();
+    // Use Promise.all to fetch all data in parallel
+    const loadInitialData = async () => {
+      await Promise.all([
+        fetchServerJoinLink(),
+        fetchServerInfo(),
+        fetchHomepageContent()
+      ]);
+    };
+    
+    loadInitialData();
   }, []);
 
   const fetchServerJoinLink = async () => {
@@ -114,6 +121,7 @@ const Index = () => {
 
   const fetchHomepageContent = async () => {
     try {
+      // Use Promise.all to fetch both content types in parallel
       const [featuresRes, ctaRes] = await Promise.all([
         supabase
           .from('server_settings')
@@ -130,7 +138,7 @@ const Index = () => {
       if (featuresRes.data?.setting_value) {
         setHomepageFeatures(featuresRes.data.setting_value as any[]);
       } else {
-        // Fallback to default features
+        // Fallback to default features only if no data exists
         setHomepageFeatures([
           {
             title: "Professional RP Community",

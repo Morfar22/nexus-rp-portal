@@ -26,6 +26,9 @@ const ServerStats = () => {
   useEffect(() => {
     fetchServerStats();
 
+    // Fetch fresh data every 30 seconds instead of constantly
+    const interval = setInterval(fetchServerStats, 30000);
+
     // Set up real-time subscription for server stats updates
     const channel = supabase
       .channel('server-stats-changes')
@@ -46,6 +49,7 @@ const ServerStats = () => {
       .subscribe();
 
     return () => {
+      clearInterval(interval);
       supabase.removeChannel(channel);
     };
   }, []);
