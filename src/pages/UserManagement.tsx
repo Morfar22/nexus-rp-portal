@@ -216,6 +216,7 @@ export default function UserManagement() {
 
   const resetUserPassword = async (userId: string, userEmail: string) => {
     try {
+      console.log("Starting password reset for:", userEmail);
       setLoading(true);
       
       // Call our edge function to reset password with admin privileges
@@ -223,7 +224,10 @@ export default function UserManagement() {
         body: { userEmail }
       });
 
+      console.log("Function response:", { data, error });
+
       if (error) {
+        console.error("Function error:", error);
         throw error;
       }
 
