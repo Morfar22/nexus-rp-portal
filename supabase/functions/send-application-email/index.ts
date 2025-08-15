@@ -1,7 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,28 +26,12 @@ serve(async (req: Request) => {
     const { type, userEmail, applicationData } = requestBody;
     console.log("Extracted data:", { type, userEmail, applicationData });
 
-    // Send email using Resend
-    const emailResponse = await resend.emails.send({
-      from: "Nexus RP Portal <noreply@mmorfar.dk>",
-      to: [userEmail],
-      subject: "Application Received - Nexus RP Portal",
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h1 style="color: #ff6b6b;">Application Received!</h1>
-          <p>Thank you for your application to Nexus RP.</p>
-          <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
-          <p>We'll review your application and get back to you soon.</p>
-          <p>Best regards,<br>The Nexus RP Team</p>
-        </div>
-      `,
-    });
-
-    console.log("Email sent successfully:", emailResponse);
+    // Email functionality removed - Discord notification handled separately
+    console.log("Application processed successfully - Discord notification will be sent separately");
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: "Application email sent successfully",
-      emailResponse 
+      message: "Application processed successfully - Discord notification will be sent"
     }), {
       status: 200,
       headers: {
