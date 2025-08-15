@@ -151,6 +151,13 @@ export type Database = {
             referencedRelation: "application_types"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       individual_server_stats: {

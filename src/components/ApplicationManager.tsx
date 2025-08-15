@@ -28,10 +28,7 @@ const ApplicationManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('applications')
-        .select(`
-          *,
-          profiles:user_id (username, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -164,7 +161,7 @@ const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplica
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <h3 className="font-medium text-foreground">{app.profiles?.username}</h3>
+                    <h3 className="font-medium text-foreground">{app.steam_name || 'Unknown User'}</h3>
                     <Badge className={getStatusColor(app.status)}>
                       {app.status}
                     </Badge>
@@ -192,7 +189,7 @@ const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplica
                       <DialogHeader>
                         <DialogTitle className="text-foreground">Application Details</DialogTitle>
                         <DialogDescription className="text-muted-foreground">
-                          Review application from {selectedApp?.profiles?.username}
+                          Review application from {selectedApp?.steam_name}
                         </DialogDescription>
                       </DialogHeader>
                       
@@ -200,12 +197,8 @@ const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplica
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label className="text-foreground">Username</Label>
-                              <p className="text-sm text-muted-foreground">{selectedApp.profiles?.username}</p>
-                            </div>
-                            <div>
-                              <Label className="text-foreground">Email</Label>
-                              <p className="text-sm text-muted-foreground">{selectedApp.profiles?.email}</p>
+                              <Label className="text-foreground">Steam Name</Label>
+                              <p className="text-sm text-muted-foreground">{selectedApp.steam_name}</p>
                             </div>
                             <div>
                               <Label className="text-foreground">Discord Name</Label>

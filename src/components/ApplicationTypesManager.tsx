@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Trash2, Save, X, FileText, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import FormFieldEditor from "./FormFieldEditor";
 
 const ApplicationTypesManager = () => {
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
@@ -289,6 +290,32 @@ const ApplicationTypesManager = () => {
                   </div>
                   
                   <div className="flex items-center space-x-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Fields
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gaming-card border-gaming-border">
+                        <DialogHeader>
+                          <DialogTitle className="text-foreground">Edit Form Fields</DialogTitle>
+                          <DialogDescription className="text-muted-foreground">
+                            Customize the form fields for {type.name}
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <FormFieldEditor
+                          applicationTypeId={type.id}
+                          initialFields={type.form_fields || []}
+                          onSave={(fields: any) => {
+                            // Refresh the list
+                            fetchApplicationTypes();
+                          }}
+                        />
+                      </DialogContent>
+                    </Dialog>
+
                     <Button
                       size="sm"
                       variant="outline"

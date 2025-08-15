@@ -269,6 +269,48 @@ const StaffPanel = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
+            {/* Maintenance Mode */}
+            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-6">
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+                <h2 className="text-xl font-semibold text-foreground">Maintenance Mode</h2>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-foreground text-base">Enable Maintenance Mode</Label>
+                    <p className="text-sm text-muted-foreground">
+                      When enabled, only staff can access the site
+                    </p>
+                  </div>
+                  <Switch
+                    checked={serverSettings.general_settings?.maintenance_mode || false}
+                    onCheckedChange={(checked) => {
+                      const newSettings = {
+                        ...serverSettings.general_settings,
+                        maintenance_mode: checked
+                      };
+                      setServerSettings({
+                        ...serverSettings,
+                        general_settings: newSettings
+                      });
+                      handleSettingUpdate('general_settings', newSettings);
+                    }}
+                  />
+                </div>
+                
+                <div className="p-4 bg-gaming-dark rounded border">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Status:</strong> Maintenance mode is currently{' '}
+                    <span className={serverSettings.general_settings?.maintenance_mode ? 'text-yellow-400' : 'text-green-400'}>
+                      {serverSettings.general_settings?.maintenance_mode ? 'ENABLED' : 'DISABLED'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </Card>
+
             {/* Application Settings */}
             <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
               <div className="flex items-center space-x-2 mb-6">
