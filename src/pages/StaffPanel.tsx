@@ -982,8 +982,7 @@ const StaffPanel = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
-                      variant="outline" 
-                      className="justify-between bg-gaming-card border-gaming-border text-foreground hover:bg-gaming-dark"
+                      className="justify-between bg-transparent border-0 text-muted-foreground hover:text-foreground hover:bg-gaming-dark data-[state=open]:bg-gaming-dark data-[state=open]:text-foreground px-3 py-1.5 rounded-md text-sm font-medium transition-all"
                     >
                       <span>
                         {selectedApplicationView === 'pending' && `Pending Applications (${applications.filter(app => app.status === 'pending' && !app.closed).length})`}
