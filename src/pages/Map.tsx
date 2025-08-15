@@ -163,37 +163,52 @@ const Map = () => {
   useEffect(() => {
     // Get Mapbox token from Supabase secrets
     const initializeMap = async () => {
+      console.log('🗺️ Initializing map...');
       try {
+        console.log('🗺️ Fetching Mapbox token from Supabase...');
         // Try to get token from Supabase edge function that accesses secrets
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         
+        console.log('🗺️ Supabase response:', { data, error });
+        
+        if (error) {
+          console.error('🗺️ Supabase error:', error);
+          throw error;
+        }
+        
         if (data?.token) {
+          console.log('🗺️ Token found from Supabase, initializing map...');
           setMapboxToken(data.token);
           setIsTokenSet(true);
           setIsMapLoading(true);
           initMap(data.token);
         } else {
+          console.log('🗺️ No token from Supabase, checking localStorage...');
           // Fallback to localStorage for development
           const storedToken = localStorage.getItem('mapbox_token');
           if (storedToken) {
+            console.log('🗺️ Using stored token from localStorage...');
             setMapboxToken(storedToken);
             setIsTokenSet(true);
             setIsMapLoading(true);
             initMap(storedToken);
           } else {
+            console.log('🗺️ No token available, showing token input...');
             setIsMapLoading(false);
           }
         }
       } catch (error) {
-        console.error('Error initializing map:', error);
+        console.error('🗺️ Error initializing map:', error);
         // Fallback to localStorage
         const storedToken = localStorage.getItem('mapbox_token');
         if (storedToken) {
+          console.log('🗺️ Using stored token after error...');
           setMapboxToken(storedToken);
           setIsTokenSet(true);
           setIsMapLoading(true);
           initMap(storedToken);
         } else {
+          console.log('🗺️ No fallback token available');
           setIsMapLoading(false);
         }
       }
@@ -215,48 +230,74 @@ const Map = () => {
   }, [autoRefresh, refreshInterval, isTokenSet]);
 
   const initMap = (token: string) => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current) {
+      console.log('🗺️ Map container not ready or map already exists');
+      return;
+    }
 
+    console.log('🗺️ Setting Mapbox access token...');
     mapboxgl.accessToken = token;
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      // Use dark style as base
-      style: 'mapbox://styles/mapbox/dark-v11',
-      projection: 'mercator',
-      zoom: 10,
-      center: [-118.2437, 34.0522], // Los Angeles coordinates for Los Santos reference
-      pitch: 0,
-      bearing: 0
-    });
-
-    // Add navigation controls
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-      }),
-      'top-right'
-    );
-
-    // Add fullscreen control
-    map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-
-    // Set up custom Los Santos styling
-    map.current.on('style.load', () => {
-      // Add custom atmosphere for GTA feel
-      map.current?.setFog({
-        color: 'rgb(30, 30, 40)',
-        'high-color': 'rgb(50, 50, 70)',
-        'horizon-blend': 0.2,
+    console.log('🗺️ Creating new map instance...');
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        // Use dark style as base
+        style: 'mapbox://styles/mapbox/dark-v11',
+        projection: 'mercator',
+        zoom: 10,
+        center: [-118.2437, 34.0522], // Los Angeles coordinates for Los Santos reference
+        pitch: 0,
+        bearing: 0
       });
 
-      // Add custom sources and layers for servers and players
-      addServerMarkers();
-      addPlayerMarkers();
-      
-      // Map is fully loaded
+      console.log('🗺️ Map instance created successfully');
+
+      // Add navigation controls
+      map.current.addControl(
+        new mapboxgl.NavigationControl({
+          visualizePitch: true,
+        }),
+        'top-right'
+      );
+
+      // Add fullscreen control
+      map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+      // Set up event listeners
+      map.current.on('load', () => {
+        console.log('🗺️ Map loaded successfully');
+        setIsMapLoading(false);
+      });
+
+      map.current.on('error', (e) => {
+        console.error('🗺️ Map error:', e);
+        setIsMapLoading(false);
+      });
+
+      // Set up custom Los Santos styling
+      map.current.on('style.load', () => {
+        console.log('🗺️ Map style loaded, adding custom features...');
+        
+        // Add custom atmosphere for GTA feel
+        map.current?.setFog({
+          color: 'rgb(30, 30, 40)',
+          'high-color': 'rgb(50, 50, 70)',
+          'horizon-blend': 0.2,
+        });
+
+        // Add custom sources and layers for servers and players
+        addServerMarkers();
+        addPlayerMarkers();
+        
+        console.log('🗺️ Map fully initialized with markers');
+        // Map is fully loaded
+        setIsMapLoading(false);
+      });
+    } catch (error) {
+      console.error('🗺️ Error creating map:', error);
       setIsMapLoading(false);
-    });
+    }
   };
 
   const addServerMarkers = () => {
