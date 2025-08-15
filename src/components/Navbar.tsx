@@ -11,6 +11,17 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const [isStaff, setIsStaff] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [navbarConfig, setNavbarConfig] = useState({
+    items: [
+      { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false },
+      { id: 'apply', label: 'Apply', path: '/apply', visible: true, order: 1, staffOnly: false },
+      { id: 'rules', label: 'Rules', path: '/rules', visible: true, order: 2, staffOnly: false },
+      { id: 'team', label: 'Our Team', path: '/team', visible: true, order: 3, staffOnly: false },
+      { id: 'staff', label: 'Staff Panel', path: '/staff', visible: true, order: 4, staffOnly: true },
+      { id: 'servers', label: 'Servers', path: '/servers', visible: true, order: 5, staffOnly: true },
+      { id: 'users', label: 'Users', path: '/users', visible: true, order: 6, staffOnly: true }
+    ]
+  });
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -39,63 +50,47 @@ const Navbar = () => {
     checkStaffRole();
   }, [user]);
 
-  const NavLinks = () => (
-    <>
-      <Link 
-        to="/" 
-        className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
-        onClick={() => setIsOpen(false)}
-      >
-        Home
-      </Link>
-      <Link 
-        to="/apply" 
-        className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
-        onClick={() => setIsOpen(false)}
-      >
-        Apply
-      </Link>
-      <Link 
-        to="/rules" 
-        className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
-        onClick={() => setIsOpen(false)}
-      >
-        Rules
-      </Link>
-      <Link 
-        to="/team" 
-        className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
-        onClick={() => setIsOpen(false)}
-      >
-        Our Team
-      </Link>
-      {isStaff && (
-        <>
+  useEffect(() => {
+    const loadNavbarConfig = async () => {
+      try {
+        const { data } = await supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'navbar_config')
+          .maybeSingle();
+          
+        if (data) {
+          setNavbarConfig(data.setting_value as typeof navbarConfig);
+        }
+      } catch (error) {
+        console.error('Error loading navbar config:', error);
+      }
+    };
+
+    loadNavbarConfig();
+  }, []);
+
+  const NavLinks = () => {
+    // Filter and sort navigation items based on configuration
+    const visibleItems = navbarConfig.items
+      .filter(item => item.visible && (!item.staffOnly || isStaff))
+      .sort((a, b) => a.order - b.order);
+
+    return (
+      <>
+        {visibleItems.map((item) => (
           <Link 
-            to="/staff" 
+            key={item.id}
+            to={item.path} 
             className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
             onClick={() => setIsOpen(false)}
           >
-            Staff Panel
+            {item.label}
           </Link>
-          <Link 
-            to="/servers" 
-            className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
-            onClick={() => setIsOpen(false)}
-          >
-            Servers
-          </Link>
-          <Link 
-            to="/users" 
-            className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
-            onClick={() => setIsOpen(false)}
-          >
-            Users
-          </Link>
-        </>
-      )}
-    </>
-  );
+        ))}
+      </>
+    );
+  };
 
   const UserSection = () => (
     <div className="flex flex-col md:flex-row items-start md:items-center space-y-3 md:space-y-0 md:space-x-4">
