@@ -40,18 +40,47 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Fetching FiveM server data...");
 
-    // Your FiveM server configurations
+    // Get server configuration from database
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    // Fetch server settings from database
+    const settingsResponse = await fetch(
+      `${supabaseUrl}/rest/v1/server_settings?select=setting_key,setting_value&setting_key=in.(fivem_server_ip,fivem_server_port,fivem_server_name)`,
+      {
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+          'apikey': supabaseServiceRoleKey,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const settingsData = await settingsResponse.json();
+    console.log("Server settings from database:", settingsData);
+
+    // Parse settings into a map
+    const settings: Record<string, string> = {};
+    if (Array.isArray(settingsData)) {
+      settingsData.forEach((setting: any) => {
+        settings[setting.setting_key] = setting.setting_value;
+      });
+    }
+
+    // Your FiveM server configurations from database or fallback defaults
     const servers: FiveMServerConfig[] = [
       {
         id: "main",
-        name: "Dreamlight RP - Main",
-        ip: "YOUR_SERVER_IP", // Replace with your actual server IP
-        port: 30120, // Replace with your actual server port
-        coordinates: [0, 0], // GTA V Los Santos center coordinates
+        name: settings.fivem_server_name || "Dreamlight RP - Main",
+        ip: settings.fivem_server_ip || "YOUR_SERVER_IP", // Will use database value or fallback
+        port: parseInt(settings.fivem_server_port || "30120"),
+        coordinates: [-118.2437, 34.0522], // Los Angeles coordinates for Los Santos reference
         region: "GTA V"
       }
       // Add more servers if needed
     ];
+
+    console.log("Using server configurations:", servers);
 
     const serverData = await Promise.all(
       servers.map(async (server) => {
@@ -88,10 +117,10 @@ const handler = async (req: Request): Promise<Response> => {
             // This depends on your server's setup - you may need to adjust this
             const jobData = extractJobFromPlayer(player, serverInfo.vars);
             
-            // Generate random positions within GTA V Los Santos for demo
+            // Generate random positions within Los Angeles area for Los Santos simulation
             // In reality, this would come from your server's player position system
             const baseCoords = server.coordinates;
-            const randomOffset = 2000; // GTA V coordinate range
+            const randomOffset = 0.05; // ~5km radius in latitude/longitude
             
             return {
               id: `${server.id}_${player.id}`,

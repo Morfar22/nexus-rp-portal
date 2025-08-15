@@ -151,6 +151,12 @@ const StaffPanel = () => {
         .eq('setting_key', 'server_join_link')
         .maybeSingle();
 
+      // Get FiveM server settings
+      const fivemSettings = await supabase
+        .from('server_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', ['fivem_server_ip', 'fivem_server_port', 'fivem_server_name']);
+
       if (applicationsRes.data) setApplications(applicationsRes.data);
       if (rulesRes.data) setRules(rulesRes.data);
       if (processedStaffMembers) {
@@ -162,6 +168,15 @@ const StaffPanel = () => {
       if (teamMembersRes.data) setTeamMembers(teamMembersRes.data);
       if (serverStatsRes.data) setServerStats(serverStatsRes.data);
       if (joinLinkSetting.data) setServerJoinLink(joinLinkSetting.data.setting_value as string);
+      
+      // Process FiveM settings
+      if (fivemSettings.data) {
+        const fivemConfig: any = {};
+        fivemSettings.data.forEach(setting => {
+          fivemConfig[setting.setting_key] = setting.setting_value;
+        });
+        setServerSettings(prev => ({ ...prev, ...fivemConfig }));
+      }
       
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -2176,6 +2191,109 @@ const StaffPanel = () => {
                         Enter your FiveM server's IP and port for live stats fetching
                       </p>
                     </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* FiveM Server Configuration */}
+              <Card className="bg-gaming-card border-gaming-border">
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
+                    FiveM Server Configuration
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="serverIp" className="text-foreground">
+                          Server IP Address
+                        </Label>
+                        <Input
+                          id="serverIp"
+                          value={serverSettings.fivem_server_ip || ''}
+                          onChange={(e) => setServerSettings(prev => ({ ...prev, fivem_server_ip: e.target.value }))}
+                          placeholder="192.168.1.100 or your.domain.com"
+                          className="bg-gaming-dark border-gaming-border text-foreground mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="serverPort" className="text-foreground">
+                          Server Port
+                        </Label>
+                        <Input
+                          id="serverPort"
+                          type="number"
+                          value={serverSettings.fivem_server_port || '30120'}
+                          onChange={(e) => setServerSettings(prev => ({ ...prev, fivem_server_port: e.target.value }))}
+                          placeholder="30120"
+                          className="bg-gaming-dark border-gaming-border text-foreground mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="serverName" className="text-foreground">
+                        Server Name
+                      </Label>
+                      <Input
+                        id="serverName"
+                        value={serverSettings.fivem_server_name || ''}
+                        onChange={(e) => setServerSettings(prev => ({ ...prev, fivem_server_name: e.target.value }))}
+                        placeholder="Dreamlight RP - Main Server"
+                        className="bg-gaming-dark border-gaming-border text-foreground mt-1"
+                      />
+                    </div>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          // Save FiveM server configuration
+                          const settings = [
+                            { key: 'fivem_server_ip', value: serverSettings.fivem_server_ip },
+                            { key: 'fivem_server_port', value: serverSettings.fivem_server_port },
+                            { key: 'fivem_server_name', value: serverSettings.fivem_server_name }
+                          ];
+
+                          for (const setting of settings) {
+                            const { data: existingData } = await supabase
+                              .from('server_settings')
+                              .select('id')
+                              .eq('setting_key', setting.key)
+                              .single();
+
+                            if (existingData) {
+                              await supabase
+                                .from('server_settings')
+                                .update({
+                                  setting_value: setting.value,
+                                  updated_at: new Date().toISOString()
+                                })
+                                .eq('setting_key', setting.key);
+                            } else {
+                              await supabase
+                                .from('server_settings')
+                                .insert({
+                                  setting_key: setting.key,
+                                  setting_value: setting.value,
+                                  created_by: user?.id
+                                });
+                            }
+                          }
+
+                          toast({
+                            title: "Success",
+                            description: "FiveM server configuration updated successfully",
+                          });
+                        } catch (error) {
+                          console.error('Error updating FiveM server config:', error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to update FiveM server configuration",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      className="bg-neon-purple hover:bg-neon-purple/80"
+                    >
+                      Save Server Configuration
+                    </Button>
                   </div>
                 </div>
               </Card>
