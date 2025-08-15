@@ -9,12 +9,7 @@ interface ApplicationGateProps {
 }
 
 const ApplicationGate: React.FC<ApplicationGateProps> = ({ children }) => {
-  const { settings, loading, refreshSettings } = useServerSettings();
-
-  // Refresh settings when component mounts to ensure latest data
-  React.useEffect(() => {
-    refreshSettings();
-  }, [refreshSettings]);
+  const { settings, loading } = useServerSettings();
 
   if (loading) {
     return (
