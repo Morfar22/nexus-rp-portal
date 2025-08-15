@@ -1,6 +1,7 @@
 import { useServerSettings } from '@/hooks/useServerSettings';
 import { Card } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 interface ApplicationGateProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ const ApplicationGate: React.FC<ApplicationGateProps> = ({ children }) => {
   if (!settings.application_settings?.accept_applications) {
     return (
       <div className="min-h-screen bg-gradient-hero">
+        <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-2xl mx-auto">
             <Card className="p-8 text-center bg-gaming-card border-gaming-border">
