@@ -150,6 +150,12 @@ const StaffPanel = () => {
 
       if (error) throw error;
 
+      // Update local state immediately
+      setServerSettings({
+        ...serverSettings,
+        [settingType]: value
+      });
+
       toast({
         title: "Success",
         description: "Setting updated successfully",
