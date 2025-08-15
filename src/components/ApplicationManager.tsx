@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, CheckCircle, XCircle, Clock, Trash2 } from "lucide-react";
+import ApplicationTypesManager from "./ApplicationTypesManager";
 
 const ApplicationManager = () => {
   const [applications, setApplications] = useState<any[]>([]);
@@ -116,6 +118,33 @@ const ApplicationManager = () => {
       </Card>
     );
   }
+
+  return (
+    <Tabs defaultValue="applications" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2 bg-gaming-card border-gaming-border">
+        <TabsTrigger value="applications">Applications</TabsTrigger>
+        <TabsTrigger value="types">Application Types</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="applications">
+        <ApplicationsList 
+          applications={applications}
+          updateApplicationStatus={updateApplicationStatus}
+          deleteApplication={deleteApplication}
+          getStatusColor={getStatusColor}
+        />
+      </TabsContent>
+
+      <TabsContent value="types">
+        <ApplicationTypesManager />
+      </TabsContent>
+    </Tabs>
+  );
+};
+
+const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplication, getStatusColor }: any) => {
+  const [selectedApp, setSelectedApp] = useState<any>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
 
   return (
     <Card className="p-6 bg-gaming-card border-gaming-border">

@@ -13,6 +13,7 @@ import PrivacyNotice from "@/components/PrivacyNotice";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Apply from "./pages/Apply";
+import ApplicationForm from "./pages/ApplicationForm";
 import Rules from "./pages/Rules";
 import StaffPanel from "./pages/StaffPanel";
 import OurTeam from "./pages/OurTeam";
@@ -41,6 +42,11 @@ const App = () => (
                   <ApplicationGate>
                     <Apply />
                   </ApplicationGate>
+                </ProtectedRoute>
+              } />
+              <Route path="/application-form" element={
+                <ProtectedRoute>
+                  <ApplicationForm />
                 </ProtectedRoute>
               } />
               <Route path="/staff" element={
