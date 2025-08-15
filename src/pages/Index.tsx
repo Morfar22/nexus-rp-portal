@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { PlayCircle, Users, Shield, Map, Clock, Star } from "lucide-react";
 import DynamicIcon from "@/components/DynamicIcon";
 import { useToast } from "@/hooks/use-toast";
+import { useServerSettings } from "@/hooks/useServerSettings";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-image.jpg";
 
@@ -29,6 +30,7 @@ const Index = () => {
     ]
   });
   const { toast } = useToast();
+  const { settings } = useServerSettings();
 
   useEffect(() => {
     // Use Promise.all to fetch all data in parallel
@@ -209,13 +211,12 @@ const Index = () => {
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 px-4">
             <span className="bg-gradient-primary bg-clip-text text-transparent">
-              Dreamlight RP
+              {settings.general_settings?.server_name || 'Dreamlight RP'}
             </span>
           </h1>
           
           <p className="text-lg sm:text-xl md:text-2xl text-foreground/80 mb-8 max-w-3xl mx-auto px-4">
-            Experience the ultimate GTA V roleplay in our cyberpunk-themed city. 
-            Professional staff, custom content, and endless possibilities await.
+            {settings.general_settings?.welcome_message || 'Experience the ultimate GTA V roleplay in our cyberpunk-themed city. Professional staff, custom content, and endless possibilities await.'}
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 px-4">

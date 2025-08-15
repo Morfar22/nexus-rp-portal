@@ -13,6 +13,7 @@ import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useServerSettings } from "@/hooks/useServerSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { 
@@ -126,6 +127,7 @@ const StaffPanel = () => {
 
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { settings: serverSettingsData, updateSetting } = useServerSettings();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -1968,71 +1970,89 @@ const StaffPanel = () => {
                   <h2 className="text-xl font-semibold text-foreground">General Settings</h2>
                 </div>
                 
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-foreground">Server Name</Label>
-                    <Input
-                      value={serverSettings.general_settings?.server_name || ''}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...serverSettings.general_settings,
-                          server_name: e.target.value
-                        };
-                        setServerSettings({
-                          ...serverSettings,
-                          general_settings: newSettings
-                        });
-                      }}
-                      onBlur={() => handleSettingUpdate('general_settings', {
-                        ...serverSettings.general_settings,
-                        server_name: serverSettings.general_settings?.server_name || ''
-                      })}
-                      placeholder="Enter server name..."
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
-                  </div>
+                 <div className="space-y-4">
+                   <div>
+                     <Label className="text-foreground">Server Name</Label>
+                     <Input
+                       value={serverSettingsData.general_settings?.server_name || ''}
+                       onChange={(e) => {
+                         updateSetting('general_settings', {
+                           ...serverSettingsData.general_settings,
+                           server_name: e.target.value
+                         }).catch(error => {
+                           console.error('Failed to update server name:', error);
+                           toast({
+                             title: "Error",
+                             description: "Failed to update server name",
+                             variant: "destructive",
+                           });
+                         });
+                       }}
+                       placeholder="Enter server name..."
+                       className="bg-gaming-dark border-gaming-border text-foreground"
+                     />
+                     <p className="text-xs text-muted-foreground mt-1">
+                       This name will appear in the site header and homepage
+                     </p>
+                   </div>
 
-                  <div>
-                    <Label className="text-foreground">Welcome Message</Label>
-                    <Textarea
-                      value={serverSettings.general_settings?.welcome_message || ''}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...serverSettings.general_settings,
-                          welcome_message: e.target.value
-                        };
-                        setServerSettings({
-                          ...serverSettings,
-                          general_settings: newSettings
-                        });
-                      }}
-                      onBlur={() => handleSettingUpdate('general_settings', {
-                        ...serverSettings.general_settings,
-                        welcome_message: serverSettings.general_settings?.welcome_message || ''
-                      })}
-                      placeholder="Welcome message for new users..."
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                      rows={3}
-                    />
-                  </div>
+                   <div>
+                     <Label className="text-foreground">Welcome Message</Label>
+                     <Textarea
+                       value={serverSettingsData.general_settings?.welcome_message || ''}
+                       onChange={(e) => {
+                         updateSetting('general_settings', {
+                           ...serverSettingsData.general_settings,
+                           welcome_message: e.target.value
+                         }).catch(error => {
+                           console.error('Failed to update welcome message:', error);
+                           toast({
+                             title: "Error",
+                             description: "Failed to update welcome message",
+                             variant: "destructive",
+                           });
+                         });
+                       }}
+                       placeholder="Welcome message shown on homepage..."
+                       className="bg-gaming-dark border-gaming-border text-foreground"
+                       rows={3}
+                     />
+                     <p className="text-xs text-muted-foreground mt-1">
+                       This message will be displayed as the main subtitle on your homepage
+                     </p>
+                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label className="text-foreground">Maintenance Mode</Label>
-                    <Switch
-                      checked={serverSettings.general_settings?.maintenance_mode || false}
-                      onCheckedChange={(checked) => {
-                        const newSettings = {
-                          ...serverSettings.general_settings,
-                          maintenance_mode: checked
-                        };
-                        setServerSettings({
-                          ...serverSettings,
-                          general_settings: newSettings
-                        });
-                        handleSettingUpdate('general_settings', newSettings);
-                      }}
-                    />
-                  </div>
+                   <div className="flex items-center justify-between p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                     <div className="flex-1">
+                       <Label className="text-foreground font-medium">Maintenance Mode</Label>
+                       <p className="text-xs text-muted-foreground mt-1">
+                         When enabled, only staff members can access the site. Regular users will see a maintenance message.
+                       </p>
+                     </div>
+                     <Switch
+                       checked={serverSettingsData.general_settings?.maintenance_mode || false}
+                       onCheckedChange={(checked) => {
+                         updateSetting('general_settings', {
+                           ...serverSettingsData.general_settings,
+                           maintenance_mode: checked
+                         }).then(() => {
+                           toast({
+                             title: checked ? "Maintenance Mode Enabled" : "Maintenance Mode Disabled",
+                             description: checked 
+                               ? "Only staff can now access the site" 
+                               : "Site is now accessible to all users",
+                           });
+                         }).catch(error => {
+                           console.error('Failed to update maintenance mode:', error);
+                           toast({
+                             title: "Error",
+                             description: "Failed to update maintenance mode",
+                             variant: "destructive",
+                           });
+                         });
+                       }}
+                     />
+                   </div>
 
                   <div>
                     <Label className="text-foreground">Max Server Population</Label>
@@ -2066,24 +2086,63 @@ const StaffPanel = () => {
                   <h2 className="text-xl font-semibold text-foreground">Application Settings</h2>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-foreground">Accept New Applications</Label>
-                    <Switch
-                      checked={serverSettings.application_settings?.accept_applications !== false}
-                      onCheckedChange={(checked) => {
-                        const newSettings = {
-                          ...serverSettings.application_settings,
-                          accept_applications: checked
-                        };
-                        setServerSettings({
-                          ...serverSettings,
-                          application_settings: newSettings
-                        });
-                        handleSettingUpdate('application_settings', newSettings);
-                      }}
-                    />
-                  </div>
+                 <div className="space-y-4">
+                   <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                     <div className="flex-1">
+                       <Label className="text-foreground font-medium">Accept New Applications</Label>
+                       <p className="text-xs text-muted-foreground mt-1">
+                         When disabled, users will see a message that applications are closed
+                       </p>
+                     </div>
+                     <Switch
+                       checked={serverSettingsData.application_settings?.accept_applications !== false}
+                       onCheckedChange={(checked) => {
+                         updateSetting('application_settings', {
+                           ...serverSettingsData.application_settings,
+                           accept_applications: checked
+                         }).then(() => {
+                           toast({
+                             title: checked ? "Applications Opened" : "Applications Closed",
+                             description: checked 
+                               ? "Users can now submit applications" 
+                               : "Application form is now disabled",
+                           });
+                         }).catch(error => {
+                           console.error('Failed to update application settings:', error);
+                           toast({
+                             title: "Error",
+                             description: "Failed to update application settings",
+                             variant: "destructive",
+                           });
+                         });
+                       }}
+                     />
+                   </div>
+
+                   <div className="flex items-center justify-between">
+                     <div className="flex-1">
+                       <Label className="text-foreground">Allow Multiple Applications</Label>
+                       <p className="text-xs text-muted-foreground mt-1">
+                         Allow users to submit new applications even if they have an existing one
+                       </p>
+                     </div>
+                     <Switch
+                       checked={serverSettingsData.application_settings?.multiple_applications_allowed || false}
+                       onCheckedChange={(checked) => {
+                         updateSetting('application_settings', {
+                           ...serverSettingsData.application_settings,
+                           multiple_applications_allowed: checked
+                         }).catch(error => {
+                           console.error('Failed to update application settings:', error);
+                           toast({
+                             title: "Error",
+                             description: "Failed to update application settings",
+                             variant: "destructive",
+                           });
+                         });
+                       }}
+                     />
+                   </div>
 
                   <div className="flex items-center justify-between">
                     <Label className="text-foreground">Allow Multiple Applications</Label>
