@@ -145,20 +145,34 @@ const ApplicationManager = () => {
 
       // Send email notification
       try {
-        await supabase.functions.invoke('send-application-email', {
-          body: {
-            type: status === 'approved' ? 'approved' : status === 'rejected' ? 'denied' : 'under_review',
-            userId: appData.user_id,
-            applicationData: {
-              steam_name: appData.steam_name || '',
-              discord_tag: appData.discord_tag || '',
-              discord_name: appData.discord_name || '',
-              fivem_name: appData.fivem_name || '',
-              review_notes: notes || ''
+        // Get user email from profiles table
+        const { data: userProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', appData.user_id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        if (userProfile?.email) {
+          await supabase.functions.invoke('send-application-email', {
+            body: {
+              type: status === 'approved' ? 'approved' : status === 'rejected' ? 'denied' : 'under_review',
+              userEmail: userProfile.email,
+              applicationData: {
+                steam_name: appData.steam_name || '',
+                discord_tag: appData.discord_tag || '',
+                discord_name: appData.discord_name || '',
+                fivem_name: appData.fivem_name || '',
+                review_notes: notes || '',
+                status: status
+              }
             }
-          }
-        });
-        console.log('Status update email sent successfully');
+          });
+          console.log('Status update email sent successfully');
+        } else {
+          console.log('No email found for user');
+        }
       } catch (emailError) {
         console.error('Error sending status update email:', emailError);
       }

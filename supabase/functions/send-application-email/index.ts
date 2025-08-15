@@ -30,11 +30,36 @@ serve(async (req: Request) => {
     console.log("Extracted data:", { type, userEmail, applicationData });
 
     // Send email using Resend
-    const emailResponse = await resend.emails.send({
-      from: "Nexus RP Portal <noreply@mmorfar.dk>",
-      to: [userEmail],
-      subject: "Application Received - Nexus RP Portal",
-      html: `
+    let subject, htmlContent;
+    
+    if (type === 'approved') {
+      subject = "Application Approved - Nexus RP Portal";
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h1 style="color: #22c55e;">🎉 Application Approved!</h1>
+          <p>Congratulations! Your application to Nexus RP has been <strong>approved</strong>.</p>
+          <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
+          ${applicationData?.review_notes ? `<p><strong>Staff Notes:</strong> ${applicationData.review_notes}</p>` : ''}
+          <p>Welcome to our community! You can now join our FiveM server.</p>
+          <p>Best regards,<br>The Nexus RP Team</p>
+        </div>
+      `;
+    } else if (type === 'denied' || type === 'rejected') {
+      subject = "Application Update - Nexus RP Portal";
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h1 style="color: #ef4444;">Application Update</h1>
+          <p>Thank you for your interest in Nexus RP. Unfortunately, your application has not been approved at this time.</p>
+          <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
+          ${applicationData?.review_notes ? `<p><strong>Staff Feedback:</strong> ${applicationData.review_notes}</p>` : ''}
+          <p>You're welcome to submit a new application in the future. Please consider the feedback provided.</p>
+          <p>Best regards,<br>The Nexus RP Team</p>
+        </div>
+      `;
+    } else {
+      // Default confirmation email for new applications
+      subject = "Application Received - Nexus RP Portal";
+      htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h1 style="color: #ff6b6b;">Application Received!</h1>
           <p>Thank you for your application to Nexus RP.</p>
@@ -42,7 +67,14 @@ serve(async (req: Request) => {
           <p>We'll review your application and get back to you soon.</p>
           <p>Best regards,<br>The Nexus RP Team</p>
         </div>
-      `,
+      `;
+    }
+
+    const emailResponse = await resend.emails.send({
+      from: "Nexus RP Portal <noreply@mmorfar.dk>",
+      to: [userEmail],
+      subject: subject,
+      html: htmlContent,
     });
 
     console.log("Email sent successfully:", emailResponse);
