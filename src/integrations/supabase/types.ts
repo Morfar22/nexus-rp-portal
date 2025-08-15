@@ -84,7 +84,7 @@ export type Database = {
       }
       applications: {
         Row: {
-          age: number
+          age: number | null
           application_type_id: string
           character_backstory: string | null
           closed: boolean
@@ -105,7 +105,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          age: number
+          age?: number | null
           application_type_id: string
           character_backstory?: string | null
           closed?: boolean
@@ -126,7 +126,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          age?: number
+          age?: number | null
           application_type_id?: string
           character_backstory?: string | null
           closed?: boolean
