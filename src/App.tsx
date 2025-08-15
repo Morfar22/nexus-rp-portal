@@ -10,7 +10,6 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Apply from "./pages/Apply";
 import Rules from "./pages/Rules";
-import Map from "./pages/Map";
 import StaffPanel from "./pages/StaffPanel";
 import OurTeam from "./pages/OurTeam";
 import ServerManagement from "./pages/ServerManagement";
@@ -30,7 +29,6 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/rules" element={<Rules />} />
-            <Route path="/map" element={<Map />} />
             <Route path="/apply" element={
               <ProtectedRoute>
                 <Apply />

@@ -63,13 +63,6 @@ const Navbar = () => {
         Rules
       </Link>
       <Link 
-        to="/map" 
-        className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
-        onClick={() => setIsOpen(false)}
-      >
-        Live Map
-      </Link>
-      <Link 
         to="/team" 
         className="text-foreground hover:text-neon-purple transition-colors block py-2 md:py-0"
         onClick={() => setIsOpen(false)}
