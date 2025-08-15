@@ -295,7 +295,7 @@ const StaffPanel = () => {
             console.log('Email notification sent successfully');
           }
 
-          // Send Discord notification
+          // Send Discord notification (direct application notification)
           const { error: discordError } = await supabase.functions.invoke('discord-logger', {
             body: {
               type: `application_${action}`,
@@ -307,6 +307,19 @@ const StaffPanel = () => {
                 review_notes: reviewNotes
               }
             }
+          });
+
+          // Also send admin action log (respects Discord logging settings)
+          await sendDiscordLog('application_action', {
+            action: action,
+            admin: user?.email,
+            applicant: {
+              steam_name: applicationData.steam_name,
+              discord_tag: applicationData.discord_tag,
+              discord_name: applicationData.discord_name,
+              fivem_name: applicationData.fivem_name
+            },
+            review_notes: reviewNotes
           });
 
           if (discordError) {
