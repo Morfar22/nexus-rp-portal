@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import StaffProtectedRoute from "@/components/StaffProtectedRoute";
 import MaintenanceMode from "@/components/MaintenanceMode";
 import ApplicationGate from "@/components/ApplicationGate";
+import PrivacyNotice from "@/components/PrivacyNotice";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Apply from "./pages/Apply";
@@ -30,6 +31,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <MaintenanceMode />
+            <PrivacyNotice />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
