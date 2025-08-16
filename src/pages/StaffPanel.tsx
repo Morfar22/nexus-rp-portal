@@ -48,6 +48,7 @@ import TeamManager from "@/components/TeamManager";
 import NavbarManager from "@/components/NavbarManager";
 import ServerStatsManager from "@/components/ServerStatsManager";
 import { SecurityOverview } from "@/components/SecurityOverview";
+import { SecuritySettings } from "@/components/SecuritySettings";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -792,18 +793,11 @@ const StaffPanel = () => {
             </Card>
 
             {/* Security Settings */}
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center space-x-2 mb-6">
-                <AlertCircle className="h-5 w-5 text-neon-purple" />
-                <h2 className="text-xl font-semibold text-foreground">Security Settings</h2>
-              </div>
-              
-              <IPWhitelistManager 
-                serverSettings={serverSettings}
-                setServerSettings={setServerSettings}
-                handleSettingUpdate={handleSettingUpdate}
-              />
-            </Card>
+            <SecuritySettings 
+              serverSettings={serverSettings}
+              setServerSettings={setServerSettings}
+              handleSettingUpdate={handleSettingUpdate}
+            />
           </TabsContent>
 
           <TabsContent value="content" className="space-y-6">
