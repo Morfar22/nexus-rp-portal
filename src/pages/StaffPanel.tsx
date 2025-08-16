@@ -48,6 +48,201 @@ import TeamManager from "@/components/TeamManager";
 import NavbarManager from "@/components/NavbarManager";
 import ServerStatsManager from "@/components/ServerStatsManager";
 
+const DiscordLogsManager = () => {
+  const [discordSettings, setDiscordSettings] = useState<any>({});
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchDiscordSettings();
+  }, []);
+
+  const fetchDiscordSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'discord_logging_settings')
+        .maybeSingle();
+
+      if (error) throw error;
+      setDiscordSettings(data?.setting_value || {});
+    } catch (error) {
+      console.error('Error fetching Discord settings:', error);
+    }
+  };
+
+  const updateDiscordSettings = async (settings: any) => {
+    setLoadingSettings(true);
+    try {
+      const { error } = await supabase
+        .from('server_settings')
+        .upsert({
+          setting_key: 'discord_logging_settings',
+          setting_value: settings,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        });
+
+      if (error) throw error;
+      
+      setDiscordSettings(settings);
+      toast({
+        title: "Settings Updated",
+        description: "Discord logging settings have been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating Discord settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update Discord settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const testDiscordLog = async (type: string) => {
+    try {
+      await supabase.functions.invoke('discord-logger', {
+        body: {
+          type,
+          data: {
+            staff_name: 'Test Staff',
+            action: 'Test Action',
+            target: 'Test Target',
+            reason: 'Testing Discord logging system'
+          }
+        }
+      });
+      
+      toast({
+        title: "Test Sent",
+        description: `Test ${type} log sent to Discord successfully.`,
+      });
+    } catch (error) {
+      console.error('Error sending test log:', error);
+      toast({
+        title: "Test Failed",
+        description: "Failed to send test log to Discord.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Card className="p-6 bg-gaming-card border-gaming-border">
+      <div className="flex items-center space-x-2 mb-6">
+        <Settings className="h-5 w-5 text-neon-purple" />
+        <h2 className="text-xl font-semibold text-foreground">Discord Logging Settings</h2>
+      </div>
+      
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-foreground">Applications Webhook</Label>
+            <Input
+              value={discordSettings.applications_webhook || ''}
+              onChange={(e) => setDiscordSettings({
+                ...discordSettings,
+                applications_webhook: e.target.value
+              })}
+              placeholder="Discord webhook URL for application logs"
+              className="bg-gaming-dark border-gaming-border text-foreground"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-foreground">Staff Webhook</Label>
+            <Input
+              value={discordSettings.staff_webhook || ''}
+              onChange={(e) => setDiscordSettings({
+                ...discordSettings,
+                staff_webhook: e.target.value
+              })}
+              placeholder="Discord webhook URL for staff logs"
+              className="bg-gaming-dark border-gaming-border text-foreground"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-foreground">Security Webhook</Label>
+            <Input
+              value={discordSettings.security_webhook || ''}
+              onChange={(e) => setDiscordSettings({
+                ...discordSettings,
+                security_webhook: e.target.value
+              })}
+              placeholder="Discord webhook URL for security logs"
+              className="bg-gaming-dark border-gaming-border text-foreground"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-foreground">General Webhook</Label>
+            <Input
+              value={discordSettings.general_webhook || ''}
+              onChange={(e) => setDiscordSettings({
+                ...discordSettings,
+                general_webhook: e.target.value
+              })}
+              placeholder="Discord webhook URL for general logs"
+              className="bg-gaming-dark border-gaming-border text-foreground"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-foreground">Errors Webhook</Label>
+            <Input
+              value={discordSettings.errors_webhook || ''}
+              onChange={(e) => setDiscordSettings({
+                ...discordSettings,
+                errors_webhook: e.target.value
+              })}
+              placeholder="Discord webhook URL for error logs"
+              className="bg-gaming-dark border-gaming-border text-foreground"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center pt-4 border-t border-gaming-border">
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => testDiscordLog('staff_action')}
+              variant="outline"
+              size="sm"
+            >
+              Test Staff Log
+            </Button>
+            <Button
+              onClick={() => testDiscordLog('application_submitted')}
+              variant="outline"
+              size="sm"
+            >
+              Test Application Log
+            </Button>
+            <Button
+              onClick={() => testDiscordLog('error_occurred')}
+              variant="outline"
+              size="sm"
+            >
+              Test Error Log
+            </Button>
+          </div>
+          
+          <Button
+            onClick={() => updateDiscordSettings(discordSettings)}
+            disabled={loadingSettings}
+            className="bg-neon-purple hover:bg-neon-purple/80"
+          >
+            {loadingSettings ? 'Saving...' : 'Save Settings'}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 const StaffPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [serverSettings, setServerSettings] = useState<any>({});
@@ -615,6 +810,7 @@ const StaffPanel = () => {
           </TabsContent>
 
           <TabsContent value="logs" className="space-y-6">
+            <DiscordLogsManager />
             <LogsViewer />
           </TabsContent>
         </Tabs>
