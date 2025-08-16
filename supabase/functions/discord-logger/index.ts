@@ -31,66 +31,34 @@ serve(async (req) => {
     console.log("Discord logger request:", { type, data: !!data, settings: !!settings })
     console.log("FULL DATA RECEIVED:", JSON.stringify(data, null, 2))
 
-    // Get webhook URL - check application-specific settings first for application notifications
-    let webhookUrl = Deno.env.get('DISCORD_WEBHOOK_URL');
-    let useApplicationWebhook = false;
-    
-    // For application-related notifications, check application-specific settings first
-    if (type.includes('application_')) {
-      try {
-        const { data: appSettingsData, error: appError } = await supabaseAdmin
-          .from('server_settings')
-          .select('setting_value')
-          .eq('setting_key', 'application_discord_settings')
-          .single();
+    // Get Discord logging settings from database
+    let discordSettings: any = {}
+    try {
+      const { data: settingsData, error: settingsError } = await supabaseAdmin
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'discord_logging_settings')
+        .maybeSingle()
 
-        if (!appError && appSettingsData?.setting_value?.enabled) {
-          const settings = appSettingsData.setting_value;
-          
-          // Check if this specific notification type is enabled
-          const shouldNotify = 
-            (type === 'application_submitted' && settings.notify_submissions) ||
-            (type === 'application_approved' && settings.notify_approvals) ||
-            (type === 'application_denied' && settings.notify_denials);
-          
-          if (shouldNotify) {
-            // Route to appropriate webhook based on notification type
-            if (type === 'application_submitted') {
-              // Staff notifications go to staff webhook
-              webhookUrl = settings.staff_webhook_url;
-              console.log("Using staff webhook for application submission");
-            } else {
-              // Approval/denial notifications go to public webhook
-              webhookUrl = settings.public_webhook_url;
-              console.log("Using public webhook for application status update");
-            }
-            
-            if (webhookUrl) {
-              useApplicationWebhook = true;
-            }
-          }
-        }
-      } catch (appError) {
-        console.error("Error fetching application Discord settings:", appError);
+      if (settingsError) {
+        console.log('Settings error (using defaults):', settingsError.message)
+      } else if (settingsData?.setting_value) {
+        discordSettings = settingsData.setting_value
       }
+    } catch (error) {
+      console.log('Failed to fetch discord settings, using defaults:', error)
     }
-    
-    // Fallback to general Discord settings if no application webhook is configured
-    if (!useApplicationWebhook && !webhookUrl) {
-      try {
-        const { data: settingsData, error } = await supabaseAdmin
-          .from('server_settings')
-          .select('setting_value')
-          .eq('setting_key', 'discord_settings')
-          .single();
 
-        if (!error && settingsData?.setting_value?.webhook_url) {
-          webhookUrl = settingsData.setting_value.webhook_url;
-        }
-      } catch (dbError) {
-        console.error("Error fetching Discord settings from database:", dbError);
-      }
+    // Channel-specific webhook URLs
+    const webhooks = {
+      applications: discordSettings.applications_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'),
+      staff: discordSettings.staff_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'), 
+      security: discordSettings.security_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'),
+      general: discordSettings.general_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'),
+      errors: discordSettings.errors_webhook || Deno.env.get('DISCORD_WEBHOOK_URL')
     }
+
+    let webhookUrl = ''
     
     // If no webhook URL is available, skip notification
     if (!webhookUrl) {
@@ -105,8 +73,10 @@ serve(async (req) => {
     let embed = {}
     let content = ""
 
+    // Determine webhook and format message based on event type
     switch (type) {
       case 'application_submitted':
+        webhookUrl = webhooks.applications
         // Extract data from form_data if available, fallback to direct fields
         const steamName = data.steam_name || data.form_data?.steam_name || "Not provided";
         const discordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
@@ -130,6 +100,7 @@ serve(async (req) => {
         break
 
       case 'application_approved':
+        webhookUrl = webhooks.applications
         const approvedSteamName = data.steam_name || data.form_data?.steam_name || "Not provided";
         const approvedDiscordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
         const approvedFivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
@@ -150,6 +121,7 @@ serve(async (req) => {
         break
 
       case 'application_denied':
+        webhookUrl = webhooks.applications
         const deniedSteamName = data.steam_name || data.form_data?.steam_name || "Not provided";
         const deniedDiscordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
         const deniedFivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
@@ -169,149 +141,168 @@ serve(async (req) => {
         content = `🚫 **Application denied** for **${deniedSteamName}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
-      case 'application_under_review':
+      case 'staff_action':
+        webhookUrl = webhooks.staff
+        content = `🛡️ **Staff action performed** by **${data.staff_name || 'Unknown Staff'}**`
         embed = {
-          title: "🔍 Application Under Review",
+          title: '🛡️ Staff Action',
           color: 0xf39c12, // Orange
           fields: [
-            { name: "Steam Name", value: data.steam_name || "N/A", inline: true },
-            { name: "Discord Tag", value: data.discord_tag || "N/A", inline: true },
-            { name: "FiveM Name", value: data.fivem_name || "N/A", inline: true },
-            { name: "Notes", value: data.review_notes || "No notes", inline: false }
+            { name: 'Action', value: data.action || 'Unknown', inline: true },
+            { name: 'Target', value: data.target || 'Unknown', inline: true },
+            { name: 'Reason', value: data.reason || 'No reason provided', inline: false }
           ],
           timestamp: new Date().toISOString(),
-          footer: { text: "FiveM Server Application System" }
+          footer: { text: 'FiveM Server Staff System' }
         }
-        content = `👀 **Application under review** for **${data.steam_name}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
-      case 'system_log':
+      case 'user_banned':
+        webhookUrl = webhooks.security
+        content = `🔨 **User banned** - **${data.username || 'Unknown User'}**`
         embed = {
-          title: "🔧 System Log",
-          color: 0x9b59b6, // Purple
+          title: '🔨 User Banned',
+          color: 0x992d22, // Dark Red
           fields: [
-            { name: "Event", value: data.event || "Unknown", inline: true },
-            { name: "Source", value: data.source || "System", inline: true },
-            { name: "Severity", value: data.severity || "INFO", inline: true },
-            { name: "Message", value: data.message || "No message", inline: false }
+            { name: 'Username', value: data.username || 'Unknown', inline: true },
+            { name: 'Banned By', value: data.banned_by || 'System', inline: true },
+            { name: 'Reason', value: data.reason || 'No reason provided', inline: false }
           ],
           timestamp: new Date().toISOString(),
-          footer: { text: "FiveM Server System" }
+          footer: { text: 'FiveM Server Security System' }
         }
-        content = `🔧 **System Event**: ${data.event}`
         break
 
-      case 'admin_user_action':
+      case 'user_unbanned':
+        webhookUrl = webhooks.security
+        content = `🔓 **User unbanned** - **${data.username || 'Unknown User'}**`
         embed = {
-          title: "👥 Admin User Action",
+          title: '🔓 User Unbanned',
+          color: 0x27ae60, // Green
+          fields: [
+            { name: 'Username', value: data.username || 'Unknown', inline: true },
+            { name: 'Unbanned By', value: data.unbanned_by || 'System', inline: true }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: 'FiveM Server Security System' }
+        }
+        break
+
+      case 'server_start':
+        webhookUrl = webhooks.general
+        content = `🟢 **Server started** - ${data.server_name || 'FiveM Server'}`
+        embed = {
+          title: '🟢 Server Started',
+          color: 0x27ae60, // Green
+          fields: [
+            { name: 'Server', value: data.server_name || 'FiveM Server', inline: true },
+            { name: 'Players', value: `0/${data.max_players || 'Unknown'}`, inline: true }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: 'FiveM Server Status' }
+        }
+        break
+
+      case 'server_stop':
+        webhookUrl = webhooks.general
+        content = `🔴 **Server stopped** - ${data.server_name || 'FiveM Server'}`
+        embed = {
+          title: '🔴 Server Stopped',
+          color: 0xe74c3c, // Red
+          fields: [
+            { name: 'Server', value: data.server_name || 'FiveM Server', inline: true },
+            { name: 'Reason', value: data.reason || 'Unknown', inline: true }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: 'FiveM Server Status' }
+        }
+        break
+
+      case 'error_occurred':
+        webhookUrl = webhooks.errors
+        content = `🚨 **Error occurred** in ${data.component || 'Unknown Component'}`
+        embed = {
+          title: '🚨 System Error',
+          color: 0xe74c3c, // Red
+          fields: [
+            { name: 'Component', value: data.component || 'Unknown', inline: true },
+            { name: 'Error Type', value: data.error_type || 'Unknown', inline: true },
+            { name: 'Message', value: data.message || 'No message provided', inline: false }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: 'FiveM Server Error System' }
+        }
+        break
+
+      case 'rule_updated':
+        webhookUrl = webhooks.staff
+        content = `📋 **Server rules updated** by **${data.staff_name || 'Unknown Staff'}**`
+        embed = {
+          title: '📋 Rules Updated',
+          color: 0x2ecc71, // Green
+          fields: [
+            { name: 'Action', value: data.action || 'Updated', inline: true },
+            { name: 'Rule Category', value: data.category || 'General', inline: true },
+            { name: 'Updated By', value: data.staff_name || 'Unknown', inline: true }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: 'FiveM Server Management' }
+        }
+        break
+
+      case 'staff_promoted':
+        webhookUrl = webhooks.staff
+        content = `⬆️ **Staff promoted** - **${data.username || 'Unknown User'}**`
+        embed = {
+          title: '⬆️ Staff Promotion',
+          color: 0xf39c12, // Orange
+          fields: [
+            { name: 'User', value: data.username || 'Unknown', inline: true },
+            { name: 'New Role', value: data.new_role || 'Unknown', inline: true },
+            { name: 'Promoted By', value: data.promoted_by || 'System', inline: true }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: 'FiveM Server Staff System' }
+        }
+        break
+
+      case 'staff_demoted':
+        webhookUrl = webhooks.staff
+        content = `⬇️ **Staff demoted** - **${data.username || 'Unknown User'}**`
+        embed = {
+          title: '⬇️ Staff Demotion',
           color: 0xe67e22, // Orange
           fields: [
-            { name: "Action", value: data.action || "Unknown", inline: true },
-            { name: "Admin", value: data.admin_user || "Unknown", inline: true },
-            { name: "Target", value: data.user_email || data.staff_id || "Unknown", inline: true },
-            { name: "Details", value: data.role ? `Role: ${data.role}` : "No additional details", inline: false }
+            { name: 'User', value: data.username || 'Unknown', inline: true },
+            { name: 'Previous Role', value: data.previous_role || 'Unknown', inline: true },
+            { name: 'Demoted By', value: data.demoted_by || 'System', inline: true }
           ],
           timestamp: new Date().toISOString(),
-          footer: { text: "FiveM Server Admin Panel" }
+          footer: { text: 'FiveM Server Staff System' }
         }
-        content = `👥 **${data.action}** by **${data.admin_user}**`
         break
 
-      case 'admin_system_change':
-        embed = {
-          title: "⚙️ System Setting Changed",
-          color: 0x9b59b6, // Purple
-          fields: [
-            { name: "Setting", value: data.setting_key || "Unknown", inline: true },
-            { name: "Admin", value: data.admin_user || "Unknown", inline: true },
-            { name: "Action", value: data.action || "Updated", inline: true },
-            { name: "Value", value: data.setting_value ? `\`${data.setting_value.substring(0, 100)}${data.setting_value.length > 100 ? '...' : ''}\`` : "Not provided", inline: false }
-          ],
-          timestamp: new Date().toISOString(),
-          footer: { text: "FiveM Server Admin Panel" }
-        }
-        content = `⚙️ **Setting "${data.setting_key}" updated** by **${data.admin_user}**`
-        break
-
-      case 'admin_rule_change':
-        embed = {
-          title: "📋 Rule Management",
-          color: 0x3498db, // Blue
-          fields: [
-            { name: "Action", value: data.action || "Unknown", inline: true },
-            { name: "Admin", value: data.admin_user || "Unknown", inline: true },
-            { name: "Rule", value: data.rule?.title || data.rule_id || "Unknown", inline: true },
-            { name: "Category", value: data.rule?.category || "Not specified", inline: true }
-          ],
-          timestamp: new Date().toISOString(),
-          footer: { text: "FiveM Server Admin Panel" }
-        }
-        content = `📋 **${data.action}** by **${data.admin_user}**`
-        break
-
-      case 'admin_application_action':
-        embed = {
-          title: "📝 Application Management",
-          color: data.action === 'approved' ? 0x27ae60 : data.action === 'denied' ? 0xe74c3c : 0xf39c12,
-          fields: [
-            { name: "Action", value: data.action || "Unknown", inline: true },
-            { name: "Admin", value: data.admin_user || "Unknown", inline: true },
-            { name: "Applicant", value: data.steam_name || "Unknown", inline: true },
-            { name: "Notes", value: data.review_notes || "No notes", inline: false }
-          ],
-          timestamp: new Date().toISOString(),
-          footer: { text: "FiveM Server Admin Panel" }
-        }
-        content = `📝 **Application ${data.action}** by **${data.admin_user}** for **${data.steam_name}**`
-        break
-
-      case 'rule_change':
-        const actionEmoji = data.action === 'rule_created' ? '➕' : data.action === 'rule_updated' ? '✏️' : '🗑️';
-        const actionColor = data.action === 'rule_created' ? 0x27ae60 : data.action === 'rule_updated' ? 0xf39c12 : 0xe74c3c;
-        
-        embed = {
-          title: `${actionEmoji} Rule ${data.action?.replace('rule_', '').replace('_', ' ').toUpperCase()}`,
-          color: actionColor,
-          fields: [
-            { name: "Action", value: data.action?.replace('rule_', '').replace('_', ' ') || "Unknown", inline: true },
-            { name: "Admin", value: data.admin || "Unknown", inline: true },
-            { name: "Rule Title", value: data.rule?.title || "Unknown", inline: false },
-            { name: "Category", value: data.rule?.category || "No category", inline: true },
-            { name: "Description", value: data.rule?.description?.substring(0, 200) + (data.rule?.description?.length > 200 ? '...' : '') || "No description", inline: false }
-          ],
-          timestamp: new Date().toISOString(),
-          footer: { text: "FiveM Server Admin Panel" }
-        }
-        content = `📋 **Rule ${data.action?.replace('rule_', '')}** by **${data.admin}**: "${data.rule?.title || 'Unknown Rule'}"`
-        break
-
-      case 'application_action':
-        const appActionEmoji = data.action === 'approved' ? '✅' : data.action === 'denied' ? '❌' : '🔍';
-        const appActionColor = data.action === 'approved' ? 0x27ae60 : data.action === 'denied' ? 0xe74c3c : 0xf39c12;
-        
-        embed = {
-          title: `${appActionEmoji} Admin Application Action`,
-          color: appActionColor,
-          fields: [
-            { name: "Action", value: data.action?.toUpperCase() || "Unknown", inline: true },
-            { name: "Admin", value: data.admin || "Unknown", inline: true },
-            { name: "Steam Name", value: data.steam_name || "Unknown", inline: true },
-            { name: "Discord Tag", value: data.discord_tag || "Unknown", inline: true },
-            { name: "FiveM Name", value: data.fivem_name || "Unknown", inline: true },
-            { name: "Review Notes", value: data.review_notes || "No notes provided", inline: false }
-          ],
-          timestamp: new Date().toISOString(),
-          footer: { text: "FiveM Server Admin Panel" }
-        }
-        content = `👨‍💼 **Admin ${data.action}** application for **${data.steam_name || 'Unknown'}** by **${data.admin}**`
-        break
 
       default:
-        console.log("Unknown Discord log type:", type)
+        console.log('Unknown event type:', type)
         return new Response(
-          JSON.stringify({ success: false, error: "Unknown log type" }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Unknown event type' }), 
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
         )
+    }
+
+    if (!webhookUrl) {
+      console.log('No webhook URL configured for event type:', type)
+      return new Response(
+        JSON.stringify({ error: 'No webhook URL configured' }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     // Send to Discord

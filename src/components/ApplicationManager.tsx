@@ -14,6 +14,150 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import ApplicationTypesManager from "./ApplicationTypesManager";
 
+const ApplicationSettingsPanel = () => {
+  const [applicationSettings, setApplicationSettings] = useState<any>({});
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchApplicationSettings();
+  }, []);
+
+  const fetchApplicationSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'application_settings')
+        .maybeSingle();
+
+      if (error) throw error;
+      setApplicationSettings(data?.setting_value || {});
+    } catch (error) {
+      console.error('Error fetching application settings:', error);
+    }
+  };
+
+  const updateApplicationSettings = async (settings: any) => {
+    setLoadingSettings(true);
+    try {
+      const { error } = await supabase
+        .from('server_settings')
+        .upsert({
+          setting_key: 'application_settings',
+          setting_value: settings,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        });
+
+      if (error) throw error;
+      
+      setApplicationSettings(settings);
+      toast({
+        title: "Settings Updated",
+        description: "Application settings have been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating application settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  return (
+    <Card className="p-6 bg-gaming-card border-gaming-border">
+      <div className="flex items-center space-x-2 mb-6">
+        <Settings className="h-5 w-5 text-neon-purple" />
+        <h2 className="text-xl font-semibold text-foreground">Application Settings</h2>
+      </div>
+      
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-base text-foreground">Multiple Applications</Label>
+            <div className="text-sm text-muted-foreground">
+              Allow users to submit multiple applications even if they have an approved one
+            </div>
+          </div>
+          <Switch
+            checked={applicationSettings.multiple_applications_allowed || false}
+            onCheckedChange={(checked) => 
+              updateApplicationSettings({
+                ...applicationSettings,
+                multiple_applications_allowed: checked
+              })
+            }
+            disabled={loadingSettings}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-base text-foreground">Auto Close Applications</Label>
+            <div className="text-sm text-muted-foreground">
+              Automatically close applications after approval/rejection
+            </div>
+          </div>
+          <Switch
+            checked={applicationSettings.auto_close_applications || false}
+            onCheckedChange={(checked) => 
+              updateApplicationSettings({
+                ...applicationSettings,
+                auto_close_applications: checked
+              })
+            }
+            disabled={loadingSettings}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-base text-foreground">Require Age Verification</Label>
+            <div className="text-sm text-muted-foreground">
+              Require users to verify they are 18+ before applying
+            </div>
+          </div>
+          <Switch
+            checked={applicationSettings.require_age_verification || false}
+            onCheckedChange={(checked) => 
+              updateApplicationSettings({
+                ...applicationSettings,
+                require_age_verification: checked
+              })
+            }
+            disabled={loadingSettings}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-base text-foreground">Application Cooldown (Days)</Label>
+          <div className="text-sm text-muted-foreground mb-2">
+            How long users must wait before reapplying after rejection
+          </div>
+          <Input
+            type="number"
+            min="0"
+            max="365"
+            value={applicationSettings.cooldown_days || 0}
+            onChange={(e) => 
+              updateApplicationSettings({
+                ...applicationSettings,
+                cooldown_days: parseInt(e.target.value) || 0
+              })
+            }
+            disabled={loadingSettings}
+            className="w-32 bg-gaming-dark border-gaming-border text-foreground"
+          />
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 const ApplicationManager = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -261,8 +405,9 @@ const ApplicationManager = () => {
 
   return (
     <Tabs defaultValue="applications" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3 bg-gaming-card border-gaming-border">
+      <TabsList className="grid w-full grid-cols-4 bg-gaming-card border-gaming-border">
         <TabsTrigger value="applications">Applications</TabsTrigger>
+        <TabsTrigger value="settings">Settings</TabsTrigger>
         <TabsTrigger value="discord">Discord Settings</TabsTrigger>
         <TabsTrigger value="types">Application Types</TabsTrigger>
       </TabsList>
@@ -274,6 +419,10 @@ const ApplicationManager = () => {
           deleteApplication={deleteApplication}
           getStatusColor={getStatusColor}
         />
+      </TabsContent>
+
+      <TabsContent value="settings">
+        <ApplicationSettingsPanel />
       </TabsContent>
 
       <TabsContent value="discord">
