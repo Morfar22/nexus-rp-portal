@@ -206,10 +206,15 @@ async function verifyBotPermissions(guildId: string) {
     botMember.roles.includes(role.id)
   );
 
-  // Check if bot has manage roles permission
-  const hasManageRoles = botRoles.some((role: any) => 
-    (role.permissions & 0x10000000) === 0x10000000 // MANAGE_ROLES permission
-  );
+  // Check if bot has manage roles permission or administrator permission
+  const hasManageRoles = botRoles.some((role: any) => {
+    const permissions = BigInt(role.permissions);
+    const MANAGE_ROLES = 0x10000000n; // 268435456
+    const ADMINISTRATOR = 0x8n; // 8
+    
+    return (permissions & MANAGE_ROLES) === MANAGE_ROLES || 
+           (permissions & ADMINISTRATOR) === ADMINISTRATOR;
+  });
 
   console.log('Bot permissions verified:', { hasManageRoles });
   
