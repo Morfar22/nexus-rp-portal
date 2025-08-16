@@ -49,6 +49,9 @@ import NavbarManager from "@/components/NavbarManager";
 import ServerStatsManager from "@/components/ServerStatsManager";
 import { SecurityOverview } from "@/components/SecurityOverview";
 import { SecuritySettings } from "@/components/SecuritySettings";
+import { ApplicationsOverview } from "@/components/ApplicationsOverview";
+import { StaffOverview } from "@/components/StaffOverview";
+import { RulesOverview } from "@/components/RulesOverview";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -525,33 +528,9 @@ const StaffPanel = () => {
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="p-6 bg-gaming-card border-gaming-border">
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-neon-blue" />
-                  <h3 className="font-semibold text-foreground">Applications</h3>
-                </div>
-                <p className="text-2xl font-bold text-foreground mt-2">{applications.length}</p>
-                <p className="text-sm text-muted-foreground">Total applications</p>
-              </Card>
-
-              <Card className="p-6 bg-gaming-card border-gaming-border">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-neon-green" />
-                  <h3 className="font-semibold text-foreground">Staff</h3>
-                </div>
-                <p className="text-2xl font-bold text-foreground mt-2">{staffMembers.length}</p>
-                <p className="text-sm text-muted-foreground">Active staff members</p>
-              </Card>
-
-              <Card className="p-6 bg-gaming-card border-gaming-border">
-                <div className="flex items-center space-x-2">
-                  <Settings className="h-5 w-5 text-neon-purple" />
-                  <h3 className="font-semibold text-foreground">Rules</h3>
-                </div>
-                <p className="text-2xl font-bold text-foreground mt-2">{rules.length}</p>
-                <p className="text-sm text-muted-foreground">Server rules</p>
-              </Card>
-
+              <ApplicationsOverview applications={applications} />
+              <StaffOverview staffMembers={staffMembers} />
+              <RulesOverview rules={rules} />
               <SecurityOverview 
                 serverSettings={serverSettings} 
                 staffCount={staffMembers.length}
