@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Server, Plus, Activity, Users, Clock, Zap, Trash2, Settings } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Server, Plus, Activity, Users, Clock, Zap, Trash2, Settings, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import ServerStatsManager from '@/components/ServerStatsManager';
@@ -44,6 +45,8 @@ export default function ServerManagement() {
   const [isStaff, setIsStaff] = useState(false);
   const [checkingStaff, setCheckingStaff] = useState(true);
   const [showStatsManager, setShowStatsManager] = useState(false);
+  const [applicationSettings, setApplicationSettings] = useState<any>({});
+  const [loadingSettings, setLoadingSettings] = useState(false);
   const [newServer, setNewServer] = useState({
     name: '',
     ip_address: '',
@@ -79,6 +82,7 @@ export default function ServerManagement() {
     checkStaffRole();
     fetchServers();
     fetchServerStats();
+    fetchApplicationSettings();
     
     // Set up real-time subscriptions
     const serverChannel = supabase
@@ -100,6 +104,51 @@ export default function ServerManagement() {
       supabase.removeChannel(statsChannel);
     };
   }, [user]);
+
+  const fetchApplicationSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'application_settings')
+        .maybeSingle();
+
+      if (error) throw error;
+      setApplicationSettings(data?.setting_value || {});
+    } catch (error) {
+      console.error('Error fetching application settings:', error);
+    }
+  };
+
+  const updateApplicationSettings = async (settings: any) => {
+    setLoadingSettings(true);
+    try {
+      const { error } = await supabase
+        .from('server_settings')
+        .upsert({
+          setting_key: 'application_settings',
+          setting_value: settings,
+          created_by: user?.id
+        });
+
+      if (error) throw error;
+      
+      setApplicationSettings(settings);
+      toast({
+        title: "Settings Updated",
+        description: "Application settings have been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating application settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
 
   const fetchServers = async () => {
     try {
@@ -350,6 +399,41 @@ export default function ServerManagement() {
             </div>
           )}
         </div>
+
+        {/* Application Settings Section */}
+        {isStaff && (
+          <Card className="mb-6 bg-gaming-card border-gaming-border">
+            <CardHeader>
+              <CardTitle className="flex items-center text-foreground">
+                <FileText className="w-5 h-5 mr-2" />
+                Application Settings
+              </CardTitle>
+              <CardDescription>
+                Configure how applications work on your server
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Multiple Applications</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Allow users to submit multiple applications even if they have an approved one
+                  </div>
+                </div>
+                <Switch
+                  checked={applicationSettings.multiple_applications_allowed || false}
+                  onCheckedChange={(checked) => 
+                    updateApplicationSettings({
+                      ...applicationSettings,
+                      multiple_applications_allowed: checked
+                    })
+                  }
+                  disabled={loadingSettings}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Manager Section */}
         {isStaff && showStatsManager && (
