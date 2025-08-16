@@ -35,7 +35,8 @@ const Apply = () => {
         const { data, error } = await supabase
           .from('application_types')
           .select('*')
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
 
         if (error) throw error;
         setApplicationTypes(data || []);
@@ -60,6 +61,26 @@ const Apply = () => {
     fetchServerSettings();
     checkExistingApplication();
     fetchAllUserApplications();
+
+    // Set up real-time subscription for application types
+    const applicationTypesSubscription = supabase
+      .channel('application_types_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'application_types'
+        },
+        () => {
+          fetchApplicationTypes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      applicationTypesSubscription.unsubscribe();
+    };
   }, [user]);
 
   const fetchServerSettings = async () => {

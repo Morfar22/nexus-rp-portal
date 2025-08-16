@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Server, Mail, Lock, User, AlertCircle, Shield, Ban } from "lucide-react";
 import DiscordIcon from "@/components/icons/DiscordIcon";
-import TwitchIcon from "@/components/icons/TwitchIcon";
+
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 const Auth = () => {
@@ -294,38 +294,6 @@ const Auth = () => {
     }
   };
 
-  const handleTwitchSignIn = async () => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      cleanupAuthState();
-      
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'twitch',
-        options: {
-          redirectTo: redirectUrl,
-        }
-      });
-
-      if (error) {
-        setError(error.message);
-        setIsLoading(false);
-      }
-      // Loading will be handled by the OAuth redirect
-    } catch (error: any) {
-      setError(error.message || "An unexpected error occurred");
-      setIsLoading(false);
-    }
-  };
 
   // Show banned screen if user is banned
   if (showBannedScreen && bannedUserInfo) {
@@ -626,16 +594,6 @@ const Auth = () => {
                   Sign in with Discord
                 </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleTwitchSignIn}
-                  disabled={isLoading}
-                  className="w-full bg-[#9146FF] hover:bg-[#7928CA] text-white border-[#9146FF] hover:border-[#7928CA]"
-                >
-                  <TwitchIcon className="mr-2 h-4 w-4" />
-                  Sign in with Twitch
-                </Button>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
@@ -755,16 +713,6 @@ const Auth = () => {
                   Sign up with Discord
                 </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleTwitchSignIn}
-                  disabled={isLoading}
-                  className="w-full bg-[#9146FF] hover:bg-[#7928CA] text-white border-[#9146FF] hover:border-[#7928CA]"
-                >
-                  <TwitchIcon className="mr-2 h-4 w-4" />
-                  Sign up with Twitch
-                </Button>
               </TabsContent>
             </CardContent>
           </Tabs>
