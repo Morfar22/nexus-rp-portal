@@ -49,6 +49,36 @@ export type Database = {
           },
         ]
       }
+      application_rate_limits: {
+        Row: {
+          application_count: number
+          blocked_until: string | null
+          email: string | null
+          first_application: string
+          id: string
+          ip_address: unknown
+          last_application: string
+        }
+        Insert: {
+          application_count?: number
+          blocked_until?: string | null
+          email?: string | null
+          first_application?: string
+          id?: string
+          ip_address: unknown
+          last_application?: string
+        }
+        Update: {
+          application_count?: number
+          blocked_until?: string | null
+          email?: string | null
+          first_application?: string
+          id?: string
+          ip_address?: unknown
+          last_application?: string
+        }
+        Relationships: []
+      }
       application_types: {
         Row: {
           created_at: string
@@ -162,6 +192,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      failed_login_attempts: {
+        Row: {
+          attempt_count: number
+          blocked_until: string | null
+          email: string | null
+          first_attempt: string
+          id: string
+          ip_address: unknown
+          last_attempt: string
+          user_agent: string | null
+        }
+        Insert: {
+          attempt_count?: number
+          blocked_until?: string | null
+          email?: string | null
+          first_attempt?: string
+          id?: string
+          ip_address: unknown
+          last_attempt?: string
+          user_agent?: string | null
+        }
+        Update: {
+          attempt_count?: number
+          blocked_until?: string | null
+          email?: string | null
+          first_attempt?: string
+          id?: string
+          ip_address?: unknown
+          last_attempt?: string
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       individual_server_stats: {
         Row: {
@@ -455,6 +557,39 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          last_activity: string
+          session_token: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          last_activity?: string
+          session_token: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          last_activity?: string
+          session_token?: string
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []

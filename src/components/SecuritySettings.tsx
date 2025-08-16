@@ -40,18 +40,43 @@ export const SecuritySettings = ({ serverSettings, setServerSettings, handleSett
 
   useEffect(() => {
     fetchAuditLogs();
-  }, []);
+    if (securitySettings.audit_logging) {
+      fetchSecurityStats();
+    }
+  }, [securitySettings.audit_logging]);
+
+  const fetchSecurityStats = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('security-manager', {
+        body: { action: 'get_security_stats' }
+      });
+      
+      if (error) throw error;
+      console.log('Security stats:', data);
+    } catch (error) {
+      console.error('Error fetching security stats:', error);
+    }
+  };
 
   const fetchAuditLogs = async () => {
     try {
-      // This would fetch audit logs from a dedicated table
-      // For now, we'll show placeholder data
-      setAuditLogs([
-        { id: 1, action: "Login", user: "Admin", timestamp: new Date(), ip: "192.168.1.1" },
-        { id: 2, action: "Application Approved", user: "Moderator", timestamp: new Date(), ip: "192.168.1.2" }
-      ]);
+      if (securitySettings.audit_logging) {
+        const { data, error } = await supabase.functions.invoke('security-manager', {
+          body: { action: 'get_audit_logs', data: { limit: 10 } }
+        });
+        
+        if (error) throw error;
+        setAuditLogs(data.data || []);
+      } else {
+        // Show placeholder data when audit logging is disabled
+        setAuditLogs([
+          { id: 1, action: "Login", user_id: "admin", created_at: new Date(), ip_address: "192.168.1.1" },
+          { id: 2, action: "Application Approved", user_id: "moderator", created_at: new Date(), ip_address: "192.168.1.2" }
+        ]);
+      }
     } catch (error) {
       console.error('Error fetching audit logs:', error);
+      setAuditLogs([]);
     }
   };
 
@@ -383,13 +408,18 @@ export const SecuritySettings = ({ serverSettings, setServerSettings, handleSett
                     <Badge variant="outline" className="text-xs">
                       {log.action}
                     </Badge>
-                    <span className="text-sm text-muted-foreground">{log.user}</span>
+                    <span className="text-sm text-muted-foreground">{log.user_id || 'System'}</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {log.timestamp.toLocaleTimeString()} - {log.ip}
+                    {new Date(log.created_at).toLocaleTimeString()} - {log.ip_address || 'N/A'}
                   </div>
                 </div>
               ))}
+              {auditLogs.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No security events recorded yet
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
