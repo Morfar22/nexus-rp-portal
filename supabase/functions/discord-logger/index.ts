@@ -59,19 +59,8 @@ serve(async (req) => {
     }
 
     let webhookUrl = ''
-    
-    // If no webhook URL is available, skip notification
-    if (!webhookUrl) {
-      console.log("No Discord webhook URL configured - skipping Discord notification")
-      return new Response(
-        JSON.stringify({ success: true, skipped: true, reason: "No webhook configured" }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Create Discord embed based on type
-    let embed = {}
-    let content = ""
+    let embed: any = {}
+    let content = ''
 
     // Determine webhook and format message based on event type
     switch (type) {
@@ -305,41 +294,50 @@ serve(async (req) => {
       )
     }
 
-    // Send to Discord
-    const discordPayload = {
-      content: content,
+    console.log('FULL DATA RECEIVED:', data)
+    console.log('Sending to Discord webhook:', webhookUrl)
+
+    const payload = {
+      content,
       embeds: [embed]
     }
 
-    console.log("Sending to Discord webhook:", webhookUrl)
-    console.log("Discord payload:", JSON.stringify(discordPayload, null, 2))
+    console.log('Discord payload:', JSON.stringify(payload, null, 2))
 
-    const discordResponse = await fetch(webhookUrl, {
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(discordPayload)
+      body: JSON.stringify(payload),
     })
 
-    if (!discordResponse.ok) {
-      const errorText = await discordResponse.text()
-      console.error("Discord webhook error:", discordResponse.status, errorText)
-      throw new Error(`Discord webhook failed: ${discordResponse.status} - ${errorText}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Discord webhook error:', response.status, errorText)
+      throw new Error(`Discord webhook failed: ${response.status} - ${errorText}`)
     }
 
-    console.log("Discord message sent successfully")
+    console.log('Discord message sent successfully')
 
     return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true }), 
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     )
 
   } catch (error) {
-    console.error("Discord logger error:", error)
+    console.error('Discord logger error:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: 'Failed to send Discord message', 
+        details: error.message 
+      }), 
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     )
   }
 })
