@@ -134,7 +134,13 @@ const Apply = () => {
     try {
       const { data, error } = await supabase
         .from('applications')
-        .select('*')
+        .select(`
+          *,
+          application_types (
+            name,
+            description
+          )
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -515,8 +521,8 @@ const Apply = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Steam Name</TableHead>
-                        <TableHead>Discord Tag</TableHead>
+                        <TableHead>Application Type</TableHead>
+                        <TableHead>Character Info</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Submitted</TableHead>
                         <TableHead>Notes</TableHead>
@@ -525,8 +531,31 @@ const Apply = () => {
                     <TableBody>
                       {allApplications.map((application) => (
                         <TableRow key={application.id}>
-                          <TableCell className="font-medium">{application.steam_name}</TableCell>
-                          <TableCell>{application.discord_tag}</TableCell>
+                          <TableCell className="font-medium">
+                            {application.application_types?.name || 'Unknown'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {application.steam_name && (
+                                <div className="text-sm">
+                                  <span className="text-muted-foreground">Steam:</span> {application.steam_name}
+                                </div>
+                              )}
+                              {application.discord_name && (
+                                <div className="text-sm">
+                                  <span className="text-muted-foreground">Discord:</span> {application.discord_name}
+                                </div>
+                              )}
+                              {application.fivem_name && (
+                                <div className="text-sm">
+                                  <span className="text-muted-foreground">FiveM:</span> {application.fivem_name}
+                                </div>
+                              )}
+                              {!application.steam_name && !application.discord_name && !application.fivem_name && (
+                                <div className="text-sm text-muted-foreground">No character info</div>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
                               {getStatusIcon(application.status)}
