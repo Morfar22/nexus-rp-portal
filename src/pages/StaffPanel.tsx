@@ -75,15 +75,36 @@ const DiscordLogsManager = () => {
   const updateDiscordSettings = async (settings: any) => {
     setLoadingSettings(true);
     try {
-      const { error } = await supabase
+      // Check if record exists first
+      const { data: existingData } = await supabase
         .from('server_settings')
-        .upsert({
-          setting_key: 'discord_logging_settings',
-          setting_value: settings,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        });
+        .select('id')
+        .eq('setting_key', 'discord_logging_settings')
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingData) {
+        // Update existing record
+        const { error } = await supabase
+          .from('server_settings')
+          .update({
+            setting_value: settings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('setting_key', 'discord_logging_settings');
+
+        if (error) throw error;
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('server_settings')
+          .insert({
+            setting_key: 'discord_logging_settings',
+            setting_value: settings,
+            created_by: (await supabase.auth.getUser()).data.user?.id
+          });
+
+        if (error) throw error;
+      }
       
       setDiscordSettings(settings);
       toast({
