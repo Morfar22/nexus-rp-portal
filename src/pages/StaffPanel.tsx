@@ -47,6 +47,7 @@ import UserManagementSection from "@/components/UserManagementSection";
 import TeamManager from "@/components/TeamManager";
 import NavbarManager from "@/components/NavbarManager";
 import ServerStatsManager from "@/components/ServerStatsManager";
+import { SecurityOverview } from "@/components/SecurityOverview";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -550,15 +551,10 @@ const StaffPanel = () => {
                 <p className="text-sm text-muted-foreground">Server rules</p>
               </Card>
 
-              <Card className="p-6 bg-gaming-card border-gaming-border">
-                <div className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5 text-yellow-500" />
-                  <h3 className="font-semibold text-foreground">Security</h3>
-                </div>
-                <p className="text-sm font-medium text-foreground mt-2">
-                  {serverSettings.security_settings?.ip_whitelist ? 'IP Whitelist ON' : 'Standard Security'}
-                </p>
-              </Card>
+              <SecurityOverview 
+                serverSettings={serverSettings} 
+                staffCount={staffMembers.length}
+              />
             </div>
           </TabsContent>
 
