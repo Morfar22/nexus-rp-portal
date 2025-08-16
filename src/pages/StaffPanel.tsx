@@ -160,18 +160,6 @@ const DiscordLogsManager = () => {
       
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-foreground">Applications Webhook</Label>
-            <Input
-              value={discordSettings.applications_webhook || ''}
-              onChange={(e) => setDiscordSettings({
-                ...discordSettings,
-                applications_webhook: e.target.value
-              })}
-              placeholder="Discord webhook URL for application logs"
-              className="bg-gaming-dark border-gaming-border text-foreground"
-            />
-          </div>
           
           <div className="space-y-2">
             <Label className="text-foreground">Staff Webhook</Label>

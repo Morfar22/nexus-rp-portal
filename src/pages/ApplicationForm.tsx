@@ -137,10 +137,31 @@ const ApplicationForm = () => {
             applicationData: formData
           }
         });
-        console.log('Application email sent successfully');
+        console.log('Submission email sent successfully');
       } catch (emailError) {
         console.error('Failed to send application email:', emailError);
         // Don't fail the whole process if email fails
+      }
+
+      // Send Discord notification
+      try {
+        console.log('Calling discord-logger function...');
+        const discordResponse = await supabase.functions.invoke('discord-logger', {
+          body: {
+            type: 'application_submitted',
+            data: {
+              applicationId: 'pending', // We don't have the ID yet since this is after insert
+              applicantEmail: user?.email,
+              applicationType: selectedType.name,
+              formData: formData
+            }
+          }
+        });
+        console.log('Discord function response:', discordResponse);
+        console.log('Discord notification attempted');
+      } catch (discordError) {
+        console.error('Failed to send Discord notification:', discordError);
+        // Don't fail the whole process if Discord fails
       }
 
       toast({

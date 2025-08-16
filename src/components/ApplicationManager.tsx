@@ -589,6 +589,7 @@ const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplica
                                 </Button>
                                 <Button
                                   onClick={() => {
+                                    console.log('Reject button clicked for application:', selectedApp.id);
                                     updateApplicationStatus(selectedApp.id, 'rejected', reviewNotes);
                                     setReviewNotes("");
                                   }}

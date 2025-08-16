@@ -33,6 +33,8 @@ serve(async (req) => {
 
     // Get Discord logging settings from database
     let discordSettings: any = {}
+    let applicationDiscordSettings: any = {}
+    
     try {
       const { data: settingsData, error: settingsError } = await supabaseAdmin
         .from('server_settings')
@@ -49,14 +51,35 @@ serve(async (req) => {
       console.log('Failed to fetch discord settings, using defaults:', error)
     }
 
-    // Channel-specific webhook URLs
+    // Also get application-specific Discord settings
+    try {
+      const { data: appSettingsData, error: appSettingsError } = await supabaseAdmin
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'application_discord_settings')
+        .maybeSingle()
+
+      if (appSettingsError) {
+        console.log('Application settings error (using defaults):', appSettingsError.message)
+      } else if (appSettingsData?.setting_value) {
+        applicationDiscordSettings = appSettingsData.setting_value
+      }
+    } catch (error) {
+      console.log('Failed to fetch application discord settings, using defaults:', error)
+    }
+
+    // Channel-specific webhook URLs - prioritize application-specific settings for application events
     const webhooks = {
-      applications: discordSettings.applications_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'),
+      applications: applicationDiscordSettings.staff_webhook_url || discordSettings.applications_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'),
       staff: discordSettings.staff_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'), 
       security: discordSettings.security_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'),
       general: discordSettings.general_webhook || Deno.env.get('DISCORD_WEBHOOK_URL'),
       errors: discordSettings.errors_webhook || Deno.env.get('DISCORD_WEBHOOK_URL')
     }
+
+    console.log("Available webhooks:", webhooks)
+    console.log("Application Discord Settings:", applicationDiscordSettings)
+    console.log("General Discord Settings:", discordSettings)
 
     let webhookUrl = ''
     let embed: any = {}
@@ -66,6 +89,7 @@ serve(async (req) => {
     switch (type) {
       case 'application_submitted':
         webhookUrl = webhooks.applications
+        console.log('Application submitted - webhook URL found:', webhookUrl)
         // Extract data from form_data if available, fallback to direct fields
         const steamName = data.steam_name || data.form_data?.steam_name || "Not provided";
         const discordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
