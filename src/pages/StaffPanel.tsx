@@ -52,6 +52,7 @@ import { SecuritySettings } from "@/components/SecuritySettings";
 import { ApplicationsOverview } from "@/components/ApplicationsOverview";
 import { StaffOverview } from "@/components/StaffOverview";
 import { RulesOverview } from "@/components/RulesOverview";
+import { DeploymentSettings } from "@/components/DeploymentSettings";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -512,7 +513,7 @@ const StaffPanel = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-11 bg-gaming-card border-gaming-border">
+          <TabsList className="grid w-full grid-cols-12 bg-gaming-card border-gaming-border">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="applications">Applications</TabsTrigger>
             <TabsTrigger value="rules">Rules</TabsTrigger>
@@ -523,6 +524,7 @@ const StaffPanel = () => {
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="server-stats">Server Stats</TabsTrigger>
+            <TabsTrigger value="deployment">Deployment</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
           </TabsList>
 
@@ -785,6 +787,10 @@ const StaffPanel = () => {
 
           <TabsContent value="server-stats" className="space-y-6">
             <ServerStatsManager />
+          </TabsContent>
+
+          <TabsContent value="deployment" className="space-y-6">
+            <DeploymentSettings />
           </TabsContent>
 
           <TabsContent value="logs" className="space-y-6">
