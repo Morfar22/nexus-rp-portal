@@ -61,23 +61,40 @@ export const DeploymentSettings = () => {
   const [showValues, setShowValues] = useState<Record<string, boolean>>({});
   const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [readinessData, setReadinessData] = useState<any>(null);
+  const [loadingReadiness, setLoadingReadiness] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    checkConfiguredKeys();
+    checkDeploymentReadiness();
   }, []);
 
-  const checkConfiguredKeys = async () => {
+  const checkDeploymentReadiness = async () => {
     try {
-      // In a real implementation, you'd check which secrets are configured
-      // For now, we'll assume none are configured initially
+      setLoadingReadiness(true);
+      const { data, error } = await supabase.functions.invoke('deployment-manager', {
+        body: { action: 'check_readiness' }
+      });
+
+      if (error) throw error;
+      
+      setReadinessData(data);
+      
+      // Update API keys status based on real backend data
       const updatedKeys = apiKeys.map(key => ({
         ...key,
-        configured: false // This would be determined by checking Supabase secrets
+        configured: data.checks[`${key.name.toLowerCase()}_configured`] || false
       }));
       setApiKeys(updatedKeys);
     } catch (error) {
-      console.error('Error checking configured keys:', error);
+      console.error('Error checking deployment readiness:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check deployment readiness",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingReadiness(false);
     }
   };
 
@@ -94,25 +111,44 @@ export const DeploymentSettings = () => {
     setLoading(prev => ({ ...prev, [keyName]: true }));
 
     try {
-      // Here you would save to Supabase secrets
-      // For now, we'll simulate a successful save
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // First validate the key
+      const { data: validationData, error: validationError } = await supabase.functions.invoke('deployment-manager', {
+        body: { 
+          action: 'validate_key', 
+          keyName, 
+          keyValue: values[keyName] 
+        }
+      });
 
+      if (validationError) throw validationError;
+
+      if (!validationData.is_valid) {
+        toast({
+          title: "Invalid API Key",
+          description: validationData.error_message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // If validation passed, show success and refresh status
       setApiKeys(prev => prev.map(key => 
         key.name === keyName ? { ...key, configured: true } : key
       ));
 
       toast({
         title: "Success",
-        description: `${keyName} has been configured successfully`
+        description: `${keyName} validated successfully! ${validationData.error_message || ''}`,
       });
 
-      // Clear the input value
+      // Clear the input value and refresh readiness
       setValues(prev => ({ ...prev, [keyName]: '' }));
-    } catch (error) {
+      await checkDeploymentReadiness();
+      
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to save API key",
+        description: `Failed to validate API key: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -125,12 +161,24 @@ export const DeploymentSettings = () => {
   };
 
   const getReadinessScore = () => {
-    const totalRequired = apiKeys.filter(key => key.required).length;
-    const configuredRequired = apiKeys.filter(key => key.required && key.configured).length;
-    return Math.round((configuredRequired / totalRequired) * 100);
+    if (!readinessData) return 0;
+    return readinessData.readiness_score || 0;
   };
 
   const readinessScore = getReadinessScore();
+
+  if (loadingReadiness) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Checking deployment status...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -164,13 +212,13 @@ export const DeploymentSettings = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {apiKeys.filter(key => key.configured).length}
+                {readinessData?.configured_count || 0}
               </div>
               <div className="text-sm text-muted-foreground">Configured</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">
-                {apiKeys.filter(key => key.required && !key.configured).length}
+                {readinessData?.required_missing?.length || 0}
               </div>
               <div className="text-sm text-muted-foreground">Required Missing</div>
             </div>
@@ -189,6 +237,18 @@ export const DeploymentSettings = () => {
                 <div className="font-medium text-yellow-800">Deployment Not Ready</div>
                 <div className="text-sm text-yellow-700">
                   You need to configure all required API keys before deploying to production.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {readinessData?.deployment_ready && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+              <Check className="h-5 w-5 text-green-600 mt-0.5" />
+              <div>
+                <div className="font-medium text-green-800">Ready for Deployment!</div>
+                <div className="text-sm text-green-700">
+                  All required services are configured and working properly.
                 </div>
               </div>
             </div>
