@@ -517,7 +517,7 @@ const StaffPanel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gaming-dark">
+    <div className="min-h-screen bg-gaming-dark staff-panel-scrollbar">
       <Navbar />
       
       <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
