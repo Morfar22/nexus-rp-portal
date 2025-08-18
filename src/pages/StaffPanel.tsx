@@ -45,6 +45,7 @@ import RulesManager from "@/components/RulesManager";
 import StaffManager from "@/components/StaffManager";
 import UserManagementSection from "@/components/UserManagementSection";
 import TeamManager from "@/components/TeamManager";
+import PartnerManager from "@/components/PartnerManager";
 import NavbarManager from "@/components/NavbarManager";
 import ServerStatsManager from "@/components/ServerStatsManager";
 import { SecurityOverview } from "@/components/SecurityOverview";
@@ -514,13 +515,14 @@ const StaffPanel = () => {
 
         <Tabs defaultValue="overview" className="space-y-6">
           <div className="overflow-x-auto">
-            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 bg-gaming-card border-gaming-border min-w-fit">
+            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 lg:grid-cols-13 bg-gaming-card border-gaming-border min-w-fit">
               <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
               <TabsTrigger value="applications" className="text-xs sm:text-sm">Apps</TabsTrigger>
               <TabsTrigger value="rules" className="text-xs sm:text-sm">Rules</TabsTrigger>
               <TabsTrigger value="staff" className="text-xs sm:text-sm">Staff</TabsTrigger>
               <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
               <TabsTrigger value="team" className="text-xs sm:text-sm">Team</TabsTrigger>
+              <TabsTrigger value="partners" className="text-xs sm:text-sm">Partners</TabsTrigger>
               <TabsTrigger value="navbar" className="text-xs sm:text-sm">Navbar</TabsTrigger>
               <TabsTrigger value="settings" className="text-xs sm:text-sm">Settings</TabsTrigger>
               <TabsTrigger value="content" className="text-xs sm:text-sm">Content</TabsTrigger>
@@ -560,6 +562,10 @@ const StaffPanel = () => {
 
           <TabsContent value="team" className="space-y-4 sm:space-y-6">
             <TeamManager />
+          </TabsContent>
+
+          <TabsContent value="partners" className="space-y-4 sm:space-y-6">
+            <PartnerManager />
           </TabsContent>
 
           <TabsContent value="navbar" className="space-y-4 sm:space-y-6">
