@@ -17,6 +17,7 @@ import ApplicationForm from "./pages/ApplicationForm";
 import Rules from "./pages/Rules";
 import StaffPanel from "./pages/StaffPanel";
 import OurTeam from "./pages/OurTeam";
+import Partners from "./pages/Partners";
 import ServerManagement from "./pages/ServerManagement";
 import NotFound from "./pages/NotFound";
 
@@ -59,6 +60,7 @@ const App = () => (
                 </StaffProtectedRoute>
               } />
               <Route path="/team" element={<OurTeam />} />
+              <Route path="/partners" element={<Partners />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

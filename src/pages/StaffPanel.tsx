@@ -53,6 +53,7 @@ import { SecuritySettings } from "@/components/SecuritySettings";
 import { ApplicationsOverview } from "@/components/ApplicationsOverview";
 import { StaffOverview } from "@/components/StaffOverview";
 import { RulesOverview } from "@/components/RulesOverview";
+import { PartnersOverview } from "@/components/PartnersOverview";
 import { DeploymentSettings } from "@/components/DeploymentSettings";
 
 const DiscordLogsManager = () => {
@@ -269,6 +270,7 @@ const StaffPanel = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [rules, setRules] = useState<any[]>([]);
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
+  const [partners, setPartners] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -284,7 +286,8 @@ const StaffPanel = () => {
         fetchServerSettings(),
         fetchApplications(),
         fetchRules(),
-        fetchStaffMembers()
+        fetchStaffMembers(),
+        fetchPartners()
       ]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -350,6 +353,20 @@ const StaffPanel = () => {
       setStaffMembers(data || []);
     } catch (error) {
       console.error('Error fetching staff members:', error);
+    }
+  };
+
+  const fetchPartners = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('partners')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      setPartners(data || []);
+    } catch (error) {
+      console.error('Error fetching partners:', error);
     }
   };
 
@@ -533,10 +550,11 @@ const StaffPanel = () => {
           </div>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-6">
               <ApplicationsOverview applications={applications} />
               <StaffOverview staffMembers={staffMembers} />
               <RulesOverview rules={rules} />
+              <PartnersOverview partners={partners} />
               <SecurityOverview 
                 serverSettings={serverSettings} 
                 staffCount={staffMembers.length}
