@@ -502,34 +502,36 @@ const StaffPanel = () => {
     <div className="min-h-screen bg-gaming-dark">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+      <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
             Staff Panel
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Manage your FiveM server settings, applications, and staff members
           </p>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-12 bg-gaming-card border-gaming-border">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="applications">Applications</TabsTrigger>
-            <TabsTrigger value="rules">Rules</TabsTrigger>
-            <TabsTrigger value="staff">Staff</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="navbar">Navbar</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="server-stats">Server Stats</TabsTrigger>
-            <TabsTrigger value="deployment">Deployment</TabsTrigger>
-            <TabsTrigger value="logs">Logs</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 bg-gaming-card border-gaming-border min-w-fit">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+              <TabsTrigger value="applications" className="text-xs sm:text-sm">Apps</TabsTrigger>
+              <TabsTrigger value="rules" className="text-xs sm:text-sm">Rules</TabsTrigger>
+              <TabsTrigger value="staff" className="text-xs sm:text-sm">Staff</TabsTrigger>
+              <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
+              <TabsTrigger value="team" className="text-xs sm:text-sm">Team</TabsTrigger>
+              <TabsTrigger value="navbar" className="text-xs sm:text-sm">Navbar</TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs sm:text-sm">Settings</TabsTrigger>
+              <TabsTrigger value="content" className="text-xs sm:text-sm">Content</TabsTrigger>
+              <TabsTrigger value="server-stats" className="text-xs sm:text-sm">Stats</TabsTrigger>
+              <TabsTrigger value="deployment" className="text-xs sm:text-sm">Deploy</TabsTrigger>
+              <TabsTrigger value="logs" className="text-xs sm:text-sm">Logs</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
               <ApplicationsOverview applications={applications} />
               <StaffOverview staffMembers={staffMembers} />
               <RulesOverview rules={rules} />
@@ -540,55 +542,55 @@ const StaffPanel = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="applications" className="space-y-6">
+          <TabsContent value="applications" className="space-y-4 sm:space-y-6">
             <ApplicationManager />
           </TabsContent>
 
-          <TabsContent value="rules" className="space-y-6">
+          <TabsContent value="rules" className="space-y-4 sm:space-y-6">
             <RulesManager />
           </TabsContent>
 
-          <TabsContent value="staff" className="space-y-6">
+          <TabsContent value="staff" className="space-y-4 sm:space-y-6">
             <StaffManager />
           </TabsContent>
 
-          <TabsContent value="users" className="space-y-6">
+          <TabsContent value="users" className="space-y-4 sm:space-y-6">
             <UserManagementSection />
           </TabsContent>
 
-          <TabsContent value="team" className="space-y-6">
+          <TabsContent value="team" className="space-y-4 sm:space-y-6">
             <TeamManager />
           </TabsContent>
 
-          <TabsContent value="navbar" className="space-y-6">
+          <TabsContent value="navbar" className="space-y-4 sm:space-y-6">
             <NavbarManager />
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
+          <TabsContent value="settings" className="space-y-4 sm:space-y-6">
             {/* Email Test */}
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center space-x-2 mb-6">
+            <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                 <Settings className="h-5 w-5 text-neon-green" />
-                <h2 className="text-xl font-semibold text-foreground">Email Testing</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground">Email Testing</h2>
               </div>
               
               <div className="space-y-4">
                 <div>
-                  <Label className="text-foreground text-base">Test Email Function</Label>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <Label className="text-foreground text-sm sm:text-base">Test Email Function</Label>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                     Test if your Resend API key is working correctly
                   </p>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button onClick={testMinimalFunction} variant="outline">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    <Button onClick={testMinimalFunction} variant="outline" size="sm">
                       Test Minimal Function
                     </Button>
-                    <Button onClick={testSimpleFunction} variant="outline">
+                    <Button onClick={testSimpleFunction} variant="outline" size="sm">
                       Test Simple Function
                     </Button>
-                    <Button onClick={testEmail} variant="outline">
+                    <Button onClick={testEmail} variant="outline" size="sm">
                       Test Basic Email
                     </Button>
-                    <Button onClick={testApplicationEmail} variant="outline">
+                    <Button onClick={testApplicationEmail} variant="outline" size="sm">
                       Test Application Email
                     </Button>
                   </div>
@@ -597,15 +599,15 @@ const StaffPanel = () => {
             </Card>
 
             {/* General Settings */}
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center space-x-2 mb-6">
+            <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                 <Settings className="h-5 w-5 text-neon-purple" />
-                <h2 className="text-xl font-semibold text-foreground">General Settings</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground">General Settings</h2>
               </div>
               
               <div className="space-y-4">
                 <div>
-                  <Label className="text-foreground">Server Name</Label>
+                  <Label className="text-foreground text-sm sm:text-base">Server Name</Label>
                   <Input
                     value={serverSettings.general_settings?.server_name || ''}
                     onChange={(e) => {
@@ -622,13 +624,13 @@ const StaffPanel = () => {
                     placeholder="Enter your server name..."
                     className="bg-gaming-dark border-gaming-border text-foreground"
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     This appears in the homepage hero section
                   </p>
                 </div>
 
                 <div>
-                  <Label className="text-foreground">Welcome Message</Label>
+                  <Label className="text-foreground text-sm sm:text-base">Welcome Message</Label>
                   <Textarea
                     value={serverSettings.general_settings?.welcome_message || ''}
                     onChange={(e) => {
@@ -646,7 +648,7 @@ const StaffPanel = () => {
                     className="bg-gaming-dark border-gaming-border text-foreground"
                     rows={3}
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     This appears below the server name on the homepage
                   </p>
                 </div>
@@ -654,17 +656,17 @@ const StaffPanel = () => {
             </Card>
 
             {/* Maintenance Mode */}
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center space-x-2 mb-6">
+            <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                 <AlertCircle className="h-5 w-5 text-yellow-500" />
-                <h2 className="text-xl font-semibold text-foreground">Maintenance Mode</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground">Maintenance Mode</h2>
               </div>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground text-base">Enable Maintenance Mode</Label>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 pr-4">
+                    <Label className="text-foreground text-sm sm:text-base">Enable Maintenance Mode</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       When enabled, only staff can access the site
                     </p>
                   </div>
@@ -684,8 +686,8 @@ const StaffPanel = () => {
                   />
                 </div>
                 
-                <div className="p-4 bg-gaming-dark rounded border">
-                  <p className="text-sm text-muted-foreground">
+                <div className="p-3 sm:p-4 bg-gaming-dark rounded border">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     <strong>Status:</strong> Maintenance mode is currently{' '}
                     <span className={serverSettings.general_settings?.maintenance_mode ? 'text-yellow-400' : 'text-green-400'}>
                       {serverSettings.general_settings?.maintenance_mode ? 'ENABLED' : 'DISABLED'}
@@ -696,17 +698,17 @@ const StaffPanel = () => {
             </Card>
 
             {/* Application Settings */}
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center space-x-2 mb-6">
+            <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                 <FileText className="h-5 w-5 text-neon-green" />
-                <h2 className="text-xl font-semibold text-foreground">Application Settings</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground">Application Settings</h2>
               </div>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground text-base">Accept Applications</Label>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 pr-4">
+                    <Label className="text-foreground text-sm sm:text-base">Accept Applications</Label>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Toggle whether new applications can be submitted
                     </p>
                   </div>
@@ -726,8 +728,8 @@ const StaffPanel = () => {
                   />
                 </div>
                 
-                <div className="p-4 bg-gaming-dark rounded border">
-                  <p className="text-sm text-muted-foreground">
+                <div className="p-3 sm:p-4 bg-gaming-dark rounded border">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     <strong>Status:</strong> Applications are currently{' '}
                     <span className={serverSettings.application_settings?.accept_applications ? 'text-green-400' : 'text-red-400'}>
                       {serverSettings.application_settings?.accept_applications ? 'OPEN' : 'CLOSED'}
@@ -738,15 +740,15 @@ const StaffPanel = () => {
             </Card>
 
             {/* Discord Settings */}
-            <Card className="p-6 bg-gaming-card border-gaming-border shadow-gaming">
-              <div className="flex items-center space-x-2 mb-6">
+            <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                 <Users className="h-5 w-5 text-neon-blue" />
-                <h2 className="text-xl font-semibold text-foreground">Discord Integration</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground">Discord Integration</h2>
               </div>
               
               <div className="space-y-4">
                 <div>
-                  <Label className="text-foreground">Discord Server ID</Label>
+                  <Label className="text-foreground text-sm sm:text-base">Discord Server ID</Label>
                   <Input
                     value={serverSettings.discord_settings?.server_id || ''}
                     onChange={(e) => {
@@ -781,19 +783,19 @@ const StaffPanel = () => {
             />
           </TabsContent>
 
-          <TabsContent value="content" className="space-y-6">
+          <TabsContent value="content" className="space-y-4 sm:space-y-6">
             <HomepageContentManager />
           </TabsContent>
 
-          <TabsContent value="server-stats" className="space-y-6">
+          <TabsContent value="server-stats" className="space-y-4 sm:space-y-6">
             <ServerStatsManager />
           </TabsContent>
 
-          <TabsContent value="deployment" className="space-y-6">
+          <TabsContent value="deployment" className="space-y-4 sm:space-y-6">
             <DeploymentSettings />
           </TabsContent>
 
-          <TabsContent value="logs" className="space-y-6">
+          <TabsContent value="logs" className="space-y-4 sm:space-y-6">
             <DiscordLogsManager />
             <LogsViewer />
           </TabsContent>
