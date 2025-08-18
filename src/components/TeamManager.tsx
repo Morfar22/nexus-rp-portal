@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,9 +8,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Edit, Trash2, Save, X, Users, Image } from "lucide-react";
+import { Plus, Edit, Trash2, Save, X, Users, Image, Crown, Shield, Star, Calendar, Activity, TrendingUp, Award, Eye } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const TeamManager = () => {
@@ -25,6 +27,13 @@ const TeamManager = () => {
     image_url: "",
     order_index: 0,
     is_active: true
+  });
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    admins: 0,
+    mods: 0,
+    recent: 0
   });
   const { user } = useAuth();
   const { toast } = useToast();
@@ -42,7 +51,26 @@ const TeamManager = () => {
         .order('order_index', { ascending: true });
 
       if (error) throw error;
-      setTeamMembers(data || []);
+      const members = data || [];
+      setTeamMembers(members);
+      
+      // Calculate stats
+      const activeMembers = members.filter(m => m.is_active);
+      const admins = members.filter(m => m.role.toLowerCase().includes('admin') || m.role.toLowerCase().includes('owner'));
+      const mods = members.filter(m => m.role.toLowerCase().includes('moderator') || m.role.toLowerCase().includes('mod'));
+      const recentlyAdded = members.filter(m => {
+        const memberDate = new Date(m.created_at);
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        return memberDate > weekAgo;
+      });
+      
+      setStats({
+        total: members.length,
+        active: activeMembers.length,
+        admins: admins.length,
+        mods: mods.length,
+        recent: recentlyAdded.length
+      });
     } catch (error) {
       console.error('Error fetching team members:', error);
       toast({
@@ -139,6 +167,31 @@ const TeamManager = () => {
     }
   };
 
+  const getRoleIcon = (role: string) => {
+    const lowerRole = role.toLowerCase();
+    if (lowerRole.includes('owner') || lowerRole.includes('founder')) return Crown;
+    if (lowerRole.includes('admin')) return Star;
+    if (lowerRole.includes('moderator') || lowerRole.includes('mod')) return Shield;
+    return Users;
+  };
+
+  const getRoleColor = (role: string) => {
+    const lowerRole = role.toLowerCase();
+    if (lowerRole.includes('owner') || lowerRole.includes('founder')) return 'text-yellow-400 border-yellow-400/50 bg-yellow-400/10';
+    if (lowerRole.includes('admin')) return 'text-red-400 border-red-400/50 bg-red-400/10';
+    if (lowerRole.includes('moderator') || lowerRole.includes('mod')) return 'text-blue-400 border-blue-400/50 bg-blue-400/10';
+    return 'text-green-400 border-green-400/50 bg-green-400/10';
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (isLoading) {
     return (
       <Card className="p-6 bg-gaming-card border-gaming-border">
@@ -150,12 +203,70 @@ const TeamManager = () => {
   }
 
   return (
-    <Card className="p-6 bg-gaming-card border-gaming-border">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-2">
-          <Users className="h-5 w-5 text-neon-green" />
-          <h2 className="text-xl font-semibold text-foreground">Team Members</h2>
-        </div>
+    <div className="space-y-6">
+      {/* Team Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card className="bg-gaming-card border-gaming-border">
+          <CardContent className="p-4 text-center">
+            <Users className="h-6 w-6 text-neon-blue mx-auto mb-2" />
+            <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+            <p className="text-xs text-muted-foreground">Total Members</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gaming-card border-gaming-border">
+          <CardContent className="p-4 text-center">
+            <Activity className="h-6 w-6 text-neon-green mx-auto mb-2" />
+            <p className="text-2xl font-bold text-foreground">{stats.active}</p>
+            <p className="text-xs text-muted-foreground">Active</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gaming-card border-gaming-border">
+          <CardContent className="p-4 text-center">
+            <Crown className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
+            <p className="text-2xl font-bold text-foreground">{stats.admins}</p>
+            <p className="text-xs text-muted-foreground">Admins</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gaming-card border-gaming-border">
+          <CardContent className="p-4 text-center">
+            <Shield className="h-6 w-6 text-blue-400 mx-auto mb-2" />
+            <p className="text-2xl font-bold text-foreground">{stats.mods}</p>
+            <p className="text-xs text-muted-foreground">Moderators</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gaming-card border-gaming-border">
+          <CardContent className="p-4 text-center">
+            <TrendingUp className="h-6 w-6 text-neon-purple mx-auto mb-2" />
+            <p className="text-2xl font-bold text-foreground">{stats.recent}</p>
+            <p className="text-xs text-muted-foreground">Recent (7d)</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Activity Progress */}
+      <Card className="bg-gaming-card border-gaming-border">
+        <CardContent className="p-4">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-muted-foreground">Team Activity Rate</span>
+            <span className="text-foreground">{Math.round((stats.active / Math.max(stats.total, 1)) * 100)}% Active</span>
+          </div>
+          <Progress value={(stats.active / Math.max(stats.total, 1)) * 100} className="h-2" />
+        </CardContent>
+      </Card>
+
+      <Card className="p-6 bg-gaming-card border-gaming-border">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            <Users className="h-5 w-5 text-neon-green" />
+            <h2 className="text-xl font-semibold text-foreground">Team Members</h2>
+            <Badge variant="outline" className="text-neon-blue border-neon-blue/50">
+              {stats.total} total
+            </Badge>
+          </div>
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
           <DialogTrigger asChild>
             <Button>
@@ -249,9 +360,13 @@ const TeamManager = () => {
         {teamMembers.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">No team members found</p>
         ) : (
-          teamMembers.map((member) => (
-            <Card key={member.id} className="p-4 bg-gaming-dark border-gaming-border">
-              {editingMember?.id === member.id ? (
+          teamMembers.map((member) => {
+            const RoleIcon = getRoleIcon(member.role);
+            const roleColorClass = getRoleColor(member.role);
+            
+            return (
+              <Card key={member.id} className="p-4 bg-gaming-dark border-gaming-border hover:border-neon-purple/30 transition-colors">
+                {editingMember?.id === member.id ? (
                 <div className="space-y-3">
                   <Input
                     value={editingMember.name}
@@ -312,32 +427,58 @@ const TeamManager = () => {
               ) : (
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4">
-                    {member.image_url && (
-                      <img
-                        src={member.image_url}
-                        alt={member.name}
-                        className="w-16 h-16 rounded-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    )}
+                    <div className="relative">
+                      <Avatar className="h-16 w-16 ring-2 ring-gaming-border">
+                        <AvatarImage src={member.image_url} alt={member.name} className="object-cover" />
+                        <AvatarFallback className="bg-gradient-to-br from-neon-purple/30 to-neon-blue/30 text-white font-bold">
+                          {getInitials(member.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {/* Status indicator */}
+                      <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-gaming-dark ${member.is_active ? 'bg-green-400' : 'bg-gray-500'}`} />
+                      
+                      {/* Role icon */}
+                      <div className={`absolute -bottom-1 -right-1 p-1 rounded-full bg-gaming-dark border ${roleColorClass.split(' ')[1]}`}>
+                        <RoleIcon className={`h-3 w-3 ${roleColorClass.split(' ')[0]}`} />
+                      </div>
+                    </div>
+                    
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="font-medium text-foreground">{member.name}</h4>
-                        <Badge className="bg-neon-blue/20 text-neon-blue border-neon-blue/30">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h4 className="font-medium text-foreground text-lg">{member.name}</h4>
+                        <Badge className={`${roleColorClass} font-medium`}>
+                          <RoleIcon className="h-3 w-3 mr-1" />
                           {member.role}
                         </Badge>
                         {!member.is_active && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs bg-gray-500/20 text-gray-400">
                             Inactive
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">{member.bio}</p>
-                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                        <span>Order: {member.order_index}</span>
-                        <span>Added: {new Date(member.created_at).toLocaleDateString()}</span>
+                      
+                      {member.bio && (
+                        <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{member.bio}</p>
+                      )}
+                      
+                      <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Award className="h-3 w-3" />
+                          <span>Position: #{member.order_index}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>Added: {new Date(member.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Eye className="h-3 w-3" />
+                          <span>Public: {member.is_active ? 'Visible' : 'Hidden'}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Activity className="h-3 w-3" />
+                          <span>Status: {member.is_active ? 'Active' : 'Inactive'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -377,11 +518,13 @@ const TeamManager = () => {
                   </div>
                 </div>
               )}
-            </Card>
-          ))
+              </Card>
+            );
+          })
         )}
-      </div>
-    </Card>
+        </div>
+      </Card>
+    </div>
   );
 };
 

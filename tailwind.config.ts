@@ -62,23 +62,38 @@ export default {
 					'purple': 'hsl(var(--neon-purple))',
 					'blue': 'hsl(var(--neon-blue))',
 					'cyan': 'hsl(var(--neon-cyan))',
-					'green': 'hsl(var(--neon-green))'
+					'green': 'hsl(var(--neon-green))',
+					'pink': 'hsl(var(--neon-pink))',
+					'orange': 'hsl(var(--neon-orange))'
 				},
+				cyber: {
+					'purple': 'hsl(var(--cyber-purple))',
+					'blue': 'hsl(var(--electric-blue))'
+				},
+			},
+			fontFamily: {
+				'orbitron': ['Orbitron', 'monospace'],
+				'inter': ['Inter', 'sans-serif'],
+				'mono': ['JetBrains Mono', 'monospace'],
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-hero': 'var(--gradient-hero)',
+				'gradient-neon': 'var(--gradient-neon)',
+				'gradient-cyber': 'var(--gradient-cyber)'
+			},
+			boxShadow: {
+				'gaming': 'var(--shadow-gaming)',
+				'glow-primary': 'var(--glow-primary)',
+				'glow-blue': 'var(--glow-blue)',
+				'glow-cyber': 'var(--glow-cyber)',
+				'neon': 'var(--shadow-neon)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
-			},
-			backgroundImage: {
-				'gradient-primary': 'var(--gradient-primary)',
-				'gradient-card': 'var(--gradient-card)',
-				'gradient-hero': 'var(--gradient-hero)'
-			},
-			boxShadow: {
-				'gaming': 'var(--shadow-gaming)',
-				'glow-primary': 'var(--glow-primary)',
-				'glow-blue': 'var(--glow-blue)'
 			},
 			keyframes: {
 				'accordion-down': {
