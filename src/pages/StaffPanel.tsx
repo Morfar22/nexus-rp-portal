@@ -54,6 +54,7 @@ import { ApplicationsOverview } from "@/components/ApplicationsOverview";
 import { StaffOverview } from "@/components/StaffOverview";
 import { RulesOverview } from "@/components/RulesOverview";
 import { PartnersOverview } from "@/components/PartnersOverview";
+import { EmailTemplateManager } from "@/components/EmailTemplateManager";
 import { DeploymentSettings } from "@/components/DeploymentSettings";
 
 const DiscordLogsManager = () => {
@@ -532,7 +533,7 @@ const StaffPanel = () => {
 
         <Tabs defaultValue="overview" className="space-y-6">
           <div className="overflow-x-auto">
-            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 lg:grid-cols-13 bg-gaming-card border-gaming-border min-w-fit">
+            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 lg:grid-cols-14 bg-gaming-card border-gaming-border min-w-fit">
               <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
               <TabsTrigger value="applications" className="text-xs sm:text-sm">Apps</TabsTrigger>
               <TabsTrigger value="rules" className="text-xs sm:text-sm">Rules</TabsTrigger>
@@ -546,6 +547,7 @@ const StaffPanel = () => {
               <TabsTrigger value="server-stats" className="text-xs sm:text-sm">Stats</TabsTrigger>
               <TabsTrigger value="deployment" className="text-xs sm:text-sm">Deploy</TabsTrigger>
               <TabsTrigger value="logs" className="text-xs sm:text-sm">Logs</TabsTrigger>
+              <TabsTrigger value="emails" className="text-xs sm:text-sm">Emails</TabsTrigger>
             </TabsList>
           </div>
 
@@ -822,6 +824,10 @@ const StaffPanel = () => {
           <TabsContent value="logs" className="space-y-4 sm:space-y-6">
             <DiscordLogsManager />
             <LogsViewer />
+          </TabsContent>
+
+          <TabsContent value="emails" className="space-y-4 sm:space-y-6">
+            <EmailTemplateManager />
           </TabsContent>
         </Tabs>
       </div>
