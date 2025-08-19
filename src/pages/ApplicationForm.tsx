@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Footer from "@/components/Footer";
 
 const ApplicationForm = () => {
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
