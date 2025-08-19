@@ -425,18 +425,16 @@ const resetUserPassword = async (userId: string, email: string) => {
                             <DialogTrigger asChild>
                               <Button variant="outline">Cancel</Button>
                             </DialogTrigger>
-<Button
-  onClick={async () => {
-    const staff = await supabase.auth.getUser();
-    const staffName = staff.data.user?.username || staff.data.user?.email;
-    handleBanUser(user, banReason, staffName);
-    setBanReason("");
-  }}
-  variant="destructive"
->
-  Ban User
-</Button>
-
+                          <Button
+                            onClick={async () => {
+                              const staff = await supabase.auth.getUser();
+                              const staffName = staff.data.user?.username || staff.data.user?.email;
+                              handleBanUser(user, banReason, staffName);
+                              setBanReason("");
+                            }}
+                            variant="destructive"
+                          >
+                            Ban User
                           </Button>
                           </div>
                         </DialogContent>
