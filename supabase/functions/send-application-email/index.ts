@@ -2,7 +2,14 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Check if RESEND_API_KEY is available
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+console.log('RESEND_API_KEY available:', !!RESEND_API_KEY);
+if (!RESEND_API_KEY) {
+  console.error('CRITICAL: RESEND_API_KEY environment variable not found!');
+}
+
+const resend = new Resend(RESEND_API_KEY);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
