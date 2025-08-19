@@ -66,7 +66,6 @@ const UserManagementSection = () => {
   };
 
 const handleBanUser = async (user: any, reason: string, staffName?: string) => {
-  // Defensive check at the top!
   if (!user || !user.email) {
     toast({
       title: "Error",
@@ -78,13 +77,24 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
   }
 
   try {
+    // Get staff info if not provided
+    let staffDisplayName = staffName;
+    if (!staffDisplayName) {
+      const staff = await supabase.auth.getUser();
+      staffDisplayName =
+        staff.data.user?.username ||
+        staff.data.user?.full_name ||
+        staff.data.user?.email ||
+        "Unknown Staff";
+    }
+
     // Mark user as banned in your profiles table
     const { error } = await supabase
       .from('profiles')
       .update({ 
         banned: true, 
         banned_at: new Date().toISOString(),
-        banned_by: (await supabase.auth.getUser()).data.user?.id
+        banned_by: staffDisplayName // This can now be set correctly
       })
       .eq('id', user.id);
 
@@ -94,11 +104,11 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
     try {
       await supabase.functions.invoke('send-ban-notification', {
         body: {
-          userEmail: user.email,      // REQUIRED
-          userName: user.username,    // REQUIRED
-          isBanned: true,             // REQUIRED for notification template
-          banReason: reason,          // The ban reason
-          staffName                  // Optionally, the staff's display name
+          userEmail: user.email,
+          userName: user.username,
+          isBanned: true,
+          banReason: reason,
+          staffName: staffDisplayName // use correct name
         }
       });
     } catch (fnError) {
@@ -119,6 +129,7 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
     });
   }
 };
+
 
 
   const handleUnbanUser = async (userId: string) => {
@@ -414,15 +425,17 @@ const resetUserPassword = async (userId: string, email: string) => {
                             <DialogTrigger asChild>
                               <Button variant="outline">Cancel</Button>
                             </DialogTrigger>
-                            <Button
-                              onClick={() => {
-                                handleBanUser(user, banReason, staffName);  // Pass the whole user object!
-                                setBanReason("");
-                              }}
-                              variant="destructive"
-                            >
-                              Ban User
-                            </Button>
+                          <Button
+                            onClick={async () => {
+                              const staff = await supabase.auth.getUser();
+                              const staffName = staff.data.user?.username || staff.data.user?.email;
+                              handleBanUser(user, banReason, staffName);
+                              setBanReason("");
+                            }}
+                            variant="destructive"
+                          >
+                            Ban User
+                          </Button>
                           </div>
                         </DialogContent>
                       </Dialog>
