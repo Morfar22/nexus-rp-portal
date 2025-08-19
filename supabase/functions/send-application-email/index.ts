@@ -149,65 +149,81 @@ const handler = async (req: Request): Promise<Response> => {
 
 // Legacy handler for backward compatibility
 const handleLegacyRequest = async (requestBody: EmailRequest) => {
-  const { type, userEmail, applicationData } = requestBody;
-  
-  let subject, htmlContent;
-  
-  if (type === 'approved') {
-    subject = "Application Approved - DreamLight RP";
-    htmlContent = `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h1 style="color: #22c55e;">🎉 Application Approved!</h1>
-        <p>Congratulations! Your application to DreamLight RP has been <strong>approved</strong>.</p>
-        <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
-        ${applicationData?.review_notes ? `<p><strong>Staff Notes:</strong> ${applicationData.review_notes}</p>` : ''}
-        <p>Welcome to our community! You can now join our FiveM server.</p>
-        <p>Best regards,<br>The DreamLight RP Team</p>
-      </div>
-    `;
-  } else if (type === 'denied' || type === 'rejected') {
-    subject = "Application Update - DreamLight RP";
-    htmlContent = `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h1 style="color: #ef4444;">Application Update</h1>
-        <p>Thank you for your interest in DreamLight RP. Unfortunately, your application has not been approved at this time.</p>
-        <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
-        ${applicationData?.review_notes ? `<p><strong>Staff Feedback:</strong> ${applicationData.review_notes}</p>` : ''}
-        <p>You're welcome to submit a new application in the future. Please consider the feedback provided.</p>
-        <p>Best regards,<br>The DreamLight RP Team</p>
-      </div>
-    `;
-  } else {
-    subject = "Application Received - DreamLight RP";
-    htmlContent = `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h1 style="color: #ff6b6b;">Application Received!</h1>
-        <p>Thank you for your application to DreamLight RP.</p>
-        <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
-        <p>We'll review your application and get back to you soon.</p>
-        <p>Best regards,<br>The DreamLight RP Team</p>
-      </div>
-    `;
+  try {
+    console.log('Processing legacy email request');
+    const { type, userEmail, applicationData } = requestBody;
+    
+    let subject, htmlContent;
+    
+    if (type === 'approved') {
+      subject = "Application Approved - DreamLight RP";
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h1 style="color: #22c55e;">🎉 Application Approved!</h1>
+          <p>Congratulations! Your application to DreamLight RP has been <strong>approved</strong>.</p>
+          <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
+          ${applicationData?.review_notes ? `<p><strong>Staff Notes:</strong> ${applicationData.review_notes}</p>` : ''}
+          <p>Welcome to our community! You can now join our FiveM server.</p>
+          <p>Best regards,<br>The DreamLight RP Team</p>
+        </div>
+      `;
+    } else if (type === 'denied' || type === 'rejected') {
+      subject = "Application Update - DreamLight RP";
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h1 style="color: #ef4444;">Application Update</h1>
+          <p>Thank you for your interest in DreamLight RP. Unfortunately, your application has not been approved at this time.</p>
+          <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
+          ${applicationData?.review_notes ? `<p><strong>Staff Feedback:</strong> ${applicationData.review_notes}</p>` : ''}
+          <p>You're welcome to submit a new application in the future. Please consider the feedback provided.</p>
+          <p>Best regards,<br>The DreamLight RP Team</p>
+        </div>
+      `;
+    } else {
+      subject = "Application Received - DreamLight RP";
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h1 style="color: #ff6b6b;">Application Received!</h1>
+          <p>Thank you for your application to DreamLight RP.</p>
+          <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
+          <p>We'll review your application and get back to you soon.</p>
+          <p>Best regards,<br>The DreamLight RP Team</p>
+        </div>
+      `;
+    }
+
+    console.log('Sending legacy email to:', userEmail);
+    console.log('Email subject:', subject);
+
+    const emailResponse = await resend.emails.send({
+      from: "DreamLight RP <noreply@dreamlightrp.dk>",
+      to: [userEmail!],
+      subject: subject,
+      html: htmlContent,
+    });
+
+    if (emailResponse.error) {
+      console.error('Resend error in legacy handler:', emailResponse.error);
+      throw new Error(`Failed to send email: ${emailResponse.error.message}`);
+    }
+
+    console.log('Legacy email sent successfully:', emailResponse);
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: "Application email sent successfully",
+      emailResponse 
+    }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error in legacy email handler:', error);
+    throw error; // Re-throw to be caught by main handler
   }
-
-  const emailResponse = await resend.emails.send({
-    from: "DreamLight RP <noreply@dreamlightrp.dk>",
-    to: [userEmail!],
-    subject: subject,
-    html: htmlContent,
-  });
-
-  return new Response(JSON.stringify({ 
-    success: true, 
-    message: "Application email sent successfully",
-    emailResponse 
-  }), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-      ...corsHeaders,
-    },
-  });
 };
 
 serve(handler);
