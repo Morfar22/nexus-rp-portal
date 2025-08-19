@@ -404,7 +404,7 @@ const resetUserPassword = async (userId: string, email: string) => {
                             </DialogTrigger>
                             <Button
                               onClick={() => {
-                                handleBanUser(user.id, banReason);
+                                handleBanUser(user, banReason, staffName);  // Pass the whole user object!
                                 setBanReason("");
                               }}
                               variant="destructive"
