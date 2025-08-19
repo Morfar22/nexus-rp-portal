@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Footer from "@/components/Footer";
 
 const ApplicationForm = () => {
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
@@ -255,9 +256,9 @@ const ApplicationForm = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gaming-dark">
+      <div className="min-h-screen bg-gaming-dark flex flex-col">
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
+        <div className="flex-1 container mx-auto px-4 py-8">
           <Alert className="max-w-2xl mx-auto">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -271,9 +272,9 @@ const ApplicationForm = () => {
 
   if (hasExistingApplication) {
     return (
-      <div className="min-h-screen bg-gaming-dark">
+      <div className="min-h-screen bg-gaming-dark flex flex-col">
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
+        <div className="flex-1 container mx-auto px-4 py-8">
           <Alert className="max-w-2xl mx-auto">
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
