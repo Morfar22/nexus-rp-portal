@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Determine redirect domain
     const originHeader = req.headers.get('origin') || req.headers.get('referer');
-    const redirectDomain = originHeader || 'https://dreamlightrp.dk';
+    const redirectDomain = originHeader || 'dreamlightrp.dk';
     console.log("Using redirect domain:", redirectDomain);
 
     // Generate password reset link
