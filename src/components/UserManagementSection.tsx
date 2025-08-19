@@ -66,6 +66,17 @@ const UserManagementSection = () => {
   };
 
 const handleBanUser = async (user: any, reason: string, staffName?: string) => {
+  // Defensive check at the top!
+  if (!user || !user.email) {
+    toast({
+      title: "Error",
+      description: "Could not send ban notification: user or user email missing.",
+      variant: "destructive",
+    });
+    console.error("handleBanUser called with:", user, reason, staffName);
+    return;
+  }
+
   try {
     // Mark user as banned in your profiles table
     const { error } = await supabase
@@ -87,7 +98,7 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
           userName: user.username,    // REQUIRED
           isBanned: true,             // REQUIRED for notification template
           banReason: reason,          // The ban reason
-          staffName                   // Optionally, the staff's display name
+          staffName                  // Optionally, the staff's display name
         }
       });
     } catch (fnError) {
@@ -108,6 +119,7 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
     });
   }
 };
+
 
   const handleUnbanUser = async (userId: string) => {
     try {
