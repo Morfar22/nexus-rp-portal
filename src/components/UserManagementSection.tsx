@@ -81,7 +81,15 @@ const UserManagementSection = () => {
       // Send ban notification via edge function
       try {
         await supabase.functions.invoke('send-ban-notification', {
-        body: { userId, reason, email: selectedUser.email } // <-- must include 'email'
+await supabase.functions.invoke('send-ban-notification', {
+  body: {
+    userEmail: user.email,         // REQUIRED: banned user's email
+    userName: user.username,       // REQUIRED: banned user's username
+    isBanned: true,                // REQUIRED: true for ban, false for unban
+    banReason: banReason,          // Optional: your ban reason string
+    staffName: staffName           // Optional: name of staff performing action
+    // optionally originalUserEmail if needed
+  }
         });
       } catch (fnError) {
         console.warn('Failed to send ban notification:', fnError);
