@@ -65,50 +65,49 @@ const UserManagementSection = () => {
     }
   };
 
-  const handleBanUser = async (userId: string, reason: string) => {
+const handleBanUser = async (user: any, reason: string, staffName?: string) => {
+  try {
+    // Mark user as banned in your profiles table
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        banned: true, 
+        banned_at: new Date().toISOString(),
+        banned_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    // Send ban notification via edge function – include all required fields
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          banned: true, 
-          banned_at: new Date().toISOString(),
-          banned_by: (await supabase.auth.getUser()).data.user?.id
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      // Send ban notification via edge function
-      try {
-        await supabase.functions.invoke('send-ban-notification', {
-await supabase.functions.invoke('send-ban-notification', {
-  body: {
-    userEmail: user.email,         // REQUIRED: banned user's email
-    userName: user.username,       // REQUIRED: banned user's username
-    isBanned: true,                // REQUIRED: true for ban, false for unban
-    banReason: banReason,          // Optional: your ban reason string
-    staffName: staffName           // Optional: name of staff performing action
-    // optionally originalUserEmail if needed
-  }
-        });
-      } catch (fnError) {
-        console.warn('Failed to send ban notification:', fnError);
-      }
-
-      await fetchUsers();
-      toast({
-        title: "Success",
-        description: "User has been banned successfully",
+      await supabase.functions.invoke('send-ban-notification', {
+        body: {
+          userEmail: user.email,      // REQUIRED
+          userName: user.username,    // REQUIRED
+          isBanned: true,             // REQUIRED for notification template
+          banReason: reason,          // The ban reason
+          staffName                   // Optionally, the staff's display name
+        }
       });
-    } catch (error) {
-      console.error('Error banning user:', error);
-      toast({
-        title: "Error",
-        description: "Failed to ban user",
-        variant: "destructive",
-      });
+    } catch (fnError) {
+      console.warn('Failed to send ban notification:', fnError);
     }
-  };
+
+    await fetchUsers();
+    toast({
+      title: "Success",
+      description: "User has been banned successfully",
+    });
+  } catch (error) {
+    console.error('Error banning user:', error);
+    toast({
+      title: "Error",
+      description: "Failed to ban user",
+      variant: "destructive",
+    });
+  }
+};
 
   const handleUnbanUser = async (userId: string) => {
     try {
