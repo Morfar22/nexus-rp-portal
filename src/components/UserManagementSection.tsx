@@ -154,27 +154,28 @@ const UserManagementSection = () => {
     }
   };
 
-  const resetUserPassword = async (userId: string, email: string) => {
-    try {
-      const { error } = await supabase.functions.invoke('reset-user-password', {
-        body: { userId, email }
-      });
+const resetUserPassword = async (userId: string, email: string) => {
+  try {
+    const { error } = await supabase.functions.invoke('reset-user-password', {
+      body: { userEmail: email } // <-- THIS IS THE CORRECT KEY!
+    });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Password reset email sent successfully",
-      });
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send password reset email",
-        variant: "destructive",
-      });
-    }
-  };
+    toast({
+      title: "Success",
+      description: "Password reset email sent successfully",
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    toast({
+      title: "Error",
+      description: "Failed to send password reset email",
+      variant: "destructive",
+    });
+  }
+};
+
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = !searchTerm || 
