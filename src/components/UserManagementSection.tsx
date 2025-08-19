@@ -156,7 +156,7 @@ const UserManagementSection = () => {
 
 const resetUserPassword = async (userId: string, email: string) => {
   try {
-    // POST ONLY userEmail, not userId or email!
+    // Send ONLY userEmail, not userId or email
     const { error } = await supabase.functions.invoke('reset-user-password', {
       body: { userEmail: email }
     });
@@ -176,6 +176,7 @@ const resetUserPassword = async (userId: string, email: string) => {
     });
   }
 };
+
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = !searchTerm || 
