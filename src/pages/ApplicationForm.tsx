@@ -132,9 +132,12 @@ const ApplicationForm = () => {
       try {
         await supabase.functions.invoke('send-application-email', {
           body: {
-            type: selectedType.name,
-            userEmail: user?.email,
-            applicationData: formData
+            applicationId: 'temp-id', // We don't have the actual ID yet
+            templateType: 'application_submitted',
+            recipientEmail: user?.email,
+            applicantName: formData.steam_name || user?.email || 'Applicant',
+            applicationType: selectedType.name,
+            discordName: formData.discord_tag || formData.discord_name || ''
           }
         });
         console.log('Submission email sent successfully');
