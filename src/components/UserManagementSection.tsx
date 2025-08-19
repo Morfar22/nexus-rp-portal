@@ -65,14 +65,14 @@ const UserManagementSection = () => {
     }
   };
 
-const handleBanUser = async (user: any, reason: string, staffName?: string) => {
+const handleBanUser = async (user: any, reason: string) => {
   if (!user || !user.email) {
     toast({
       title: "Error",
       description: "Could not send ban notification: user or user email missing.",
       variant: "destructive",
     });
-    console.error("handleBanUser called with:", user, reason, staffName);
+    console.error("handleBanUser called with:", user, reason);
     return;
   }
 
@@ -106,7 +106,7 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
           userName: user.username,
           isBanned: true,
           banReason: reason,
-          staffName: staffDisplayName // display name/email for email content
+          staffName: staffDisplayName // display name/email for notification only
         }
       });
     } catch (fnError) {
@@ -127,6 +127,7 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
     });
   }
 };
+
 
   const handleUnbanUser = async (userId: string) => {
     try {
@@ -422,16 +423,15 @@ const resetUserPassword = async (userId: string, email: string) => {
                               <Button variant="outline">Cancel</Button>
                             </DialogTrigger>
 <Button
-  onClick={async () => {
-    const staff = await supabase.auth.getUser();
-    const staffName = staff.data.user?.username || staff.data.user?.email;
-    handleBanUser(user, banReason, staffName);
+  onClick={() => {
+    handleBanUser(user, banReason); // Only user and reason!
     setBanReason("");
   }}
   variant="destructive"
 >
   Ban User
 </Button>
+
                           </div>
                         </DialogContent>
                       </Dialog>
