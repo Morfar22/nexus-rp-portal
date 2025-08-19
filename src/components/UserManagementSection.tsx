@@ -77,30 +77,28 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
   }
 
   try {
-    // Get staff info if not provided
-    let staffDisplayName = staffName;
-    if (!staffDisplayName) {
-      const staff = await supabase.auth.getUser();
-      staffDisplayName =
-        staff.data.user?.username ||
-        staff.data.user?.full_name ||
-        staff.data.user?.email ||
-        "Unknown Staff";
-    }
+    // Always get staff info for both DB and notification
+    const staff = await supabase.auth.getUser();
+    const staffId = staff.data.user?.id; // UUID for banned_by DB column
+    const staffDisplayName =
+      staff.data.user?.username ||
+      staff.data.user?.full_name ||
+      staff.data.user?.email ||
+      "Unknown Staff";
 
-    // Mark user as banned in your profiles table
+    // Mark user as banned in your profiles table (use UUID!)
     const { error } = await supabase
       .from('profiles')
       .update({ 
         banned: true, 
         banned_at: new Date().toISOString(),
-        banned_by: staffDisplayName // This can now be set correctly
+        banned_by: staffId // <-- UUID, never display name/email
       })
       .eq('id', user.id);
 
     if (error) throw error;
 
-    // Send ban notification via edge function – include all required fields
+    // Send ban notification via edge function – use name/email for email template
     try {
       await supabase.functions.invoke('send-ban-notification', {
         body: {
@@ -108,7 +106,7 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
           userName: user.username,
           isBanned: true,
           banReason: reason,
-          staffName: staffDisplayName // use correct name
+          staffName: staffDisplayName // display name/email for email content
         }
       });
     } catch (fnError) {
@@ -129,8 +127,6 @@ const handleBanUser = async (user: any, reason: string, staffName?: string) => {
     });
   }
 };
-
-
 
   const handleUnbanUser = async (userId: string) => {
     try {
@@ -436,7 +432,6 @@ const resetUserPassword = async (userId: string, email: string) => {
 >
   Ban User
 </Button>
-
                           </div>
                         </DialogContent>
                       </Dialog>
