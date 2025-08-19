@@ -93,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
-      from: "DreamLight RP <noreply@dreamlightrp.dk>",
+      from: "DreamLight RP <noreply@mmorfar.dk>",
       to: [recipientEmail],
       subject: emailSubject,
       html: emailBody.replace(/\n/g, '<br>'),
@@ -203,7 +203,7 @@ const handleLegacyRequest = async (requestBody: EmailRequest) => {
     console.log('Email subject:', subject);
 
     const emailResponse = await resend.emails.send({
-      from: "DreamLight RP <noreply@dreamlightrp.dk>",
+      from: "DreamLight RP <noreply@mmorfar.dk>",
       to: [userEmail!],
       subject: subject,
       html: htmlContent,
