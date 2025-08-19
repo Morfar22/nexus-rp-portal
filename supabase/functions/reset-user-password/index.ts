@@ -2,51 +2,48 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 
-// Set up CORS headers so it works cross-origin (browser safe)
+// Setup Resend API email sender
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+// CORS headers for browser compatibility
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface ResetPasswordRequest {
-  userEmail: string;
-}
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-// The edge function handler
+// Main edge function handler
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
+  // Preflight CORS
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
   try {
     console.log("Password reset function called");
 
-    // Validate and parse POST body
-    let body: ResetPasswordRequest;
+    // Parse and validate payload
+    let body: { userEmail?: string };
     try {
       body = await req.json();
+      console.log("Incoming request body:", body);
     } catch {
-      return new Response(JSON.stringify({
-        error: "Invalid request body",
-      }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      console.log("Failed to parse request body");
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     const { userEmail } = body || {};
     if (!userEmail || typeof userEmail !== "string" || !userEmail.includes("@")) {
-      return new Response(JSON.stringify({
-        error: "A valid email address is required",
-      }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      console.log("Missing/invalid email in request:", userEmail);
+      return new Response(
+        JSON.stringify({ error: "A valid email address is required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    // Create Supabase admin client
+    // Supabase admin for password reset
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -55,30 +52,30 @@ const handler = async (req: Request): Promise<Response> => {
           autoRefreshToken: false,
           persistSession: false,
         },
-      },
+      }
     );
 
-    // Build the redirect domain (default if missing)
-    const originHeader = req.headers.get("origin") || req.headers.get("referer");
-    const redirectDomain = originHeader || "https://c2b9c9da-596f-4acf-999d-5d33f978ad1b.lovableproject.com";
+    // Determine redirect domain
+    const originHeader = req.headers.get('origin') || req.headers.get('referer');
+    const redirectDomain = originHeader || 'https://dreamlightrp.dk';
     console.log("Using redirect domain:", redirectDomain);
 
-    // Generate the password reset link
+    // Generate password reset link
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
+      type: 'recovery',
       email: userEmail,
       options: {
-        redirectTo: `${redirectDomain}/auth`,
-      },
+        redirectTo: `${redirectDomain}/auth`
+      }
     });
 
     if (error) {
-      // Forward Supabase errors to client
+      console.log("Supabase error:", error);
       throw error;
     }
     console.log("Password reset link generated for:", userEmail);
 
-    // Send the password reset email via Resend
+    // Email user the password reset link via Resend
     const emailResponse = await resend.emails.send({
       from: "Gaming Community <noreply@mmorfar.dk>",
       to: [userEmail],
@@ -103,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
             This link will expire in 24 hours.
           </p>
         </div>
-      `,
+      `
     });
 
     console.log("Password reset email sent successfully:", emailResponse);
@@ -111,12 +108,15 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Password reset email sent successfully",
-        emailResponse,
+        message: 'Password reset email sent successfully',
+        emailResponse
       }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        }
       }
     );
   } catch (error: any) {
@@ -124,11 +124,14 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         error: error.message,
-        details: error.toString(),
+        details: error.toString()
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
       }
     );
   }
