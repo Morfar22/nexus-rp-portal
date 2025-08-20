@@ -9,9 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Ban, Shield, Trash2, Eye, Mail, Calendar, Clock, UserX, CheckCircle, AlertTriangle } from "lucide-react";
+import { Search, Ban, Shield, Trash2, Eye, Mail, Calendar, Clock, UserX, CheckCircle, AlertTriangle, Edit2, Save, X } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import ActiveUsersTracker from "./ActiveUsersTracker";
 
 const UserManagementSection = () => {
@@ -202,6 +206,39 @@ const resetUserPassword = async (userId: string, email: string) => {
   }
 };
 
+const userEditSchema = z.object({
+  username: z.string().min(1, "Username is required").max(50, "Username must be less than 50 characters"),
+  full_name: z.string().max(100, "Full name must be less than 100 characters").optional(),
+});
+
+const handleUpdateUser = async (userId: string, data: z.infer<typeof userEditSchema>) => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        username: data.username,
+        full_name: data.full_name || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+
+    if (error) throw error;
+
+    await fetchUsers();
+    toast({
+      title: "Success",
+      description: "User updated successfully",
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    toast({
+      title: "Error", 
+      description: "Failed to update user",
+      variant: "destructive",
+    });
+  }
+};
+
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = !searchTerm || 
@@ -229,6 +266,135 @@ const resetUserPassword = async (userId: string, email: string) => {
       return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Moderator</Badge>;
     }
     return <Badge variant="outline">User</Badge>;
+  };
+
+  const UserEditDialog = ({ user, onUserUpdate }: { user: any; onUserUpdate: () => void }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    
+    const form = useForm<z.infer<typeof userEditSchema>>({
+      resolver: zodResolver(userEditSchema),
+      defaultValues: {
+        username: user?.username || "",
+        full_name: user?.full_name || "",
+      },
+    });
+
+    const onSubmit = async (data: z.infer<typeof userEditSchema>) => {
+      await handleUpdateUser(user.id, data);
+      setIsEditing(false);
+      onUserUpdate();
+    };
+
+    const handleCancel = () => {
+      form.reset({
+        username: user?.username || "",
+        full_name: user?.full_name || "",
+      });
+      setIsEditing(false);
+    };
+
+    if (!user) return null;
+
+    return (
+      <DialogContent className="bg-gaming-card border-gaming-border max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-foreground flex items-center justify-between">
+            User Details
+            {!isEditing && (
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            )}
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            {isEditing ? "Edit user information" : "View and manage user information"}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {isEditing ? (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">Username</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        className="bg-gaming-dark border-gaming-border text-foreground"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="full_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">Full Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        className="bg-gaming-dark border-gaming-border text-foreground"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div>
+                <Label className="text-foreground">Email</Label>
+                <p className="text-sm text-muted-foreground break-all">{user.email} (read-only)</p>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={handleCancel}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+              </div>
+            </form>
+          </Form>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-foreground">Username</Label>
+                <p className="text-sm text-muted-foreground">{user.username || 'Not set'}</p>
+              </div>
+              <div>
+                <Label className="text-foreground">Email</Label>
+                <p className="text-sm text-muted-foreground break-all">{user.email}</p>
+              </div>
+              <div>
+                <Label className="text-foreground">Full Name</Label>
+                <p className="text-sm text-muted-foreground">{user.full_name || 'Not set'}</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => resetUserPassword(user.id, user.email)}
+                size="sm"
+              >
+                Reset Password
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    );
   };
 
   if (isLoading) {
@@ -338,47 +504,7 @@ const resetUserPassword = async (userId: string, email: string) => {
                           <Eye className="h-4 w-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="bg-gaming-card border-gaming-border max-w-md">
-                        <DialogHeader>
-                          <DialogTitle className="text-foreground">User Details</DialogTitle>
-                          <DialogDescription className="text-muted-foreground">
-                            View and manage user information
-                          </DialogDescription>
-                        </DialogHeader>
-                        
-                        {selectedUser && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <Label className="text-foreground">Username</Label>
-                                <p className="text-sm text-muted-foreground">{selectedUser.username || 'Not set'}</p>
-                              </div>
-                              <div>
-                                <Label className="text-foreground">Email</Label>
-                                <p className="text-sm text-muted-foreground break-all">{selectedUser.email}</p>
-                              </div>
-                              <div>
-                                <Label className="text-foreground">Full Name</Label>
-                                <p className="text-sm text-muted-foreground">{selectedUser.full_name || 'Not set'}</p>
-                              </div>
-                              <div>
-                                <Label className="text-foreground">Role</Label>
-                                <div className="mt-1">{getUserRoleBadge(selectedUser)}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex justify-end space-x-2">
-                              <Button
-                                variant="outline"
-                                onClick={() => resetUserPassword(selectedUser.id, selectedUser.email)}
-                                size="sm"
-                              >
-                                Reset Password
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </DialogContent>
+                      <UserEditDialog user={selectedUser} onUserUpdate={fetchUsers} />
                     </Dialog>
 
                     {user.banned ? (

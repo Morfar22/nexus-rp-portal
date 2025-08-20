@@ -394,7 +394,12 @@ export type Database = {
           banned_at: string | null
           banned_by: string | null
           created_at: string | null
+          discord_access_token: string | null
+          discord_connected_at: string | null
+          discord_discriminator: string | null
           discord_id: string | null
+          discord_refresh_token: string | null
+          discord_username: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -410,7 +415,12 @@ export type Database = {
           banned_at?: string | null
           banned_by?: string | null
           created_at?: string | null
+          discord_access_token?: string | null
+          discord_connected_at?: string | null
+          discord_discriminator?: string | null
           discord_id?: string | null
+          discord_refresh_token?: string | null
+          discord_username?: string | null
           email?: string | null
           full_name?: string | null
           id: string
@@ -426,7 +436,12 @@ export type Database = {
           banned_at?: string | null
           banned_by?: string | null
           created_at?: string | null
+          discord_access_token?: string | null
+          discord_connected_at?: string | null
+          discord_discriminator?: string | null
           discord_id?: string | null
+          discord_refresh_token?: string | null
+          discord_username?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -609,6 +624,45 @@ export type Database = {
           order_index?: number
           role?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      twitch_streamers: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string | null
+          display_name: string | null
+          id: string
+          is_active: boolean
+          order_index: number
+          twitch_username: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          twitch_username: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          twitch_username?: string
+          updated_at?: string
+          username?: string
         }
         Relationships: []
       }
