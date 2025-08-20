@@ -214,10 +214,13 @@ const TwitchStreamersManager = () => {
   // CRUD HANDLERS
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
+    
     if (!formData.username.trim() || !formData.twitch_username.trim()) {
       toast({ title: "Error", description: "Username and Twitch username are required", variant: "destructive" });
       return;
     }
+    
     try {
       const streamDataObj = {
         username: formData.username.trim(),
@@ -228,18 +231,30 @@ const TwitchStreamersManager = () => {
         order_index: editingStreamer ? editingStreamer.order_index : streamers.length,
         created_by: (await supabase.auth.getUser()).data.user?.id
       };
+      
+      console.log('Attempting to save streamer:', streamDataObj);
+      console.log('Editing streamer?', !!editingStreamer);
+      
       if (editingStreamer) {
         const { error } = await supabase.from('twitch_streamers').update(streamDataObj).eq('id', editingStreamer.id);
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
         toast({ title: "Success", description: "Streamer updated successfully" });
       } else {
-        const { error } = await supabase.from('twitch_streamers').insert(streamDataObj);
-        if (error) throw error;
+        const { data, error } = await supabase.from('twitch_streamers').insert(streamDataObj);
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        console.log('Streamer added successfully:', data);
         toast({ title: "Success", description: "Streamer added successfully" });
       }
+      
       handleDialogClose();
-      fetchStreamers();
-      fetchStreamData();
+      await fetchStreamers();
+      await fetchStreamData();
     } catch (error: any) {
       console.error('Error saving streamer:', error);
       toast({ title: "Error", description: error.message || "Failed to save streamer", variant: "destructive" });
