@@ -1,5 +1,5 @@
 // src/components/TwitchStreamersManager.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,7 +163,7 @@ const TwitchStreamersManager = () => {
   const sensors = useSensors(useSensor(PointerSensor));
 
   // FETCH STREAMERS
-  const fetchStreamers = async () => {
+  const fetchStreamers = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('twitch_streamers')
@@ -177,25 +177,25 @@ const TwitchStreamersManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-// FETCH LIVE DATA
-const fetchStreamData = async () => {
-  try {
-    const { data, error } = await supabase.functions.invoke('fetch-twitch-streams');
-    
-    if (error) {
-      console.error('Error calling fetch-twitch-streams:', error);
-      throw error;
+  // FETCH LIVE DATA
+  const fetchStreamData = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-twitch-streams');
+      
+      if (error) {
+        console.error('Error calling fetch-twitch-streams:', error);
+        throw error;
+      }
+      
+      if (data) {
+        setStreamData(data.streamData || {});
+      }
+    } catch (error) {
+      console.error('Error fetching live stream data:', error);
     }
-    
-    if (data) {
-      setStreamData(data.streamData || {});
-    }
-  } catch (error) {
-    console.error('Error fetching live stream data:', error);
-  }
-};
+  }, []);
 
   // CRUD HANDLERS
   const handleSubmit = async (e: React.FormEvent) => {
@@ -232,7 +232,7 @@ const fetchStreamData = async () => {
     }
   };
 
-  const handleEdit = (streamer: TwitchStreamer) => {
+  const handleEdit = useCallback((streamer: TwitchStreamer) => {
     setEditingStreamer(streamer);
     setFormData({
       username: streamer.username,
@@ -242,9 +242,9 @@ const fetchStreamData = async () => {
       is_active: streamer.is_active
     });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const handleDelete = async (streamerId: string) => {
+  const handleDelete = useCallback(async (streamerId: string) => {
     try {
       const { error } = await supabase.from('twitch_streamers').delete().eq('id', streamerId);
       if (error) throw error;
@@ -255,9 +255,9 @@ const fetchStreamData = async () => {
       console.error('Error deleting streamer:', error);
       toast({ title: "Error", description: error.message || "Failed to delete streamer", variant: "destructive" });
     }
-  };
+  }, [fetchStreamers, fetchStreamData, toast]);
 
-  const toggleActive = async (streamerId: string, isActive: boolean) => {
+  const toggleActive = useCallback(async (streamerId: string, isActive: boolean) => {
     try {
       const { error } = await supabase.from('twitch_streamers').update({ is_active: isActive }).eq('id', streamerId);
       if (error) throw error;
@@ -268,38 +268,52 @@ const fetchStreamData = async () => {
       console.error('Error updating streamer status:', error);
       toast({ title: "Error", description: error.message || "Failed to update streamer status", variant: "destructive" });
     }
-  };
+  }, [fetchStreamers, fetchStreamData, toast]);
 
-  const resetForm = () => setFormData({
+  const resetForm = useCallback(() => setFormData({
     username: '',
     twitch_username: '',
     display_name: '',
     avatar_url: '',
     is_active: true
-  });
+  }), []);
 
-  const handleDialogClose = () => {
+  const handleDialogClose = useCallback(() => {
     setIsDialogOpen(false);
     setEditingStreamer(null);
     resetForm();
-  };
+  }, [resetForm]);
 
   // DRAG HANDLE ORDER UPDATE
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = useCallback(async (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+    
     const oldIndex = streamers.findIndex((s) => s.id === active.id);
     const newIndex = streamers.findIndex((s) => s.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
     const newStreamers = arrayMove(streamers, oldIndex, newIndex);
-
-    await Promise.all(
-      newStreamers.map((s, idx) =>
-        supabase.from('twitch_streamers').update({ order_index: idx }).eq('id', s.id)
-      )
-    );
+    
+    // Update local state immediately for better UX
     setStreamers(newStreamers);
-    toast({ title: "Order Updated", description: "Streamer order saved." });
-  };
+    
+    try {
+      // Update database in background
+      await Promise.all(
+        newStreamers.map((s, idx) =>
+          supabase.from('twitch_streamers').update({ order_index: idx }).eq('id', s.id)
+        )
+      );
+      toast({ title: "Order Updated", description: "Streamer order saved." });
+    } catch (error) {
+      console.error('Error updating order:', error);
+      // Revert on error
+      setStreamers(streamers);
+      toast({ title: "Error", description: "Failed to save order", variant: "destructive" });
+    }
+  }, [streamers, toast]);
 
   if (loading) {
     return (
