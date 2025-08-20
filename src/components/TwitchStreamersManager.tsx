@@ -352,7 +352,12 @@ const TwitchStreamersManager = () => {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setEditingStreamer(null); resetForm(); setIsDialogOpen(true); }} className="bg-neon-purple hover:bg-neon-purple/80">
+            <Button onClick={() => { 
+              console.log('Add Streamer button clicked');
+              setEditingStreamer(null); 
+              resetForm(); 
+              setIsDialogOpen(true); 
+            }} className="bg-neon-purple hover:bg-neon-purple/80">
               <Plus className="h-4 w-4 mr-2" />
               Add Streamer
             </Button>
@@ -366,7 +371,10 @@ const TwitchStreamersManager = () => {
                 {editingStreamer ? 'Update the streamer information.' : 'Add a new Twitch streamer to the live page.'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={(e) => {
+              console.log('Form onSubmit triggered');
+              handleSubmit(e);
+            }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="username" className="text-foreground">Username</Label>
