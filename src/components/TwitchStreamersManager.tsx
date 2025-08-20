@@ -41,16 +41,21 @@ interface TwitchStreamer {
 type StreamDataMap = Record<string, any>;
 
 // DRAG HANDLE
-function DragHandle({ attributes, listeners }: { attributes: any; listeners: any }) {
+function DragHandle() {
   return (
-    <span {...attributes} {...listeners} className="cursor-grab px-2">
+    <span className="cursor-grab px-2">
       <GripVertical className="h-5 w-5 text-muted-foreground" />
     </span>
   );
 }
 
 // SORTABLE ROW
-function SortableStreamerRow({ streamer, children }: { streamer: TwitchStreamer; children: React.ReactNode }) {
+function SortableStreamerRow({ streamer, onEdit, onDelete, toggleActive }: { 
+  streamer: TwitchStreamer; 
+  onEdit: (streamer: TwitchStreamer) => void;
+  onDelete: (id: string) => void;
+  toggleActive: (id: string, active: boolean) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: streamer.id,
   });
@@ -59,13 +64,76 @@ function SortableStreamerRow({ streamer, children }: { streamer: TwitchStreamer;
     transition,
     opacity: isDragging ? 0.7 : 1,
   };
+  
   return (
     <div
       ref={setNodeRef}
       style={style}
       className="flex items-center justify-between p-4 bg-gaming-dark rounded-lg border border-gaming-border mb-2"
     >
-      {children}
+      <span {...attributes} {...listeners} className="cursor-grab px-2">
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </span>
+      {streamer.avatar_url ? (
+        <img
+          src={streamer.avatar_url}
+          alt={streamer.display_name || streamer.username}
+          className="w-10 h-10 rounded-full mx-2"
+        />
+      ) : (
+        <div className="w-10 h-10 rounded-full bg-neon-purple/20 flex items-center justify-center mx-2">
+          <Users className="h-5 w-5 text-neon-purple" />
+        </div>
+      )}
+      <div>
+        <h3 className="font-semibold text-foreground">
+          {streamer.display_name || streamer.username}
+        </h3>
+        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+          <span>@{streamer.twitch_username}</span>
+          <a
+            href={`https://twitch.tv/${streamer.twitch_username}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-neon-purple hover:text-neon-purple/80"
+          >
+            <ExternalLink className="h-3 w-3 ml-1" />
+          </a>
+        </div>
+      </div>
+      <Badge variant={streamer.is_active ? "default" : "secondary"}>
+        {streamer.is_active ? "Active" : "Inactive"}
+      </Badge>
+      <div className="flex items-center space-x-2 ml-auto">
+        <Switch
+          checked={streamer.is_active}
+          onCheckedChange={(checked) => toggleActive(streamer.id, checked)}
+        />
+        <Button variant="outline" size="sm" onClick={() => onEdit(streamer)}>
+          <Edit className="h-4 w-4" />
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="text-red-400 hover:text-red-300">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-gaming-card border-gaming-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">Delete Streamer</AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                Are you sure you want to delete "{streamer.display_name || streamer.username}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(streamer.id)} className="bg-red-600 hover:bg-red-700">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
@@ -352,87 +420,15 @@ const fetchStreamData = async () => {
       <h2 className="text-lg font-semibold mb-2">Sort / Edit Streamers</h2>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={streamers.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-          {streamers.map((streamer) => {
-            const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-              id: streamer.id,
-            });
-            const style = {
-              transform: CSS.Transform.toString(transform),
-              transition,
-              opacity: isDragging ? 0.7 : 1,
-            };
-            
-            return (
-              <div
-                key={streamer.id}
-                ref={setNodeRef}
-                style={style}
-                className="flex items-center justify-between p-4 bg-gaming-dark rounded-lg border border-gaming-border mb-2"
-              >
-                <DragHandle attributes={attributes} listeners={listeners} />
-                {streamer.avatar_url ? (
-                  <img
-                    src={streamer.avatar_url}
-                    alt={streamer.display_name || streamer.username}
-                    className="w-10 h-10 rounded-full mx-2"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-neon-purple/20 flex items-center justify-center mx-2">
-                    <Users className="h-5 w-5 text-neon-purple" />
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-semibold text-foreground">
-                    {streamer.display_name || streamer.username}
-                  </h3>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <span>@{streamer.twitch_username}</span>
-                    <a
-                      href={`https://twitch.tv/${streamer.twitch_username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-neon-purple hover:text-neon-purple/80"
-                    >
-                      <ExternalLink className="h-3 w-3 ml-1" />
-                    </a>
-                  </div>
-                </div>
-                <Badge variant={streamer.is_active ? "default" : "secondary"}>
-                  {streamer.is_active ? "Active" : "Inactive"}
-                </Badge>
-                <div className="flex items-center space-x-2 ml-auto">
-                  <Switch
-                    checked={streamer.is_active}
-                    onCheckedChange={(checked) => toggleActive(streamer.id, checked)}
-                  />
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(streamer)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-red-400 hover:text-red-300">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-gaming-card border-gaming-border">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-foreground">Delete Streamer</AlertDialogTitle>
-                        <AlertDialogDescription className="text-muted-foreground">
-                          Are you sure you want to delete "{streamer.display_name || streamer.username}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(streamer.id)} className="bg-red-600 hover:bg-red-700">
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            );
-          })}
+          {streamers.map((streamer) => (
+            <SortableStreamerRow
+              key={streamer.id}
+              streamer={streamer}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              toggleActive={toggleActive}
+            />
+          ))}
         </SortableContext>
       </DndContext>
     </Card>
