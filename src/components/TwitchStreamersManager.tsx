@@ -157,10 +157,9 @@ const fetchStreamData = async () => {
         if (error) throw error;
         toast({ title: "Success", description: "Streamer added successfully" });
       }
-      setIsDialogOpen(false);
-      setEditingStreamer(null);
-      resetForm();
+      handleDialogClose();
       fetchStreamers();
+      fetchStreamData();
     } catch (error: any) {
       console.error('Error saving streamer:', error);
       toast({ title: "Error", description: error.message || "Failed to save streamer", variant: "destructive" });
@@ -185,6 +184,7 @@ const fetchStreamData = async () => {
       if (error) throw error;
       toast({ title: "Success", description: "Streamer deleted successfully" });
       fetchStreamers();
+      fetchStreamData();
     } catch (error: any) {
       console.error('Error deleting streamer:', error);
       toast({ title: "Error", description: error.message || "Failed to delete streamer", variant: "destructive" });
@@ -197,6 +197,7 @@ const fetchStreamData = async () => {
       if (error) throw error;
       toast({ title: "Success", description: `Streamer ${isActive ? 'activated' : 'deactivated'} successfully` });
       fetchStreamers();
+      fetchStreamData();
     } catch (error: any) {
       console.error('Error updating streamer status:', error);
       toast({ title: "Error", description: error.message || "Failed to update streamer status", variant: "destructive" });
@@ -254,9 +255,9 @@ const fetchStreamData = async () => {
           <Users className="h-5 w-5 text-neon-purple" />
           <h2 className="text-xl font-semibold text-foreground">Twitch Streamers</h2>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsDialogOpen(true)} className="bg-neon-purple hover:bg-neon-purple/80">
+            <Button onClick={() => { setEditingStreamer(null); resetForm(); setIsDialogOpen(true); }} className="bg-neon-purple hover:bg-neon-purple/80">
               <Plus className="h-4 w-4 mr-2" />
               Add Streamer
             </Button>
@@ -339,15 +340,15 @@ const fetchStreamData = async () => {
       {/* LIVE STREAM KORT */}
       <h2 className="text-lg font-semibold mb-4">Live Stream Previews</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        {streamers
-          .filter((s) => s.is_active)
-          .map((streamer) => (
-            <StreamerCard
-              key={streamer.twitch_username}
-              streamer={streamer}
-              streamData={streamData[streamer.twitch_username] || {}}
-            />
-        ))}
+          {streamers
+            .filter((s) => s.is_active)
+            .map((streamer) => (
+              <StreamerCard
+                key={streamer.id}
+                streamer={streamer}
+                streamData={streamData[streamer.twitch_username] || {}}
+              />
+          ))}
       </div>
       {/* DRAG AND DROP ADMIN LIST */}
       <h2 className="text-lg font-semibold mb-2">Sort / Edit Streamers</h2>
