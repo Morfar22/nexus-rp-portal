@@ -81,8 +81,6 @@ const handleBanUser = async (user: any, reason: string) => {
     const staff = await supabase.auth.getUser();
     const staffId = staff.data.user?.id; // UUID for banned_by DB column
     const staffDisplayName =
-      staff.data.user?.username ||
-      staff.data.user?.full_name ||
       staff.data.user?.email ||
       "Unknown Staff";
 
