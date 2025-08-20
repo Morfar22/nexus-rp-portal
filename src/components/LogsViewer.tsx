@@ -42,9 +42,11 @@ const LogsViewer = () => {
   const { toast } = useToast();
 
   const fetchLogs = async () => {
+    console.log('🚀 Starting fetchLogs function...');
     setLoading(true);
     try {
       console.log('🔍 Fetching logs from analytics...');
+      console.log('📡 Supabase client available:', !!supabase);
       
       // Fetch logs in parallel
       const [authRes, dbRes, edgeRes] = await Promise.all([
