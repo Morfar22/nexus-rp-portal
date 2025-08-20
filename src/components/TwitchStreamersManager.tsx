@@ -197,8 +197,22 @@ const TwitchStreamersManager = () => {
     }
   }, []);
 
+  const resetForm = useCallback(() => setFormData({
+    username: '',
+    twitch_username: '',
+    display_name: '',
+    avatar_url: '',
+    is_active: true
+  }), []);
+
+  const handleDialogClose = useCallback(() => {
+    setIsDialogOpen(false);
+    setEditingStreamer(null);
+    resetForm();
+  }, [resetForm]);
+
   // CRUD HANDLERS
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.username.trim() || !formData.twitch_username.trim()) {
       toast({ title: "Error", description: "Username and Twitch username are required", variant: "destructive" });
@@ -230,7 +244,7 @@ const TwitchStreamersManager = () => {
       console.error('Error saving streamer:', error);
       toast({ title: "Error", description: error.message || "Failed to save streamer", variant: "destructive" });
     }
-  };
+  }, [formData, editingStreamer, streamers.length, toast, handleDialogClose, fetchStreamers, fetchStreamData]);
 
   const handleEdit = useCallback((streamer: TwitchStreamer) => {
     setEditingStreamer(streamer);
@@ -269,20 +283,6 @@ const TwitchStreamersManager = () => {
       toast({ title: "Error", description: error.message || "Failed to update streamer status", variant: "destructive" });
     }
   }, [fetchStreamers, fetchStreamData, toast]);
-
-  const resetForm = useCallback(() => setFormData({
-    username: '',
-    twitch_username: '',
-    display_name: '',
-    avatar_url: '',
-    is_active: true
-  }), []);
-
-  const handleDialogClose = useCallback(() => {
-    setIsDialogOpen(false);
-    setEditingStreamer(null);
-    resetForm();
-  }, [resetForm]);
 
   // DRAG HANDLE ORDER UPDATE
   const handleDragEnd = useCallback(async (event: any) => {
