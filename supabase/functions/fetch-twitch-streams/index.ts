@@ -167,6 +167,7 @@ serve(async (req) => {
         game_name: stream.game_name,
         title: stream.title,
         started_at: stream.started_at,
+        thumbnail_url: stream.thumbnail_url,
       };
     });
 

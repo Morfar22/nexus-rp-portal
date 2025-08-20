@@ -116,28 +116,16 @@ const TwitchStreamersManager = () => {
 // FETCH LIVE DATA
 const fetchStreamData = async () => {
   try {
-    // Get the current session
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke('fetch-twitch-streams');
     
-    // Include authorization headers
-    const res = await fetch(
-      "https://ganubwsifvjraqsawccl.supabase.co/functions/v1/fetch-twitch-streams", 
-      {
-        headers: {
-          // The API key from your Supabase project
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          // Optional: Include the auth token if needed
-          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
-        }
-      }
-    );
-    
-    if (!res.ok) {
-      throw new Error(`Error ${res.status}: ${res.statusText}`);
+    if (error) {
+      console.error('Error calling fetch-twitch-streams:', error);
+      throw error;
     }
     
-    const { streamData: data } = await res.json();
-    setStreamData(data || {});
+    if (data) {
+      setStreamData(data.streamData || {});
+    }
   } catch (error) {
     console.error('Error fetching live stream data:', error);
   }

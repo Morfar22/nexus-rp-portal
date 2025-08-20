@@ -21,6 +21,7 @@ interface StreamData {
   game_name?: string;
   title?: string;
   started_at?: string;
+  thumbnail_url?: string;
 }
 
 const Live = () => {
@@ -145,12 +146,20 @@ const Live = () => {
                         >
                           <div className="relative">
                             {/* Stream Thumbnail */}
-                            <div className="aspect-video bg-gradient-to-br from-neon-purple/20 to-neon-blue/20 flex items-center justify-center">
-                              <div className="text-center">
-                                <Users className="h-8 w-8 text-neon-purple mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground">Live Stream</p>
+                            {stream?.thumbnail_url ? (
+                              <img 
+                                src={stream.thumbnail_url.replace('{width}', '320').replace('{height}', '180') + `?v=${Date.now()}`}
+                                alt={`${streamer.twitch_username} live stream`}
+                                className="aspect-video w-full object-cover"
+                              />
+                            ) : (
+                              <div className="aspect-video bg-gradient-to-br from-neon-purple/20 to-neon-blue/20 flex items-center justify-center">
+                                <div className="text-center">
+                                  <Users className="h-8 w-8 text-neon-purple mx-auto mb-2" />
+                                  <p className="text-sm text-muted-foreground">Live Stream</p>
+                                </div>
                               </div>
-                            </div>
+                            )}
                             
                             {/* Live Badge */}
                             <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-500">
