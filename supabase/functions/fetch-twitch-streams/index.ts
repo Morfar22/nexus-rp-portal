@@ -156,11 +156,13 @@ serve(async (req) => {
         game_name: '',
         title: '',
         started_at: '',
+        thumbnail_url: '',
       };
     });
 
     // Update with live stream data
     twitchStreams.forEach(stream => {
+      console.log(`Processing stream for ${stream.user_login}, thumbnail: ${stream.thumbnail_url}`);
       streamData[stream.user_login] = {
         is_live: true,
         viewer_count: stream.viewer_count,
