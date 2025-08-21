@@ -52,6 +52,7 @@ import NavbarManager from "@/components/NavbarManager";
 import ServerStatsManager from "@/components/ServerStatsManager";
 import { SecurityOverview } from "@/components/SecurityOverview";
 import { SecuritySettings } from "@/components/SecuritySettings";
+import { SecurityDashboard } from "@/components/SecurityDashboard";
 import { ApplicationsOverview } from "@/components/ApplicationsOverview";
 import { StaffOverview } from "@/components/StaffOverview";
 import { RulesOverview } from "@/components/RulesOverview";
@@ -549,6 +550,7 @@ const StaffPanel = () => {
                   {activeTab === "deployment" && "Deployment Settings"}
                   {activeTab === "logs" && "System Logs"}
                   {activeTab === "emails" && "Email Templates"}
+                  {activeTab === "security" && "Security Management"}
                 </h1>
                 <div className="flex items-center space-x-2 mt-1">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
@@ -649,6 +651,23 @@ const StaffPanel = () => {
               {activeTab === "emails" && (
                 <div className="space-y-6">
                   <EmailTemplateManager />
+                </div>
+              )}
+
+              {activeTab === "security" && (
+                <div className="space-y-6">
+                  <SecurityDashboard />
+                  <SecuritySettings 
+                    serverSettings={serverSettings}
+                    setServerSettings={setServerSettings}
+                    handleSettingUpdate={handleSettingUpdate}
+                  />
+                  <UserManagementSection />
+                  <IPWhitelistManager 
+                    serverSettings={serverSettings}
+                    setServerSettings={setServerSettings}
+                    handleSettingUpdate={handleSettingUpdate}
+                  />
                 </div>
               )}
 
