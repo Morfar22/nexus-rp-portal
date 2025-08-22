@@ -34,6 +34,7 @@ const Index = () => {
       "Active Discord community"
     ]
   });
+  const [designSettings, setDesignSettings] = useState<any>({});
   const { toast } = useToast();
   const { settings } = useServerSettings();
 
@@ -43,7 +44,8 @@ const Index = () => {
       await Promise.all([
         fetchServerJoinLink(),
         fetchServerInfo(),
-        fetchHomepageContent()
+        fetchHomepageContent(),
+        fetchDesignSettings()
       ]);
     };
     
@@ -157,6 +159,27 @@ const Index = () => {
     }
   };
 
+  const fetchDesignSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'design_settings')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching design settings:', error);
+        return;
+      }
+
+      if (data?.setting_value) {
+        setDesignSettings(data.setting_value);
+      }
+    } catch (error) {
+      console.error('Error fetching design settings:', error);
+    }
+  };
+
   const fetchHomepageContent = async () => {
     try {
       // Use Promise.all to fetch all content types in parallel
@@ -245,7 +268,8 @@ const Index = () => {
       <section className="relative overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${heroImage})` }}
+          style={{ backgroundImage: `url(${designSettings.hero_image_url || heroImage})` }}
+          data-hero-bg
         />
         <div className="absolute inset-0 bg-gaming-darker/70" />
         

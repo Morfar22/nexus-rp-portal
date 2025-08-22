@@ -60,6 +60,8 @@ import { PartnersOverview } from "@/components/PartnersOverview";
 import { EmailTemplateManager } from "@/components/EmailTemplateManager";
 import TwitchStreamersManager from "@/components/TwitchStreamersManager";
 import { DeploymentSettings } from "@/components/DeploymentSettings";
+import RoleManagement from "@/components/RoleManagement";
+import DesignManager from "@/components/DesignManager";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -302,6 +304,11 @@ const StaffPanel = () => {
     }
   };
 
+  // Add refresh function to be passed to child components
+  const refreshData = async () => {
+    await fetchData();
+  };
+
   const fetchServerSettings = async () => {
     try {
       const { data, error } = await supabase
@@ -350,13 +357,68 @@ const StaffPanel = () => {
 
   const fetchStaffMembers = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch from new role assignments system
+      const { data: roleAssignments, error: assignmentError } = await supabase
+        .from('user_role_assignments')
+        .select(`
+          *,
+          staff_roles!inner (
+            id,
+            name,
+            display_name,
+            color,
+            hierarchy_level
+          )
+        `)
+        .eq('is_active', true);
+
+      if (assignmentError) throw assignmentError;
+
+      // Fetch from old user_roles system (admin/moderator)
+      const { data: oldRoles, error: oldRolesError } = await supabase
         .from('user_roles')
         .select('*')
         .in('role', ['admin', 'moderator']);
 
-      if (error) throw error;
-      setStaffMembers(data || []);
+      if (oldRolesError) throw oldRolesError;
+
+      // Get all user IDs
+      const assignmentUserIds = roleAssignments?.map(assignment => assignment.user_id) || [];
+      const oldRoleUserIds = oldRoles?.map(role => role.user_id) || [];
+      const allUserIds = [...new Set([...assignmentUserIds, ...oldRoleUserIds])];
+
+      if (allUserIds.length === 0) {
+        setStaffMembers([]);
+        return;
+      }
+
+      // Get user profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, email, full_name')
+        .in('id', allUserIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine new role assignments with profiles
+      const newStaff = roleAssignments?.map(assignment => ({
+        ...assignment,
+        role: assignment.staff_roles.name, // Map to expected structure
+        profiles: profiles?.find(profile => profile.id === assignment.user_id),
+        isLegacy: false
+      })) || [];
+
+      // Convert old roles to new format
+      const legacyStaff = oldRoles?.map(role => ({
+        ...role,
+        role: role.role, // This already has the role in the right format
+        profiles: profiles?.find(profile => profile.id === role.user_id),
+        isLegacy: true
+      })) || [];
+
+      // Combine both datasets
+      const allStaff = [...newStaff, ...legacyStaff];
+      setStaffMembers(allStaff);
     } catch (error) {
       console.error('Error fetching staff members:', error);
     }
@@ -539,6 +601,7 @@ const StaffPanel = () => {
                   {activeTab === "applications" && "Application Management"}
                   {activeTab === "rules" && "Rules Management"}
                   {activeTab === "staff" && "Staff Management"}
+                  {activeTab === "role-management" && "Role & Permissions Management"}
                   {activeTab === "users" && "User Management"}
                   {activeTab === "team" && "Team Page Management"}
                   {activeTab === "partners" && "Partners Management"}
@@ -550,6 +613,7 @@ const StaffPanel = () => {
                   {activeTab === "deployment" && "Deployment Settings"}
                   {activeTab === "logs" && "System Logs"}
                   {activeTab === "emails" && "Email Templates"}
+                  {activeTab === "design" && "Design & Appearance"}
                   {activeTab === "security" && "Security Management"}
                 </h1>
                 <div className="flex items-center space-x-2 mt-1">
@@ -589,7 +653,13 @@ const StaffPanel = () => {
 
               {activeTab === "staff" && (
                 <div className="space-y-6">
-                  <StaffManager />
+                  <StaffManager onRefresh={refreshData} />
+                </div>
+              )}
+
+              {activeTab === "role-management" && (
+                <div className="space-y-6">
+                  <RoleManagement />
                 </div>
               )}
 
@@ -651,6 +721,12 @@ const StaffPanel = () => {
               {activeTab === "emails" && (
                 <div className="space-y-6">
                   <EmailTemplateManager />
+                </div>
+              )}
+
+              {activeTab === "design" && (
+                <div className="space-y-6">
+                  <DesignManager />
                 </div>
               )}
 

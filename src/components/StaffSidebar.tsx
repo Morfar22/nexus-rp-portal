@@ -26,7 +26,8 @@ import {
   Rocket,
   Activity,
   Home,
-  UserPlus
+  UserPlus,
+  Palette
 } from "lucide-react";
 
 interface StaffSidebarProps {
@@ -48,6 +49,7 @@ const navigationItems = [
     items: [
       { id: "rules", label: "Rules", icon: FileSearch },
       { id: "content", label: "Homepage", icon: Layout },
+      { id: "design", label: "Design & Appearance", icon: Palette },
       { id: "live-streamers", label: "Live Streamers", icon: Tv },
     ]
   },
@@ -55,6 +57,7 @@ const navigationItems = [
     group: "User Management",
     items: [
       { id: "staff", label: "Staff", icon: UserCheck },
+      { id: "role-management", label: "Role Management", icon: Shield },
       { id: "users", label: "Users", icon: Users },
       { id: "team", label: "Team Page", icon: UserPlus },
       { id: "partners", label: "Partners", icon: Globe },
