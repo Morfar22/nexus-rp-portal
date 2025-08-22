@@ -17,6 +17,10 @@ interface DesignSettings {
   accent_color?: string;
   background_color?: string;
   text_color?: string;
+  border_color?: string;
+  card_color?: string;
+  muted_color?: string;
+  destructive_color?: string;
   font_primary?: string;
   font_secondary?: string;
   border_radius?: string;
@@ -156,12 +160,14 @@ const DesignManager = () => {
       const hsl = hexToHsl(settings.primary_color);
       root.style.setProperty('--primary', hsl);
       root.style.setProperty('--neon-teal', hsl);
+      root.style.setProperty('--teal-primary', hsl);
     }
     if (settings.secondary_color) {
       const hsl = hexToHsl(settings.secondary_color);
       root.style.setProperty('--secondary', hsl);
       root.style.setProperty('--neon-gold', hsl);
       root.style.setProperty('--cyber-gold', hsl);
+      root.style.setProperty('--golden-primary', hsl);
     }
     if (settings.accent_color) {
       const hsl = hexToHsl(settings.accent_color);
@@ -178,6 +184,43 @@ const DesignManager = () => {
       const hsl = hexToHsl(settings.text_color);
       root.style.setProperty('--foreground', hsl);
       root.style.setProperty('--neon-cream', hsl);
+      root.style.setProperty('--patriot-cream', hsl);
+    }
+    if (settings.border_color) {
+      const hsl = hexToHsl(settings.border_color);
+      root.style.setProperty('--border', hsl);
+      root.style.setProperty('--gaming-border', hsl);
+    }
+    if (settings.card_color) {
+      const hsl = hexToHsl(settings.card_color);
+      root.style.setProperty('--card', hsl);
+      root.style.setProperty('--gaming-card', hsl);
+    }
+    if (settings.muted_color) {
+      const hsl = hexToHsl(settings.muted_color);
+      root.style.setProperty('--muted', hsl);
+    }
+    if (settings.destructive_color) {
+      const hsl = hexToHsl(settings.destructive_color);
+      root.style.setProperty('--destructive', hsl);
+    }
+
+    // Additional color mappings
+    if (settings.primary_color) {
+      const hsl = hexToHsl(settings.primary_color);
+      root.style.setProperty('--primary-foreground', adjustHslBrightness(hsl, 90));
+    }
+    if (settings.secondary_color) {
+      const hsl = hexToHsl(settings.secondary_color);
+      root.style.setProperty('--secondary-foreground', adjustHslBrightness(hsl, -50));
+    }
+    if (settings.card_color) {
+      const hsl = hexToHsl(settings.card_color);
+      root.style.setProperty('--card-foreground', adjustHslBrightness(hsl, 80));
+    }
+    if (settings.muted_color) {
+      const hsl = hexToHsl(settings.muted_color);
+      root.style.setProperty('--muted-foreground', adjustHslBrightness(hsl, 40));
     }
 
     // Fonts
@@ -187,8 +230,8 @@ const DesignManager = () => {
     // Layout
     if (settings.border_radius) root.style.setProperty('--radius', settings.border_radius);
 
-    // Custom CSS always live
-    if (settings.custom_css !== undefined) updateCustomCSS(settings.custom_css);
+    // Custom CSS always live - fixed functionality
+    updateCustomCSS(settings.custom_css || '');
 
     // Hero image
     if (settings.hero_image_url) {
@@ -359,10 +402,222 @@ const DesignManager = () => {
             <Card className="p-4 bg-gaming-darker border-gaming-border">
               <h3 className="text-lg font-semibold mb-4 text-foreground">Color Scheme</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {/* Color Fields logic unchanged - see previous answer for details */}
-                {/* ...Primary, Secondary, Accent, Background, Text Color Inputs... */}
-                {/* Use the group from preview with applyDesignSettings(newSettings) in onChange for live preview */}
-                {/* ...Copy the color fields block from prior answer... */}
+                <div>
+                  <Label className="text-foreground">Primary Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.primary_color || '#339999'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, primary_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.primary_color || '#339999'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, primary_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">Secondary Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.secondary_color || '#f0e68c'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, secondary_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.secondary_color || '#f0e68c'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, secondary_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">Accent Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.accent_color || '#00ccff'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, accent_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.accent_color || '#00ccff'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, accent_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">Background Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.background_color || '#1a1a1a'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, background_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.background_color || '#1a1a1a'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, background_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">Text Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.text_color || '#f5f5dc'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, text_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.text_color || '#f5f5dc'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, text_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">Border Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.border_color || '#2a2a2a'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, border_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.border_color || '#2a2a2a'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, border_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">Card Background</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.card_color || '#1e1e1e'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, card_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.card_color || '#1e1e1e'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, card_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">Muted Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.muted_color || '#404040'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, muted_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.muted_color || '#404040'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, muted_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">Destructive Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={designSettings.destructive_color || '#ef4444'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, destructive_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                    />
+                    <Input
+                      value={designSettings.destructive_color || '#ef4444'}
+                      onChange={(e) => {
+                        const newSettings = { ...designSettings, destructive_color: e.target.value };
+                        setDesignSettings(newSettings);
+                        applyDesignSettings(newSettings);
+                      }}
+                      className="bg-gaming-dark border-gaming-border text-foreground"
+                    />
+                  </div>
+                </div>
               </div>
             </Card>
           </TabsContent>
