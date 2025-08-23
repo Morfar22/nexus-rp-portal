@@ -74,7 +74,14 @@ const Live = () => {
 
   const fetchStreamers = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('fetch-twitch-streams');
+      // Set a reasonable timeout for the edge function call
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 8000)
+      );
+
+      const fetchPromise = supabase.functions.invoke('fetch-twitch-streams');
+      
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('Error calling fetch-twitch-streams:', error);
@@ -87,11 +94,27 @@ const Live = () => {
       }
     } catch (error) {
       console.error('Error fetching streamers:', error);
-      // Fallback to empty data on error
-      setStreamers([]);
-      setStreamData({});
+      // Load streamers from database as fallback
+      await loadStreamersFromDB();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStreamersFromDB = async () => {
+    try {
+      const { data } = await supabase
+        .from('twitch_streamers')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index');
+      
+      if (data) {
+        setStreamers(data);
+        setStreamData({}); // No live data available
+      }
+    } catch (error) {
+      console.error('Error loading streamers from DB:', error);
     }
   };
 
