@@ -30,11 +30,17 @@ interface ServerDashboardProps {
 
 const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashboardProps) => {
   const [servers, setServers] = useState<ServerData[]>([]);
+  const [serverInfo, setServerInfo] = useState({
+    displayIp: 'connect adventure-rp.com',
+    discordUrl: 'https://discord.gg/adventure-rp',
+    status: 'online'
+  });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchServers();
+    fetchServerInfo();
     
     // Set up 30-second interval for updates
     const interval = setInterval(fetchServers, 30000);
@@ -138,6 +144,35 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
     }
   };
 
+  const fetchServerInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', ['server_display_ip', 'discord_url', 'server_status']);
+
+      if (error) {
+        console.error('Error fetching server info:', error);
+        return;
+      }
+
+      if (data) {
+        const settings: any = {};
+        data.forEach(setting => {
+          settings[setting.setting_key] = setting.setting_value;
+        });
+
+        setServerInfo({
+          displayIp: settings.server_display_ip || 'connect adventure-rp.com',
+          discordUrl: settings.discord_url || 'https://discord.gg/adventure-rp',
+          status: settings.server_status || 'online'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching server info:', error);
+    }
+  };
+
   const handleRefreshStats = async () => {
     try {
       // Call the auto-fetch function to manually trigger stats update
@@ -152,6 +187,7 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
       
       // Refresh the data
       await fetchServers();
+      await fetchServerInfo();
     } catch (error) {
       console.error("Error refreshing stats:", error);
       toast({
@@ -343,13 +379,33 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
                       }}
                     />
                   </div>
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
+                 </div>
+               )}
 
-        {servers.length === 0 && (
+               {/* Server Connection Info */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gaming-border/30">
+                 <div className="flex items-center justify-between p-3 bg-gaming-darker/30 rounded-lg">
+                   <span className="text-sm text-muted-foreground">Server IP:</span>
+                   <code className="text-sm bg-gaming-dark px-2 py-1 rounded text-neon-teal border border-neon-teal/30">
+                     {serverInfo.displayIp}
+                   </code>
+                 </div>
+                 <div className="flex items-center justify-between p-3 bg-gaming-darker/30 rounded-lg">
+                   <span className="text-sm text-muted-foreground">Status:</span>
+                   <Badge className={
+                     serverInfo.status === 'online' ? 'bg-neon-green/20 text-neon-green border-neon-green/30' :
+                     serverInfo.status === 'maintenance' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' :
+                     'bg-red-500/20 text-red-500 border-red-500/30'
+                   }>
+                     {serverInfo.status.toUpperCase()}
+                   </Badge>
+                 </div>
+               </div>
+             </div>
+           </Card>
+         ))}
+
+         {servers.length === 0 && (
           <Card className="p-8 bg-gaming-card/50 border-gaming-border text-center">
             <Server className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Servers Found</h3>
