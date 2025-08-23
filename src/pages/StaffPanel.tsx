@@ -65,6 +65,7 @@ import { DeploymentSettings } from "@/components/DeploymentSettings";
 import RoleManagement from "@/components/RoleManagement";
 import LiveChatManager from "@/components/LiveChatManager";
 import DesignManager from "@/components/DesignManager";
+import ServerInfoCard from "@/components/ServerInfoCard";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -706,6 +707,7 @@ const StaffPanel = () => {
               {activeTab === "server-stats" && (
                 <div className="space-y-6">
                   <ServerManager />
+                  <ServerInfoCard />
                 </div>
               )}
 
