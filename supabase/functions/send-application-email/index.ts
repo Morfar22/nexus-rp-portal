@@ -2,14 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 import { Resend } from "npm:resend@2.0.0";
 
-// Check if RESEND_API_KEY is available
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-console.log('RESEND_API_KEY available:', !!RESEND_API_KEY);
-if (!RESEND_API_KEY) {
-  console.error('CRITICAL: RESEND_API_KEY environment variable not found!');
-}
-
-const resend = new Resend(RESEND_API_KEY);
+// Resend client is initialized per request to ensure latest secret is used
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,12 +11,14 @@ const corsHeaders = {
 
 interface EmailRequest {
   applicationId: string;
-  templateType: 'application_submitted' | 'application_accepted' | 'application_denied';
-  recipientEmail: string;
+  templateType: 'application_submitted' | 'application_approved' | 'application_denied' | 'application_accepted';
+  recipientEmail?: string;
   applicantName: string;
   applicationType: string;
   reviewNotes?: string;
   discordName?: string;
+  steamName?: string;
+  fivemName?: string;
   // Legacy support
   type?: string;
   userEmail?: string;
@@ -57,22 +52,76 @@ const handler = async (req: Request): Promise<Response> => {
       applicantName, 
       applicationType, 
       reviewNotes, 
-      discordName 
+      discordName,
+      steamName,
+      fivemName
     } = requestBody;
 
-    console.log('Sending email for application:', applicationId, 'type:', templateType);
+    const effectiveTemplateType = templateType === 'application_accepted' ? 'application_approved' : templateType;
+    console.log('Sending email for application:', applicationId, 'type:', effectiveTemplateType);
+
+    // Resolve recipient email (fallback to profile or auth.users if not provided)
+    let targetEmail = (recipientEmail || '').trim();
+
+    if (!targetEmail) {
+      const { data: appRow, error: appError } = await supabase
+        .from('applications')
+        .select('user_id')
+        .eq('id', applicationId)
+        .single();
+
+      if (appError || !appRow) {
+        console.error('Application lookup failed:', appError);
+        return new Response(
+          JSON.stringify({ error: 'Application not found', success: false }),
+          { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+
+      const userId = appRow.user_id;
+
+      // Try profiles.email first
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.warn('Profile lookup error (non-fatal):', profileError);
+      }
+
+      if (profile?.email) {
+        targetEmail = profile.email;
+      } else {
+        // Fallback to auth.users via Admin API
+        const { data: userRes, error: adminErr } = await supabase.auth.admin.getUserById(userId);
+        if (adminErr) {
+          console.warn('Auth admin getUserById error (non-fatal):', adminErr);
+        }
+        targetEmail = userRes?.user?.email ?? '';
+      }
+    }
+
+    if (!targetEmail) {
+      console.warn('No email found for user; aborting send');
+      return new Response(
+        JSON.stringify({ error: 'No email found for user', success: false }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
 
     // Fetch the email template
     const { data: template, error: templateError } = await supabase
       .from('email_templates')
       .select('*')
-      .eq('template_type', templateType)
+      .eq('template_type', effectiveTemplateType)
       .eq('is_active', true)
       .single();
 
     if (templateError || !template) {
       console.error('Template not found:', templateError);
-      throw new Error(`Email template '${templateType}' not found or inactive`);
+      throw new Error(`Email template '${effectiveTemplateType}' not found or inactive`);
     }
 
     // Replace template variables
@@ -83,7 +132,11 @@ const handler = async (req: Request): Promise<Response> => {
       '{{applicant_name}}': applicantName || 'Applicant',
       '{{application_type}}': applicationType || 'Application',
       '{{review_notes}}': reviewNotes || '',
-      '{{discord_name}}': discordName || ''
+      '{{discord_name}}': discordName || '',
+      '{{steam_name}}': steamName || '',
+      '{{fivem_name}}': fivemName || '',
+      '{{server_name}}': 'Adventurer RP', // You can make this dynamic later
+      '{{today_date}}': new Date().toLocaleDateString()
     };
 
     for (const [placeholder, value] of Object.entries(replacements)) {
@@ -91,10 +144,36 @@ const handler = async (req: Request): Promise<Response> => {
       emailBody = emailBody.replace(new RegExp(placeholder, 'g'), value);
     }
 
+    // Initialize Resend per request (avoids stale/missing secrets on cold starts)
+    let RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      // Fallback: load from server_settings (service role client)
+      try {
+        const { data: keyRow } = await supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'resend_api_key')
+          .single();
+        const val = keyRow?.setting_value;
+        if (typeof val === 'string') RESEND_API_KEY = val;
+        else if (val && typeof val.key === 'string') RESEND_API_KEY = val.key;
+      } catch (e) {
+        console.warn('Failed to load RESEND key from server_settings:', e);
+      }
+    }
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY missing');
+      return new Response(
+        JSON.stringify({ error: 'Missing RESEND_API_KEY', success: false }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+    const resend = new Resend(RESEND_API_KEY);
+
     // Send email via Resend
     const emailResponse = await resend.emails.send({
-      from: "DreamLight RP <noreply@dreamlightrp.co>",
-      to: [recipientEmail],
+      from: "Adventurer RP <noreply@adventurerp.dk>",
+      to: [targetEmail],
       subject: emailSubject,
       html: emailBody.replace(/\n/g, '<br>'),
       text: emailBody,
@@ -116,7 +195,7 @@ const handler = async (req: Request): Promise<Response> => {
         resource_id: applicationId,
         new_values: {
           template_type: templateType,
-          recipient_email: recipientEmail,
+          recipient_email: targetEmail,
           email_id: emailResponse.data?.id
         }
       });
@@ -202,8 +281,31 @@ const handleLegacyRequest = async (requestBody: EmailRequest) => {
     console.log('Sending legacy email to:', userEmail);
     console.log('Email subject:', subject);
 
+    let RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      try {
+        const { data: keyRow } = await createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        ).from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'resend_api_key')
+          .single();
+        const val = keyRow?.setting_value;
+        if (typeof val === 'string') RESEND_API_KEY = val;
+        else if (val && typeof val.key === 'string') RESEND_API_KEY = val.key;
+      } catch {}
+    }
+    if (!RESEND_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Missing RESEND_API_KEY', success: false }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+    const resend = new Resend(RESEND_API_KEY);
+
     const emailResponse = await resend.emails.send({
-      from: "DreamLight RP <noreply@dreamlightrp.co>",
+      from: "Adventurer RP <noreply@adventurerp.dk>",
       to: [userEmail!],
       subject: subject,
       html: htmlContent,

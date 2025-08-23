@@ -15,6 +15,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [serverName, setServerName] = useState("Dreamlight RP");
   const [navbarConfig, setNavbarConfig] = useState({
     items: [
       { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false },
@@ -95,7 +96,7 @@ const Navbar = () => {
 
       try {
         const { data, error } = await supabase
-          .rpc('is_staff', { _user_id: user.id });
+          .rpc('is_staff', { check_user_uuid: user.id });
 
         if (error) {
           console.error('Error checking staff role:', error);
@@ -134,10 +135,27 @@ const Navbar = () => {
       }
     };
 
-    loadNavbarConfig();
+    const loadServerName = async () => {
+      try {
+        const { data } = await supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'general_settings')
+          .maybeSingle();
+
+        if (data?.setting_value && typeof data.setting_value === 'object' && 
+            data.setting_value !== null && 'server_name' in data.setting_value) {
+          setServerName((data.setting_value as any).server_name);
+        }
+      } catch (error) {
+        console.error('Error loading server name:', error);
+      }
+    };
+
+    Promise.all([loadNavbarConfig(), loadServerName()]);
 
     // Set up real-time subscription for navbar config changes
-    const channel = supabase
+    const navChannel = supabase
       .channel('navbar-config-changes')
       .on(
         'postgres_changes',
@@ -156,8 +174,31 @@ const Navbar = () => {
       )
       .subscribe();
 
+    // Set up real-time subscription for server name changes
+    const serverChannel = supabase
+      .channel('server-name-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'server_settings',
+          filter: 'setting_key=eq.general_settings'
+        },
+        (payload) => {
+          console.log('Server settings updated:', payload);
+          if (payload.new && (payload.new as any).setting_value && 
+              typeof (payload.new as any).setting_value === 'object' && 
+              'server_name' in (payload.new as any).setting_value) {
+            setServerName((payload.new as any).setting_value.server_name);
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(navChannel);
+      supabase.removeChannel(serverChannel);
     };
   }, []);
 
@@ -252,7 +293,7 @@ const Navbar = () => {
           <Link to="/" className="flex items-center space-x-2">
             <Server className="h-8 w-8 text-neon-purple" />
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Dreamlight RP
+              {serverName}
             </span>
           </Link>
           
@@ -287,7 +328,7 @@ const Navbar = () => {
         <Link to="/" className="flex items-center space-x-2">
           <Server className="h-8 w-8 text-neon-purple" />
           <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Dreamlight RP
+            {serverName}
           </span>
         </Link>
         

@@ -47,6 +47,8 @@ import RulesManager from "@/components/RulesManager";
 import StaffManager from "@/components/StaffManager";
 import UserManagementSection from "@/components/UserManagementSection";
 import TeamManager from "@/components/TeamManager";
+import ServerManager from "@/components/ServerManager";
+import EmailTest from "@/components/EmailTest";
 import PartnerManager from "@/components/PartnerManager";
 import NavbarManager from "@/components/NavbarManager";
 import ServerStatsManager from "@/components/ServerStatsManager";
@@ -703,7 +705,7 @@ const StaffPanel = () => {
 
               {activeTab === "server-stats" && (
                 <div className="space-y-6">
-                  <ServerStatsManager />
+                  <ServerManager />
                 </div>
               )}
 
@@ -758,6 +760,8 @@ const StaffPanel = () => {
               {activeTab === "settings" && (
                 <div className="space-y-6">
                   {/* Email Test */}
+                  <EmailTest />
+                  
                   <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
                     <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                       <Settings className="h-5 w-5 text-neon-green" />
@@ -816,6 +820,29 @@ const StaffPanel = () => {
                         />
                         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                           This appears in the homepage hero section
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label className="text-foreground text-sm sm:text-base">Server Tagline</Label>
+                        <Input
+                          value={serverSettings.general_settings?.tagline || ''}
+                          onChange={(e) => {
+                            const newSettings = {
+                              ...serverSettings.general_settings,
+                              tagline: e.target.value
+                            };
+                            setServerSettings({
+                              ...serverSettings,
+                              general_settings: newSettings
+                            });
+                          }}
+                          onBlur={() => handleSettingUpdate('general_settings', serverSettings.general_settings)}
+                          placeholder="#1 PREMIUM FIVEM EXPERIENCE"
+                          className="bg-gaming-dark border-gaming-border text-foreground"
+                        />
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                          This appears in the badge above the server name
                         </p>
                       </div>
 

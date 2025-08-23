@@ -52,6 +52,7 @@ const LiveChatWidget = () => {
 
   useEffect(() => {
     if (session) {
+      loadExistingMessages();
       subscribeToMessages();
       subscribeToSessionUpdates();
     }
@@ -74,8 +75,31 @@ const LiveChatWidget = () => {
     }
   };
 
+  const loadExistingMessages = async () => {
+    if (!session) return;
+
+    console.log('LiveChatWidget: Loading existing messages for session:', session.id);
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', session.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      console.log('LiveChatWidget: Loaded existing messages:', data);
+      setMessages((data || []) as Message[]);
+    } catch (error) {
+      console.error('LiveChatWidget: Error loading existing messages:', error);
+    }
+  };
+
   const subscribeToMessages = () => {
     if (!session) return;
+
+    console.log('LiveChatWidget: Setting up message subscription for session:', session.id);
 
     const channel = supabase
       .channel(`chat_messages_${session.id}`)
@@ -88,13 +112,24 @@ const LiveChatWidget = () => {
           filter: `session_id=eq.${session.id}`
         },
         (payload) => {
+          console.log('LiveChatWidget: Received new message via real-time:', payload);
           const newMessage = payload.new as Message;
-          setMessages(prev => [...prev, newMessage]);
+          setMessages(prev => {
+            // Avoid duplicates
+            const exists = prev.some(msg => msg.id === newMessage.id);
+            if (exists) return prev;
+            
+            console.log('LiveChatWidget: Adding message to state. Previous count:', prev.length);
+            return [...prev, newMessage];
+          });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('LiveChatWidget: Subscription status:', status);
+      });
 
     return () => {
+      console.log('LiveChatWidget: Cleaning up message subscription');
       supabase.removeChannel(channel);
     };
   };
@@ -147,12 +182,68 @@ const LiveChatWidget = () => {
 
     setIsLoading(true);
     try {
+      // Get user's IP address (best effort)
+      let userIP = null;
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        userIP = ipData.ip;
+      } catch (ipError) {
+        console.warn('Could not get IP address:', ipError);
+      }
+
+      // Check if user is banned by email or IP
+      const banChecks = [];
+      
+      if (visitorEmail) {
+        banChecks.push(
+          supabase
+            .from('chat_banned_users')
+            .select('id, reason')
+            .eq('visitor_email', visitorEmail)
+            .limit(1)
+        );
+      }
+
+      if (userIP) {
+        banChecks.push(
+          supabase
+            .from('chat_banned_users')
+            .select('id, reason')
+            .eq('ip_address', userIP)
+            .limit(1)
+        );
+      }
+
+      if (banChecks.length > 0) {
+        const banResults = await Promise.all(banChecks);
+        
+        for (const result of banResults) {
+          if (result.error) throw result.error;
+          
+          if (result.data && result.data.length > 0) {
+            toast({
+              title: "Access Denied",
+              description: "You are currently banned from using live chat",
+              variant: "destructive"
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Attach authenticated user if available
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id ?? null;
+
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
         .insert({
           visitor_name: visitorName,
           visitor_email: visitorEmail || null,
-          status: 'waiting'
+          status: 'waiting',
+          user_id: userId
         })
         .select()
         .single();
@@ -161,6 +252,20 @@ const LiveChatWidget = () => {
 
       setSession(sessionData);
       setHasStartedChat(true);
+
+      // Log chat start to Discord
+      try {
+        await supabase.functions.invoke('discord-chat-logger', {
+          body: {
+            type: 'chat_started',
+            sessionId: sessionData.id,
+            visitorName: visitorName,
+            visitorEmail: visitorEmail
+          }
+        });
+      } catch (discordError) {
+        console.warn('Failed to log chat start to Discord:', discordError);
+      }
 
       toast({
         title: "Chat Started",
@@ -181,20 +286,31 @@ const LiveChatWidget = () => {
   const sendMessage = async () => {
     if (!newMessage.trim() || !session) return;
 
+    console.log('LiveChatWidget: Sending message:', {
+      session_id: session.id,
+      message: newMessage,
+      sender_type: 'visitor'
+    });
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('chat_messages')
         .insert({
           session_id: session.id,
           message: newMessage,
           sender_type: 'visitor'
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('LiveChatWidget: Insert error:', error);
+        throw error;
+      }
 
+      console.log('LiveChatWidget: Message sent successfully:', data);
       setNewMessage("");
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('LiveChatWidget: Error sending message:', error);
       toast({
         title: "Error",
         description: "Failed to send message",

@@ -28,8 +28,27 @@ const Live = () => {
   const [streamers, setStreamers] = useState<TwitchStreamer[]>([]);
   const [streamData, setStreamData] = useState<Record<string, StreamData>>({});
   const [loading, setLoading] = useState(true);
+  const [serverName, setServerName] = useState("Dreamlight RP");
 
   useEffect(() => {
+    const loadServerName = async () => {
+      try {
+        const { data } = await supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'general_settings')
+          .maybeSingle();
+
+        if (data?.setting_value && typeof data.setting_value === 'object' && 
+            data.setting_value !== null && 'server_name' in data.setting_value) {
+          setServerName((data.setting_value as any).server_name);
+        }
+      } catch (error) {
+        console.error('Error loading server name:', error);
+      }
+    };
+
+    loadServerName();
     fetchStreamers();
     
     // Set up real-time subscription
@@ -108,7 +127,7 @@ const Live = () => {
               Live Streams
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Watch our community members live on Twitch playing on Dreamlight RP
+              Watch our community members live on Twitch playing on {serverName}
             </p>
           </div>
 

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import ServerStats from "@/components/ServerStats";
+import ServerDashboard from "@/components/ServerDashboard";
 import ParticleBackground from "@/components/ParticleBackground";
 import { Link } from "react-router-dom";
 import { PlayCircle, Users, Shield, Map, Clock, Star, Zap, Gamepad2, Globe, Award } from "lucide-react";
@@ -12,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useServerSettings } from "@/hooks/useServerSettings";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-image.webp";
+import LiveChatWidget from "@/components/LiveChatWidget";
 
 const Index = () => {
   const [serverJoinLink, setServerJoinLink] = useState('');
@@ -276,7 +278,7 @@ const Index = () => {
         <div className="relative container mx-auto px-4 py-20 text-center z-10">
           <Badge className="mb-6 bg-gradient-to-r from-golden-light to-neon-teal text-gaming-darker border-none px-6 py-2 text-sm font-orbitron hover-glow animate-fade-in">
             <Star className="h-4 w-4 mr-2" />
-            #1 PREMIUM FIVEM EXPERIENCE
+            {settings.general_settings?.tagline || '#1 PREMIUM FIVEM EXPERIENCE'}
           </Badge>
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold mb-6 px-4 font-orbitron">
@@ -312,8 +314,9 @@ const Index = () => {
             </Button>
           </div>
           
-          <div className="max-w-4xl mx-auto">
-            <ServerStats />
+          {/* Detailed Server Dashboard */}
+          <div className="max-w-6xl mx-auto mt-12">
+            <ServerDashboard />
           </div>
         </div>
       </section>
@@ -421,6 +424,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+      
+      {/* Live Chat Widget */}
+      <LiveChatWidget />
     </div>
   );
 };
