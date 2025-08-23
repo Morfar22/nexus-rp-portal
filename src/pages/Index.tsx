@@ -24,7 +24,7 @@ const Index = () => {
   });
   const [homepageFeatures, setHomepageFeatures] = useState<any[]>([]);
   const [homepageFeaturesSection, setHomepageFeaturesSection] = useState<any>({
-    title: "Why Choose Dreamlight RP?",
+    title: "Why Choose Adventure rp?",
     description: "We've built the most immersive FiveM experience with attention to every detail"
   });
   const [homepageCta, setHomepageCta] = useState<any>({
@@ -283,7 +283,7 @@ const Index = () => {
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold mb-6 px-4 font-orbitron">
             <span className="bg-gradient-to-r from-golden-light via-neon-gold to-neon-teal bg-clip-text text-transparent text-glow animate-fade-in">
-              {settings.general_settings?.server_name || 'DREAMLIGHT RP'}
+              {settings.general_settings?.server_name || 'Adventure rp'}
             </span>
           </h1>
           

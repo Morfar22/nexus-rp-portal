@@ -242,38 +242,38 @@ const handleLegacyRequest = async (requestBody: EmailRequest) => {
     let subject, htmlContent;
     
     if (type === 'approved') {
-      subject = "Application Approved - DreamLight RP";
+      subject = "Application Approved - Adventure rp";
       htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h1 style="color: #22c55e;">🎉 Application Approved!</h1>
-          <p>Congratulations! Your application to DreamLight RP has been <strong>approved</strong>.</p>
+          <p>Congratulations! Your application to Adventure rp has been <strong>approved</strong>.</p>
           <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
           ${applicationData?.review_notes ? `<p><strong>Staff Notes:</strong> ${applicationData.review_notes}</p>` : ''}
           <p>Welcome to our community! You can now join our FiveM server.</p>
-          <p>Best regards,<br>The DreamLight RP Team</p>
+          <p>Best regards,<br>The Adventure rp Team</p>
         </div>
       `;
     } else if (type === 'denied' || type === 'rejected') {
-      subject = "Application Update - DreamLight RP";
+      subject = "Application Update - Adventure rp";
       htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h1 style="color: #ef4444;">Application Update</h1>
-          <p>Thank you for your interest in DreamLight RP. Unfortunately, your application has not been approved at this time.</p>
+          <p>Thank you for your interest in Adventure rp. Unfortunately, your application has not been approved at this time.</p>
           <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
           ${applicationData?.review_notes ? `<p><strong>Staff Feedback:</strong> ${applicationData.review_notes}</p>` : ''}
           <p>You're welcome to submit a new application in the future. Please consider the feedback provided.</p>
-          <p>Best regards,<br>The DreamLight RP Team</p>
+          <p>Best regards,<br>The Adventure rp Team</p>
         </div>
       `;
     } else {
-      subject = "Application Received - DreamLight RP";
+      subject = "Application Received - Adventure rp";
       htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h1 style="color: #ff6b6b;">Application Received!</h1>
-          <p>Thank you for your application to DreamLight RP.</p>
+          <p>Thank you for your application to Adventure rp.</p>
           <p><strong>Steam Name:</strong> ${applicationData?.steam_name || 'Not provided'}</p>
           <p>We'll review your application and get back to you soon.</p>
-          <p>Best regards,<br>The DreamLight RP Team</p>
+          <p>Best regards,<br>The Adventure rp Team</p>
         </div>
       `;
     }

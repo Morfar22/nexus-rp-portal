@@ -65,7 +65,7 @@ serve(async (req: Request) => {
     console.log("send-welcome-email request", { email, username, siteUrl });
 
     // Try to load a template from DB first
-    let subject = "Welcome to DreamLight RP!";
+    let subject = "Welcome to Adventure rp!";
     let content = `Welcome ${username ?? "there"}!\n\nYour account has been created.\n\nNext steps:\n- Join our Discord\n- Read the rules\n- Start your RP journey!\n\nSee you in the city!`;
 
     try {

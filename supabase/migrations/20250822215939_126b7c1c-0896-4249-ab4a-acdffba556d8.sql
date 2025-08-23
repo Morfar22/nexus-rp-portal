@@ -2,10 +2,10 @@
 INSERT INTO public.email_templates (template_type, subject, body, is_active) VALUES
 (
   'welcome',
-  'Welcome to DreamLight RP! 🎮',
+  'Welcome to Adventure rp! 🎮',
   'Welcome {{username}}!
 
-Thank you for joining DreamLight RP! We''re excited to have you as part of our community.
+Thank you for joining Adventure rp! We''re excited to have you as part of our community.
 
 Your account has been successfully created with the following details:
 - Username: {{username}}
@@ -23,7 +23,7 @@ Need help getting started? Check out our guides or reach out to our friendly sta
 Welcome to the family!
 
 Best regards,
-The DreamLight RP Team',
+The Adventure rp Team',
   true
 )
 ON CONFLICT (template_type) DO UPDATE SET

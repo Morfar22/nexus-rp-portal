@@ -24,7 +24,7 @@ const Apply = () => {
   const [applicationTypes, setApplicationTypes] = useState<any[]>([]);
   const [selectedApplicationType, setSelectedApplicationType] = useState<any>(null);
   const [serverSettings, setServerSettings] = useState<any>({});
-  const [serverName, setServerName] = useState("Dreamlight RP");
+  const [serverName, setServerName] = useState("Adventure rp");
   const [error, setError] = useState("");
   
   const { toast } = useToast();

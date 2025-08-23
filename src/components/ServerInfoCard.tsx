@@ -12,7 +12,7 @@ import { Gamepad2, Globe, Award, Edit2, Save } from "lucide-react";
 
 const ServerInfoCard = () => {
   const [serverInfo, setServerInfo] = useState({
-    displayIp: 'connect dreamlight-rp.com',
+    displayIp: 'connect panel.adventurerp.dk:30120',
     discordUrl: '',
     status: 'online'
   });
@@ -48,7 +48,7 @@ const ServerInfoCard = () => {
         });
 
         setServerInfo({
-          displayIp: settings.server_display_ip || 'connect dreamlight-rp.com',
+          displayIp: settings.server_display_ip || 'connect panel.adventurerp.dk:30120 ',
           discordUrl: settings.discord_url || '',
           status: settings.server_status || 'online'
         });

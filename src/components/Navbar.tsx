@@ -15,7 +15,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [serverName, setServerName] = useState("Dreamlight RP");
+  const [serverName, setServerName] = useState("adventure rp");
   const [navbarConfig, setNavbarConfig] = useState({
     items: [
       { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false },

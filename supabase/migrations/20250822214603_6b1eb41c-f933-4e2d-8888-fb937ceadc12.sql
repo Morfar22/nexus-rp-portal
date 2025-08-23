@@ -5,7 +5,7 @@ INSERT INTO public.email_templates (template_type, subject, body, is_active) VAL
   'Application Received - {{application_type}}',
   'Dear {{applicant_name}},
 
-Thank you for submitting your application to DreamLight RP!
+Thank you for submitting your application to Adventure rp!
 
 We have received your {{application_type}} application and it is now under review by our staff team.
 
@@ -19,15 +19,15 @@ Our team will review your application carefully and get back to you soon. Please
 If you have any questions, feel free to reach out to us on Discord.
 
 Best regards,
-The DreamLight RP Staff Team'
+The Adventure rp Staff Team'
   , true
 ),
 (
   'application_approved',
-  '🎉 Application Approved - Welcome to DreamLight RP!',
+  '🎉 Application Approved - Welcome to Adventure rp!',
   'Congratulations {{applicant_name}}!
 
-Your application to DreamLight RP has been APPROVED! Welcome to our community!
+Your application to Adventure rp has been APPROVED! Welcome to our community!
 
 Application Details:
 - Applicant: {{applicant_name}}
@@ -46,15 +46,15 @@ Next Steps:
 We''re excited to have you as part of our community. See you in the city!
 
 Best regards,
-The DreamLight RP Staff Team'
+The Adventure rp Staff Team'
   , true
 ),
 (
   'application_denied',
-  'Application Update - DreamLight RP',
+  'Application Update - Adventure rp',
   'Dear {{applicant_name}},
 
-Thank you for your interest in DreamLight RP.
+Thank you for your interest in Adventure rp.
 
 After careful review, we regret to inform you that your application has not been approved at this time.
 
@@ -75,7 +75,7 @@ Please don''t be discouraged! You''re welcome to submit a new application in the
 If you have any questions about this decision, feel free to reach out to our staff team.
 
 Best regards,
-The DreamLight RP Staff Team'
+The Adventure rp Staff Team'
   , true
 )
 ON CONFLICT (template_type) DO UPDATE SET

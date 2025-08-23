@@ -26,7 +26,7 @@ const Auth = () => {
   const [showBannedScreen, setShowBannedScreen] = useState(false);
   const [bannedUserInfo, setBannedUserInfo] = useState<{username: string, email: string} | null>(null);
   const [isPasswordReset, setIsPasswordReset] = useState(false);
-  const [serverName, setServerName] = useState("Dreamlight RP");
+  const [serverName, setServerName] = useState("Adventure rp");
   const captchaRef = useRef<HCaptcha>(null);
   const navigate = useNavigate();
   const { toast } = useToast();

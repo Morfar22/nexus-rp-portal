@@ -28,7 +28,7 @@ const Live = () => {
   const [streamers, setStreamers] = useState<TwitchStreamer[]>([]);
   const [streamData, setStreamData] = useState<Record<string, StreamData>>({});
   const [loading, setLoading] = useState(true);
-  const [serverName, setServerName] = useState("Dreamlight RP");
+  const [serverName, setServerName] = useState("Adventure rp");
 
   useEffect(() => {
     const loadServerName = async () => {

@@ -45,7 +45,7 @@ interface ServerSettingsContextType {
 
 const defaultSettings: ServerSettings = {
   general_settings: {
-    server_name: 'Dreamlight RP',
+    server_name: 'Adventure rp',
     tagline: '#1 PREMIUM FIVEM EXPERIENCE',
     welcome_message: 'Welcome to our server!',
     maintenance_mode: false,

@@ -294,7 +294,7 @@ const DesignManager = () => {
       border_radius: '0.5rem',
       shadow_intensity: 'medium',
       animation_speed: 'normal',
-      server_name: 'DREAMLIGHT RP',
+      server_name: 'Adventure RP',
       welcome_message: 'Experience the ultimate GTA V roleplay in our cyberpunk-themed city. Professional staff, custom content, and endless possibilities await.',
       custom_css: ''
     });
@@ -380,7 +380,7 @@ const DesignManager = () => {
                     <Input
                       value={designSettings.server_name || ''}
                       onChange={(e) => setDesignSettings(prev => ({ ...prev, server_name: e.target.value }))}
-                      placeholder="DREAMLIGHT RP"
+                      placeholder="adventurerp"
                       className="bg-gaming-dark border-gaming-border text-foreground"
                     />
                   </div>
