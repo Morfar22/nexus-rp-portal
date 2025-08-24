@@ -66,6 +66,7 @@ import RoleManagement from "@/components/RoleManagement";
 import LiveChatManager from "@/components/LiveChatManager";
 import DesignManager from "@/components/DesignManager";
 import ServerInfoCard from "@/components/ServerInfoCard";
+import { PackageManager } from "@/components/PackageManager";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -600,27 +601,28 @@ const StaffPanel = () => {
             <div className="border-b border-gaming-border p-4 flex items-center bg-gaming-darker/30">
               <SidebarTrigger className="mr-4 hover:bg-gaming-card hover:scale-110 transition-all duration-300 rounded-lg p-2" />
               <div className="animate-slide-up">
-                <h1 className="text-xl font-bold text-foreground">
-                  {activeTab === "overview" && "Dashboard Overview"}
-                  {activeTab === "applications" && "Application Management"}
-                  {activeTab === "rules" && "Rules Management"}
-                  {activeTab === "staff" && "Staff Management"}
-                  {activeTab === "role-management" && "Role & Permissions Management"}
-                  {activeTab === "users" && "User Management"}
-                  {activeTab === "team" && "Team Page Management"}
-                  {activeTab === "partners" && "Partners Management"}
-                  {activeTab === "navbar" && "Navigation Management"}
-                  {activeTab === "live-streamers" && "Live Streamers"}
-                  {activeTab === "settings" && "System Settings"}
-                  {activeTab === "content" && "Homepage Content"}
-                  {activeTab === "server-stats" && "Server Statistics"}
-                  {activeTab === "deployment" && "Deployment Settings"}
-                  {activeTab === "logs" && "System Logs"}
-                  {activeTab === "emails" && "Email Templates"}
-                   {activeTab === "design" && "Design & Appearance"}
-                   {activeTab === "chat" && "Live Chat Management"}
-                   {activeTab === "security" && "Security Management"}
-                </h1>
+                  <h1 className="text-xl font-bold text-foreground">
+                    {activeTab === "overview" && "Dashboard Overview"}
+                    {activeTab === "applications" && "Application Management"}
+                    {activeTab === "rules" && "Rules Management"}
+                    {activeTab === "staff" && "Staff Management"}
+                    {activeTab === "role-management" && "Role & Permissions Management"}
+                    {activeTab === "users" && "User Management"}
+                    {activeTab === "team" && "Team Page Management"}
+                    {activeTab === "partners" && "Partners Management"}
+                    {activeTab === "navbar" && "Navigation Management"}
+                    {activeTab === "live-streamers" && "Live Streamers"}
+                    {activeTab === "packages" && "Package Management"}
+                    {activeTab === "settings" && "System Settings"}
+                    {activeTab === "content" && "Homepage Content"}
+                    {activeTab === "server-stats" && "Server Statistics"}
+                    {activeTab === "deployment" && "Deployment Settings"}
+                    {activeTab === "logs" && "System Logs"}
+                    {activeTab === "emails" && "Email Templates"}
+                     {activeTab === "design" && "Design & Appearance"}
+                     {activeTab === "chat" && "Live Chat Management"}
+                     {activeTab === "security" && "Security Management"}
+                  </h1>
                 <div className="flex items-center space-x-2 mt-1">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                   <span className="text-sm text-muted-foreground">Live Dashboard</span>
@@ -695,6 +697,12 @@ const StaffPanel = () => {
               {activeTab === "live-streamers" && (
                 <div className="space-y-6">
                   <TwitchStreamersManager />
+                </div>
+              )}
+
+              {activeTab === "packages" && (
+                <div className="space-y-6">
+                  <PackageManager />
                 </div>
               )}
 
