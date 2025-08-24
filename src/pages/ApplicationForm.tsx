@@ -149,18 +149,17 @@ const ApplicationForm = () => {
       // Send Discord notification
       try {
         console.log('Calling discord-logger function...');
-        const discordResponse = await supabase.functions.invoke('discord-logger', {
+        await supabase.functions.invoke('discord-logger', {
           body: {
             type: 'application_submitted',
             data: {
-              applicationId: 'pending', // We don't have the ID yet since this is after insert
+              user_id: user?.id, // Add user_id for profile lookup
               applicantEmail: user?.email,
               applicationType: selectedType.name,
               formData: formData
             }
           }
         });
-        console.log('Discord function response:', discordResponse);
         console.log('Discord notification attempted');
       } catch (discordError) {
         console.error('Failed to send Discord notification:', discordError);

@@ -424,6 +424,7 @@ export type Database = {
           description: string | null
           features: Json | null
           id: string
+          image_url: string | null
           interval: string
           is_active: boolean
           name: string
@@ -439,6 +440,7 @@ export type Database = {
           description?: string | null
           features?: Json | null
           id?: string
+          image_url?: string | null
           interval?: string
           is_active?: boolean
           name: string
@@ -454,6 +456,7 @@ export type Database = {
           description?: string | null
           features?: Json | null
           id?: string
+          image_url?: string | null
           interval?: string
           is_active?: boolean
           name?: string

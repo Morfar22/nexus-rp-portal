@@ -10,14 +10,18 @@ const corsHeaders = {
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
 const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
 
+console.log("Environment check:", {
+  hasResendKey: !!resendApiKey,
+  hasHookSecret: !!hookSecret,
+  resendKeyLength: resendApiKey ? resendApiKey.length : 0
+});
+
 if (!resendApiKey) {
-  console.error("RESEND_API_KEY missing");
+  console.error("RESEND_API_KEY missing - email sending will fail");
 }
 if (!hookSecret) {
-  console.error("SEND_EMAIL_HOOK_SECRET missing");
+  console.error("SEND_EMAIL_HOOK_SECRET missing - webhook verification will fail");
 }
-
-const resend = new Resend(resendApiKey || "");
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -28,6 +32,9 @@ serve(async (req) => {
   try {
     if (!resendApiKey) throw new Error("RESEND_API_KEY not configured");
     if (!hookSecret) throw new Error("SEND_EMAIL_HOOK_SECRET not configured");
+
+    // Initialize Resend with the API key inside the handler
+    const resend = new Resend(resendApiKey);
 
     const payload = await req.text();
     const headers = Object.fromEntries(req.headers);

@@ -277,6 +277,7 @@ const Apply = () => {
           body: {
             type: 'application_submitted',
             data: {
+              user_id: user.id, // Add user_id for profile lookup
               steam_name: applicationData.steam_name || '',
               discord_tag: applicationData.discord_tag || '',
               discord_name: applicationData.discord_name || '',

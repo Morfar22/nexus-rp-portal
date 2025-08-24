@@ -22,6 +22,7 @@ interface Package {
   features: any; // Json from database
   is_active: boolean;
   order_index: number;
+  image_url: string | null;
   created_at: string;
 }
 
@@ -37,6 +38,7 @@ export function PackageManager() {
     currency: "usd",
     interval: "month",
     features: "",
+    image_url: "",
     is_active: true,
     order_index: 0,
   });
@@ -71,6 +73,7 @@ export function PackageManager() {
         currency: formData.currency,
         interval: formData.interval,
         features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : [],
+        image_url: formData.image_url || null,
         is_active: formData.is_active,
         order_index: formData.order_index,
       };
@@ -110,6 +113,7 @@ export function PackageManager() {
       currency: pkg.currency,
       interval: pkg.interval,
       features: Array.isArray(pkg.features) ? pkg.features.join('\n') : "",
+      image_url: pkg.image_url || "",
       is_active: pkg.is_active,
       order_index: pkg.order_index,
     });
@@ -174,6 +178,7 @@ Are you sure you want to continue?`;
       currency: "usd",
       interval: "month",
       features: "",
+      image_url: "",
       is_active: true,
       order_index: packages.length,
     });
@@ -273,6 +278,16 @@ Are you sure you want to continue?`;
               </div>
 
               <div className="col-span-2 space-y-2">
+                <Label htmlFor="image_url">Package Image URL</Label>
+                <Input
+                  id="image_url"
+                  value={formData.image_url}
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  placeholder="https://example.com/package-image.jpg"
+                />
+              </div>
+
+              <div className="col-span-2 space-y-2">
                 <Label htmlFor="features">Features (one per line)</Label>
                 <Textarea
                   id="features"
@@ -342,6 +357,15 @@ Are you sure you want to continue?`;
               </div>
             </CardHeader>
             <CardContent>
+              {pkg.image_url && (
+                <div className="mb-4">
+                  <img 
+                    src={pkg.image_url} 
+                    alt={pkg.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                </div>
+              )}
               {pkg.description && <p className="text-muted-foreground mb-4">{pkg.description}</p>}
               {Array.isArray(pkg.features) && pkg.features.length > 0 && (
                 <div>

@@ -146,27 +146,51 @@ const DiscordLogsManager = () => {
 
   const testDiscordLog = async (type: string) => {
     try {
-      await supabase.functions.invoke('discord-logger', {
+      let testData = {};
+      
+      if (type === 'purchase_completed') {
+        testData = {
+          customerEmail: 'test@example.com',
+          customerName: 'Test Customer',
+          username: 'TestUser',
+          packageName: 'Test Package',
+          price: 4999, // $49.99 in cents
+          currency: 'USD'
+        };
+      } else {
+        testData = {
+          staff_name: 'Test Staff',
+          action: 'Test Action',
+          target: 'Test Target',
+          reason: 'Testing Discord logging system'
+        };
+      }
+      
+      console.log('Sending test log:', { type, testData });
+      
+      const { data, error } = await supabase.functions.invoke('discord-logger', {
         body: {
           type,
-          data: {
-            staff_name: 'Test Staff',
-            action: 'Test Action',
-            target: 'Test Target',
-            reason: 'Testing Discord logging system'
-          }
+          data: testData
         }
       });
       
+      if (error) {
+        console.error('Function invoke error:', error);
+        throw error;
+      }
+      
+      console.log('Discord logger response:', data);
+      
       toast({
-        title: "Test Sent",
-        description: `Test ${type} log sent to Discord successfully.`,
+        title: "Test Sent Successfully",
+        description: `Test ${type} log sent to Discord. Check your Discord channel for the message.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending test log:', error);
       toast({
-        title: "Test Failed",
-        description: "Failed to send test log to Discord.",
+        title: "Test Failed", 
+        description: `Failed to send test log: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }
@@ -222,6 +246,19 @@ const DiscordLogsManager = () => {
           </div>
           
           <div className="space-y-2">
+            <Label className="text-foreground">Packages Webhook</Label>
+            <Input
+              value={discordSettings.packages_webhook || ''}
+              onChange={(e) => setDiscordSettings({
+                ...discordSettings,
+                packages_webhook: e.target.value
+              })}
+              placeholder="Discord webhook URL for package purchase logs"
+              className="bg-gaming-dark border-gaming-border text-foreground"
+            />
+          </div>
+          
+          <div className="space-y-2">
             <Label className="text-foreground">Errors Webhook</Label>
             <Input
               value={discordSettings.errors_webhook || ''}
@@ -250,6 +287,13 @@ const DiscordLogsManager = () => {
               size="sm"
             >
               Test Application Log
+            </Button>
+            <Button
+              onClick={() => testDiscordLog('purchase_completed')}
+              variant="outline"
+              size="sm"
+            >
+              Test Package Log
             </Button>
             <Button
               onClick={() => testDiscordLog('error_occurred')}

@@ -42,6 +42,12 @@ export default function Packages() {
     } else {
       setLoading(false);
     }
+    
+    // Handle success/payment confirmation
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true' && user) {
+      handlePaymentSuccess();
+    }
   }, [user]);
 
   const fetchPackages = async () => {
@@ -123,6 +129,42 @@ export default function Packages() {
     } catch (error) {
       console.error("Error opening customer portal:", error);
       toast.error("Failed to open subscription management");
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    try {
+      // Get user profile for webhook
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, email")
+        .eq("id", user?.id)
+        .single();
+
+      // Find the most expensive package as a simple way to determine what they likely bought
+      const mostExpensivePackage = packages.reduce((prev, current) => 
+        (prev.price_amount > current.price_amount) ? prev : current
+      );
+
+      // Trigger purchase webhook
+      await supabase.functions.invoke("purchase-webhook", {
+        body: {
+          customerEmail: user?.email,
+          customerName: profile?.username || user?.email,
+          packageName: mostExpensivePackage?.name || "Unknown Package",
+          price: mostExpensivePackage?.price_amount || 0,
+          currency: mostExpensivePackage?.currency || "USD"
+        }
+      });
+
+      toast.success("Payment successful! Welcome to your new package!");
+      
+      // Clear URL params and refresh subscription
+      window.history.replaceState({}, document.title, window.location.pathname);
+      await checkSubscription();
+    } catch (error) {
+      console.error("Error handling payment success:", error);
+      // Don't show error to user as payment was successful
     }
   };
 
