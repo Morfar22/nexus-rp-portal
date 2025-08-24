@@ -117,9 +117,40 @@ export function PackageManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this package?")) return;
-
     try {
+      // Check if package has active subscriptions
+      const { data: subscribers, error: checkError } = await supabase
+        .from("subscribers")
+        .select("id, email")
+        .eq("package_id", id)
+        .eq("subscribed", true);
+
+      if (checkError) throw checkError;
+
+      if (subscribers && subscribers.length > 0) {
+        const userEmails = subscribers.map(sub => sub.email).join(", ");
+        const confirmMessage = `This package has ${subscribers.length} active subscription(s) (${userEmails}). 
+
+This will:
+1. Remove the package reference from these subscriptions
+2. Delete the package
+
+Are you sure you want to continue?`;
+        
+        if (!confirm(confirmMessage)) return;
+
+        // Update subscribers to remove package reference
+        const { error: updateError } = await supabase
+          .from("subscribers")
+          .update({ package_id: null })
+          .eq("package_id", id);
+
+        if (updateError) throw updateError;
+      } else {
+        if (!confirm("Are you sure you want to delete this package?")) return;
+      }
+
+      // Now delete the package
       const { error } = await supabase
         .from("packages")
         .delete()
