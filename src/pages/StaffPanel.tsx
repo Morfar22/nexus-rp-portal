@@ -67,6 +67,7 @@ import LiveChatManager from "@/components/LiveChatManager";
 import DesignManager from "@/components/DesignManager";
 import ServerInfoCard from "@/components/ServerInfoCard";
 import { PackageManager } from "@/components/PackageManager";
+import { SubscriptionOverview } from "@/components/SubscriptionOverview";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -702,6 +703,7 @@ const StaffPanel = () => {
 
               {activeTab === "packages" && (
                 <div className="space-y-6">
+                  <SubscriptionOverview />
                   <PackageManager />
                 </div>
               )}
