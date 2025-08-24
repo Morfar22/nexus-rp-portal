@@ -67,7 +67,7 @@ export function PackageManager() {
       const packageData = {
         name: formData.name,
         description: formData.description || null,
-        price_amount: parseInt(formData.price_amount),
+        price_amount: Math.round(parseFloat(formData.price_amount) * 100), // Convert dollars to cents
         currency: formData.currency,
         interval: formData.interval,
         features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : [],
@@ -106,7 +106,7 @@ export function PackageManager() {
     setFormData({
       name: pkg.name,
       description: pkg.description || "",
-      price_amount: pkg.price_amount.toString(),
+      price_amount: (pkg.price_amount / 100).toFixed(2), // Convert cents to dollars
       currency: pkg.currency,
       interval: pkg.interval,
       features: Array.isArray(pkg.features) ? pkg.features.join('\n') : "",
@@ -223,13 +223,15 @@ Are you sure you want to continue?`;
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Price (in cents)</Label>
+                <Label htmlFor="price">Price (in dollars)</Label>
                 <Input
                   id="price"
                   type="number"
+                  step="0.01"
+                  min="0"
                   value={formData.price_amount}
                   onChange={(e) => setFormData({ ...formData, price_amount: e.target.value })}
-                  placeholder="2999"
+                  placeholder="29.99"
                 />
               </div>
 
