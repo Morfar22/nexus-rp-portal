@@ -8,6 +8,7 @@ import { CheckCircle, Star, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import GoogleAd from "@/components/GoogleAds";
 
 interface Package {
   id: string;
@@ -237,6 +238,15 @@ export default function Packages() {
             </div>
           </div>
         )}
+
+        {/* Ad Banner - Before Packages */}
+        <div className="mb-8 text-center">
+          <GoogleAd 
+            adSlot="1234567891" 
+            adFormat="horizontal" 
+            className="max-w-4xl mx-auto"
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {packages.map((pkg) => {

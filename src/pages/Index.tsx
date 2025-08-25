@@ -14,6 +14,7 @@ import { useServerSettings } from "@/hooks/useServerSettings";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-image.webp";
 import LiveChatWidget from "@/components/LiveChatWidget";
+import GoogleAd from "@/components/GoogleAds";
 
 const Index = () => {
   const [serverJoinLink, setServerJoinLink] = useState('');
