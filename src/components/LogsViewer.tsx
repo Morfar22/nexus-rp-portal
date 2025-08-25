@@ -87,6 +87,8 @@ const LogsViewer = () => {
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
+  console.log('🔧 LogsViewer component mounted/rendered');
+
   const fetchLogs = async () => {
     console.log('🚀 Starting fetchLogs function...');
     setLoading(true);
@@ -255,12 +257,15 @@ const LogsViewer = () => {
     let date: Date;
     
     if (typeof timestamp === 'number') {
-      // Handle microsecond timestamps from Supabase
-      date = new Date(timestamp > 1e12 ? timestamp / 1000 : timestamp);
+      // Handle microsecond timestamps from Supabase (divide by 1000000 to get milliseconds)
+      date = new Date(timestamp > 1e12 ? timestamp / 1000000 : timestamp);
     } else {
-      // Handle string timestamps, fix invalid dates
-      const cleanTimestamp = timestamp.replace(/^\+\d+/, '2025'); // Fix invalid year prefix
-      date = new Date(cleanTimestamp);
+      // Normalize placeholder timestamps like "+057618-..." to now
+      if (/^\+\d+/.test(timestamp)) {
+        date = new Date();
+      } else {
+        date = new Date(timestamp);
+      }
     }
     
     // Fallback to current time if date is invalid
@@ -290,6 +295,14 @@ const LogsViewer = () => {
   };
 
   const filterLogs = (logs: LogEntry[]) => {
+    console.log('🔍 filterLogs called with:', { 
+      totalLogs: logs.length, 
+      searchTerm, 
+      levelFilter, 
+      timeFilter,
+      firstLog: logs[0]
+    });
+
     let filtered = logs;
 
     // Search filter
@@ -310,8 +323,10 @@ const LogsViewer = () => {
 
     // Time filter
     if (timeFilter !== 'all') {
+      console.log('⏰ Applying time filter:', timeFilter);
       const now = new Date();
       const timeThreshold = new Date();
+ 
       
       switch (timeFilter) {
         case '1h':
@@ -329,14 +344,24 @@ const LogsViewer = () => {
       }
       
       filtered = filtered.filter(log => {
-        const logDate = new Date(typeof log.timestamp === 'number' ? log.timestamp / 1000 : log.timestamp);
+        let logDate: Date;
+        const ts: any = log.timestamp as any;
+        if (typeof ts === 'number') {
+          logDate = new Date(ts > 1e12 ? ts / 1000000 : ts);
+        } else {
+          logDate = /^\+\d+/.test(ts) ? new Date() : new Date(ts);
+        }
         return logDate >= timeThreshold;
       });
     }
 
     return filtered.sort((a, b) => {
-      const dateA = new Date(typeof a.timestamp === 'number' ? a.timestamp / 1000 : a.timestamp);
-      const dateB = new Date(typeof b.timestamp === 'number' ? b.timestamp / 1000 : b.timestamp);
+      const parseTs = (t: any) => {
+        if (typeof t === 'number') return new Date(t > 1e12 ? t / 1000000 : t);
+        return /^\+\d+/.test(t) ? new Date() : new Date(t);
+      };
+      const dateA = parseTs(a.timestamp as any);
+      const dateB = parseTs(b.timestamp as any);
       return dateB.getTime() - dateA.getTime();
     });
   };
