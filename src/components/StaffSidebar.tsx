@@ -29,7 +29,8 @@ import {
   UserPlus,
   Palette,
   MessageSquare,
-  CreditCard
+  CreditCard,
+  Scale
 } from "lucide-react";
 
 interface StaffSidebarProps {
@@ -50,6 +51,7 @@ const navigationItems = [
     group: "Content Management",
     items: [
       { id: "rules", label: "Rules", icon: FileSearch },
+      { id: "laws", label: "Laws", icon: Scale },
       { id: "content", label: "Homepage", icon: Layout },
       { id: "design", label: "Design & Appearance", icon: Palette },
       { id: "live-streamers", label: "Live Streamers", icon: Tv },

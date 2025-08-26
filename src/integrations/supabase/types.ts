@@ -416,6 +416,51 @@ export type Database = {
           },
         ]
       }
+      laws: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          fine_amount: number | null
+          id: string
+          is_active: boolean
+          jail_time_minutes: number | null
+          order_index: number
+          severity_level: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          fine_amount?: number | null
+          id?: string
+          is_active?: boolean
+          jail_time_minutes?: number | null
+          order_index?: number
+          severity_level?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          fine_amount?: number | null
+          id?: string
+          is_active?: boolean
+          jail_time_minutes?: number | null
+          order_index?: number
+          severity_level?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       packages: {
         Row: {
           created_at: string

@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 import Apply from "./pages/Apply";
 import ApplicationForm from "./pages/ApplicationForm";
 import Rules from "./pages/Rules";
+import Laws from "./pages/Laws";
 import StaffPanel from "./pages/StaffPanel";
 import OurTeam from "./pages/OurTeam";
 import Partners from "./pages/Partners";
@@ -43,6 +44,7 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/rules" element={<Rules />} />
+                  <Route path="/laws" element={<Laws />} />
                   <Route path="/apply" element={
                     <ProtectedRoute>
                       <ApplicationGate>

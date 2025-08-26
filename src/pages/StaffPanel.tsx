@@ -68,6 +68,7 @@ import DesignManager from "@/components/DesignManager";
 import ServerInfoCard from "@/components/ServerInfoCard";
 import { PackageManager } from "@/components/PackageManager";
 import { SubscriptionOverview } from "@/components/SubscriptionOverview";
+import LawsManager from "@/components/LawsManager";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -650,6 +651,7 @@ const StaffPanel = () => {
                     {activeTab === "overview" && "Dashboard Overview"}
                     {activeTab === "applications" && "Application Management"}
                     {activeTab === "rules" && "Rules Management"}
+                    {activeTab === "laws" && "Laws Management"}
                     {activeTab === "staff" && "Staff Management"}
                     {activeTab === "role-management" && "Role & Permissions Management"}
                     {activeTab === "users" && "User Management"}
@@ -700,6 +702,12 @@ const StaffPanel = () => {
               {activeTab === "rules" && (
                 <div className="space-y-6">
                   <RulesManager />
+                </div>
+              )}
+
+              {activeTab === "laws" && (
+                <div className="space-y-6">
+                  <LawsManager />
                 </div>
               )}
 
