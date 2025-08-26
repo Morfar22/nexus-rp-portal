@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Scale, DollarSign, Clock, Shield, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import Navbar from '@/components/Navbar';
 
 interface Law {
   id: string;
@@ -147,86 +148,89 @@ const Laws = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero py-20">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Scale className="h-12 w-12 text-neon-purple" />
-            <h1 className="text-4xl font-bold text-foreground">City Laws</h1>
+    <div className="min-h-screen bg-gaming-dark">
+      <Navbar />
+      <div className="py-20 bg-gradient-hero">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Scale className="h-12 w-12 text-neon-purple" />
+              <h1 className="text-4xl font-bold text-foreground">City Laws</h1>
+            </div>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Official legislation and penalties for our city. All citizens are expected to know and follow these laws.
+            </p>
           </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Official legislation and penalties for our city. All citizens are expected to know and follow these laws.
-          </p>
-        </div>
 
-        {laws.length === 0 ? (
-          <Card className="bg-gaming-card border-gaming-border text-center py-12">
-            <CardContent>
-              <Scale className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">No Laws Found</h3>
-              <p className="text-muted-foreground">No laws have been published yet.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-8">
-            {categories.map((category) => (
-              <Card key={category} className="bg-gaming-card border-gaming-border">
-                <CardHeader>
-                  <CardTitle className="text-2xl text-foreground flex items-center gap-2">
-                    <Scale className="h-6 w-6 text-neon-purple" />
-                    {category}
-                  </CardTitle>
-                  <CardDescription>
-                    {groupedLaws[category]?.length || 0} law{groupedLaws[category]?.length !== 1 ? 's' : ''} in this category
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {groupedLaws[category]?.map((law, index) => (
-                      <div key={law.id}>
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-4">
-                            <h3 className="text-lg font-semibold text-foreground">
-                              {law.title}
-                            </h3>
-                            <div className="flex items-center gap-2">
-                              {getSeverityIcon(law.severity_level)}
-                              <Badge className={getSeverityColor(law.severity_level)}>
-                                {law.severity_level}
-                              </Badge>
-                            </div>
-                          </div>
-                          
-                          <p className="text-muted-foreground leading-relaxed">
-                            {law.description}
-                          </p>
-                          
-                          <div className="flex flex-wrap gap-4">
-                            <div className="flex items-center gap-2 text-sm">
-                              <DollarSign className="h-4 w-4 text-green-500" />
-                              <span className="font-medium">Fine:</span>
-                              <span className="text-foreground">{formatFine(law.fine_amount)}</span>
+          {laws.length === 0 ? (
+            <Card className="bg-gaming-card border-gaming-border text-center py-12">
+              <CardContent>
+                <Scale className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No Laws Found</h3>
+                <p className="text-muted-foreground">No laws have been published yet.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-8">
+              {categories.map((category) => (
+                <Card key={category} className="bg-gaming-card border-gaming-border">
+                  <CardHeader>
+                    <CardTitle className="text-2xl text-foreground flex items-center gap-2">
+                      <Scale className="h-6 w-6 text-neon-purple" />
+                      {category}
+                    </CardTitle>
+                    <CardDescription>
+                      {groupedLaws[category]?.length || 0} law{groupedLaws[category]?.length !== 1 ? 's' : ''} in this category
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {groupedLaws[category]?.map((law, index) => (
+                        <div key={law.id}>
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-4">
+                              <h3 className="text-lg font-semibold text-foreground">
+                                {law.title}
+                              </h3>
+                              <div className="flex items-center gap-2">
+                                {getSeverityIcon(law.severity_level)}
+                                <Badge className={getSeverityColor(law.severity_level)}>
+                                  {law.severity_level}
+                                </Badge>
+                              </div>
                             </div>
                             
-                            <div className="flex items-center gap-2 text-sm">
-                              <Clock className="h-4 w-4 text-orange-500" />
-                              <span className="font-medium">Jail Time:</span>
-                              <span className="text-foreground">{formatJailTime(law.jail_time_minutes)}</span>
+                            <p className="text-muted-foreground leading-relaxed">
+                              {law.description}
+                            </p>
+                            
+                            <div className="flex flex-wrap gap-4">
+                              <div className="flex items-center gap-2 text-sm">
+                                <DollarSign className="h-4 w-4 text-green-500" />
+                                <span className="font-medium">Fine:</span>
+                                <span className="text-foreground">{formatFine(law.fine_amount)}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 text-sm">
+                                <Clock className="h-4 w-4 text-orange-500" />
+                                <span className="font-medium">Jail Time:</span>
+                                <span className="text-foreground">{formatJailTime(law.jail_time_minutes)}</span>
+                              </div>
                             </div>
                           </div>
+                          
+                          {index < groupedLaws[category].length - 1 && (
+                            <Separator className="mt-6" />
+                          )}
                         </div>
-                        
-                        {index < groupedLaws[category].length - 1 && (
-                          <Separator className="mt-6" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
