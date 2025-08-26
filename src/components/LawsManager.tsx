@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Scale, Plus, Edit, Trash2, Save, X, DollarSign, Clock, AlertTriangle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Scale, Plus, Edit, Trash2, Save, X, DollarSign, Clock, AlertTriangle, Settings, FolderPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -43,6 +44,10 @@ const LawsManager = () => {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>(['General', 'Traffic', 'Property', 'Violence', 'Drug', 'Weapon', 'Public Order', 'Financial']);
+  const [isManagingCategories, setIsManagingCategories] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState<{ old: string; new: string } | null>(null);
   const [formData, setFormData] = useState<LawFormData>({
     title: '',
     description: '',
@@ -54,7 +59,6 @@ const LawsManager = () => {
     order_index: 0
   });
 
-  const categories = ['General', 'Traffic', 'Property', 'Violence', 'Drug', 'Weapon', 'Public Order', 'Financial'];
   const severityLevels = ['Minor', 'Moderate', 'Severe'];
 
   useEffect(() => {
@@ -71,6 +75,11 @@ const LawsManager = () => {
 
       if (error) throw error;
       setLaws(data || []);
+      
+      // Extract unique categories from existing laws
+      const uniqueCategories = [...new Set(data?.map(law => law.category) || [])];
+      const allCategories = [...new Set([...categories, ...uniqueCategories])];
+      setCategories(allCategories);
     } catch (error) {
       console.error('Error fetching laws:', error);
       toast({
@@ -215,6 +224,94 @@ const LawsManager = () => {
     return `${hours}h ${remainingMinutes}m`;
   };
 
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    
+    if (categories.includes(newCategoryName.trim())) {
+      toast({
+        title: 'Error',
+        description: 'Category already exists',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setCategories(prev => [...prev, newCategoryName.trim()]);
+    setNewCategoryName('');
+    toast({
+      title: 'Success',
+      description: 'Category added successfully'
+    });
+  };
+
+  const handleEditCategory = async (oldName: string, newName: string) => {
+    if (!newName.trim() || oldName === newName.trim()) {
+      setEditingCategory(null);
+      return;
+    }
+
+    if (categories.includes(newName.trim()) && newName.trim() !== oldName) {
+      toast({
+        title: 'Error',
+        description: 'Category name already exists',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      // Update all laws with this category
+      const { error } = await supabase
+        .from('laws')
+        .update({ category: newName.trim() })
+        .eq('category', oldName);
+
+      if (error) throw error;
+
+      // Update local categories state
+      setCategories(prev => prev.map(cat => cat === oldName ? newName.trim() : cat));
+      setEditingCategory(null);
+      fetchLaws(); // Refresh laws to show updated categories
+      
+      toast({
+        title: 'Success',
+        description: 'Category updated successfully'
+      });
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update category',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDeleteCategory = async (categoryName: string) => {
+    const lawsInCategory = laws.filter(law => law.category === categoryName);
+    
+    if (lawsInCategory.length > 0) {
+      toast({
+        title: 'Error',
+        description: `Cannot delete category with ${lawsInCategory.length} law(s). Move or delete the laws first.`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setCategories(prev => prev.filter(cat => cat !== categoryName));
+    toast({
+      title: 'Success',
+      description: 'Category deleted successfully'
+    });
+  };
+
+  // Group laws by category
+  const lawsByCategory = categories.reduce((acc, category) => {
+    acc[category] = laws.filter(law => law.category === category);
+    return acc;
+  }, {} as Record<string, Law[]>);
+
   if (loading) {
     return <div className="text-center py-8">Loading laws...</div>;
   }
@@ -229,14 +326,120 @@ const LawsManager = () => {
           </h2>
           <p className="text-muted-foreground">Manage city laws and legislation</p>
         </div>
-        <Button 
-          onClick={() => setIsCreating(true)}
-          className="bg-neon-purple hover:bg-neon-purple/80"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Law
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setIsManagingCategories(!isManagingCategories)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Manage Categories
+          </Button>
+          <Button 
+            onClick={() => setIsCreating(true)}
+            className="bg-neon-purple hover:bg-neon-purple/80"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Law
+          </Button>
+        </div>
       </div>
+
+      {isManagingCategories && (
+        <Card className="bg-gaming-card border-gaming-border">
+          <CardHeader>
+            <CardTitle className="text-foreground">Category Management</CardTitle>
+            <CardDescription>Add, edit, or delete law categories</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="New category name"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+              />
+              <Button onClick={handleAddCategory} size="sm">
+                <FolderPlus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-medium text-foreground">Existing Categories</h4>
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <div key={category} className="flex items-center gap-2 p-2 bg-muted/50 rounded">
+                    {editingCategory?.old === category ? (
+                      <div className="flex-1 flex gap-2">
+                        <Input
+                          value={editingCategory.new}
+                          onChange={(e) => setEditingCategory({ ...editingCategory, new: e.target.value })}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') handleEditCategory(category, editingCategory.new);
+                            if (e.key === 'Escape') setEditingCategory(null);
+                          }}
+                          autoFocus
+                        />
+                        <Button size="sm" onClick={() => handleEditCategory(category, editingCategory.new)}>
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingCategory(null)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="flex-1 text-foreground">{category}</span>
+                        <Badge variant="secondary">
+                          {lawsByCategory[category]?.length || 0} laws
+                        </Badge>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setEditingCategory({ old: category, new: category })}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete the "{category}" category? 
+                                {lawsByCategory[category]?.length > 0 && (
+                                  <span className="text-red-600 block mt-2">
+                                    This category contains {lawsByCategory[category].length} law(s). 
+                                    You must move or delete these laws first.
+                                  </span>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteCategory(category)}
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={lawsByCategory[category]?.length > 0}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {isCreating && (
         <Card className="bg-gaming-card border-gaming-border">
@@ -377,88 +580,110 @@ const LawsManager = () => {
         </Card>
       )}
 
-      <div className="grid gap-4">
-        {laws.map((law) => (
-          <Card key={law.id} className="bg-gaming-card border-gaming-border">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 space-y-3">
+      {laws.length === 0 ? (
+        <Card className="bg-gaming-card border-gaming-border">
+          <CardContent className="text-center py-12">
+            <Scale className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">No Laws Found</h3>
+            <p className="text-muted-foreground mb-4">Create your first law to get started.</p>
+            <Button onClick={() => setIsCreating(true)} className="bg-neon-purple hover:bg-neon-purple/80">
+              <Plus className="h-4 w-4 mr-2" />
+              Add First Law
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Accordion type="multiple" className="space-y-4">
+          {categories.map((category) => {
+            const categoryLaws = lawsByCategory[category] || [];
+            if (categoryLaws.length === 0) return null;
+            
+            return (
+              <AccordionItem 
+                key={category} 
+                value={category}
+                className="bg-gaming-card border-gaming-border rounded-lg"
+              >
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold text-foreground">{law.title}</h3>
-                    <Badge className={getSeverityColor(law.severity_level)}>
-                      {law.severity_level}
-                    </Badge>
-                    <Badge variant="outline">{law.category}</Badge>
-                    {!law.is_active && <Badge variant="secondary">Inactive</Badge>}
+                    <h3 className="text-lg font-semibold text-foreground">{category}</h3>
+                    <Badge variant="secondary">{categoryLaws.length} laws</Badge>
                   </div>
-                  
-                  <p className="text-muted-foreground">{law.description}</p>
-                  
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4 text-green-500" />
-                      <span>Fine: ${law.fine_amount.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4 text-orange-500" />
-                      <span>Jail: {formatJailTime(law.jail_time_minutes)}</span>
-                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-4">
+                  <div className="space-y-4">
+                    {categoryLaws.map((law) => (
+                      <Card key={law.id} className="bg-muted/50 border-muted">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 space-y-3">
+                              <div className="flex items-center gap-3">
+                                <h4 className="font-semibold text-foreground">{law.title}</h4>
+                                <Badge className={getSeverityColor(law.severity_level)}>
+                                  {law.severity_level}
+                                </Badge>
+                                {!law.is_active && <Badge variant="secondary">Inactive</Badge>}
+                              </div>
+                              
+                              <p className="text-muted-foreground text-sm">{law.description}</p>
+                              
+                              <div className="flex flex-wrap gap-4 text-sm">
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="h-4 w-4 text-green-500" />
+                                  <span>Fine: ${law.fine_amount.toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4 text-orange-500" />
+                                  <span>Jail: {formatJailTime(law.jail_time_minutes)}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(law)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Law</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete "{law.title}"? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDelete(law.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(law)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Law</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{law.title}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(law.id)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {laws.length === 0 && (
-          <Card className="bg-gaming-card border-gaming-border">
-            <CardContent className="text-center py-12">
-              <Scale className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">No Laws Found</h3>
-              <p className="text-muted-foreground mb-4">Create your first law to get started.</p>
-              <Button onClick={() => setIsCreating(true)} className="bg-neon-purple hover:bg-neon-purple/80">
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Law
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      )}
     </div>
   );
 };

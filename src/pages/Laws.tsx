@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { ChevronDown, ChevronRight, Scale, DollarSign, Clock, Shield, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Scale, DollarSign, Clock, Shield, AlertTriangle, AlertCircle } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import Navbar from '@/components/Navbar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Law {
   id: string;
@@ -24,6 +24,7 @@ const Laws = () => {
   const [laws, setLaws] = useState<Law[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchLaws();
@@ -43,16 +44,27 @@ const Laws = () => {
         return;
       }
 
-      setLaws(data || []);
-      
-      // Extract unique categories
-      const uniqueCategories = [...new Set(data?.map(law => law.category) || [])];
+      const fetchedLaws = data || [];
+      setLaws(fetchedLaws);
+
+      // Find alle unikke kategorier
+      const uniqueCategories = [...new Set(fetchedLaws.map(law => law.category))];
       setCategories(uniqueCategories);
+
+      // Init state så alle starter collapsed
+      setExpandedCategories(Object.fromEntries(uniqueCategories.map(cat => [cat, false])));
     } catch (error) {
       console.error('Error fetching laws:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category], // Toggle on each click
+    }));
   };
 
   const getSeverityIcon = (severity: string) => {
@@ -84,15 +96,11 @@ const Laws = () => {
   const formatJailTime = (minutes: number) => {
     if (minutes === 0) return 'No jail time';
     if (minutes < 60) return `${minutes} minutes`;
-    
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    
-    if (remainingMinutes === 0) {
-      return `${hours} hour${hours !== 1 ? 's' : ''}`;
-    }
-    
-    return `${hours}h ${remainingMinutes}m`;
+    return remainingMinutes === 0 
+      ? `${hours} hour${hours !== 1 ? 's' : ''}` 
+      : `${hours}h ${remainingMinutes}m`;
   };
 
   const formatFine = (amount: number) => {
@@ -116,7 +124,7 @@ const Laws = () => {
             <Skeleton className="h-12 w-64 mx-auto mb-4" />
             <Skeleton className="h-6 w-96 mx-auto" />
           </div>
-          
+          {/* Skeleton cards */}
           <div className="grid gap-8">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="bg-gaming-card border-gaming-border">
@@ -162,19 +170,14 @@ const Laws = () => {
             </p>
           </div>
 
-          {laws.length === 0 ? (
-            <Card className="bg-gaming-card border-gaming-border text-center py-12">
-              <CardContent>
-                <Scale className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">No Laws Found</h3>
-                <p className="text-muted-foreground">No laws have been published yet.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-8">
-              {categories.map((category) => (
-                <Card key={category} className="bg-gaming-card border-gaming-border">
-                  <CardHeader>
+          <div className="grid gap-8">
+            {categories.map((category) => (
+              <Card key={category} className="bg-gaming-card border-gaming-border">
+                <CardHeader
+                  onClick={() => toggleCategory(category)}
+                  className="cursor-pointer flex items-center justify-between"
+                >
+                  <div>
                     <CardTitle className="text-2xl text-foreground flex items-center gap-2">
                       <Scale className="h-6 w-6 text-neon-purple" />
                       {category}
@@ -182,16 +185,22 @@ const Laws = () => {
                     <CardDescription>
                       {groupedLaws[category]?.length || 0} law{groupedLaws[category]?.length !== 1 ? 's' : ''} in this category
                     </CardDescription>
-                  </CardHeader>
+                  </div>
+                  {expandedCategories[category] ? (
+                    <ChevronDown className="h-6 w-6 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </CardHeader>
+
+                {expandedCategories[category] && (
                   <CardContent>
                     <div className="space-y-6">
                       {groupedLaws[category]?.map((law, index) => (
                         <div key={law.id}>
                           <div className="space-y-3">
                             <div className="flex items-start justify-between gap-4">
-                              <h3 className="text-lg font-semibold text-foreground">
-                                {law.title}
-                              </h3>
+                              <h3 className="text-lg font-semibold text-foreground">{law.title}</h3>
                               <div className="flex items-center gap-2">
                                 {getSeverityIcon(law.severity_level)}
                                 <Badge className={getSeverityColor(law.severity_level)}>
@@ -199,18 +208,13 @@ const Laws = () => {
                                 </Badge>
                               </div>
                             </div>
-                            
-                            <p className="text-muted-foreground leading-relaxed">
-                              {law.description}
-                            </p>
-                            
+                            <p className="text-muted-foreground leading-relaxed">{law.description}</p>
                             <div className="flex flex-wrap gap-4">
                               <div className="flex items-center gap-2 text-sm">
                                 <DollarSign className="h-4 w-4 text-green-500" />
                                 <span className="font-medium">Fine:</span>
                                 <span className="text-foreground">{formatFine(law.fine_amount)}</span>
                               </div>
-                              
                               <div className="flex items-center gap-2 text-sm">
                                 <Clock className="h-4 w-4 text-orange-500" />
                                 <span className="font-medium">Jail Time:</span>
@@ -218,18 +222,15 @@ const Laws = () => {
                               </div>
                             </div>
                           </div>
-                          
-                          {index < groupedLaws[category].length - 1 && (
-                            <Separator className="mt-6" />
-                          )}
+                          {index < groupedLaws[category].length - 1 && <Separator className="mt-6" />}
                         </div>
                       ))}
                     </div>
                   </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                )}
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </div>
