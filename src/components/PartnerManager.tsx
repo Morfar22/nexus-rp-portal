@@ -17,7 +17,7 @@ interface Partner {
   description: string | null;
   logo_url: string | null;
   website_url: string | null;
-  discount_code: string | null;
+  discount_code?: string | null;
   is_active: boolean;
   order_index: number;
   created_at: string;
@@ -141,7 +141,8 @@ export default function PartnerManager() {
       logo_url: "",
       website_url: "",
       is_active: true,
-      order_index: 0
+      order_index: 0,
+      discount_code: ""
     });
     setEditingPartner(null);
     setIsDialogOpen(false);

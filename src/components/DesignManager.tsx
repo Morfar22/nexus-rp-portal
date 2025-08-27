@@ -39,6 +39,29 @@ const DesignManager = () => {
 
   useEffect(() => {
     fetchDesignSettings();
+    
+    // Set up real-time subscription for design settings
+    const channel = supabase
+      .channel('design-settings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'server_settings',
+          filter: 'setting_key=in.(design_settings,general_settings)'
+        },
+        (payload) => {
+          console.log('Design settings updated:', payload);
+          // Refresh settings when they change
+          fetchDesignSettings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -116,6 +139,37 @@ const DesignManager = () => {
       toast({ title: "Upload Failed", description: "Failed to upload image. Check console for details.", variant: "destructive" });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const saveDesignSettingsInternal = async (settings: DesignSettings) => {
+    try {
+      const designData = { ...settings };
+      delete designData.server_name;
+      delete designData.welcome_message;
+      
+      await supabase
+        .from('server_settings')
+        .upsert({
+          setting_key: 'design_settings',
+          setting_value: designData,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'setting_key' });
+
+      if (settings.server_name || settings.welcome_message) {
+        await supabase
+          .from('server_settings')
+          .upsert({
+            setting_key: 'general_settings',
+            setting_value: {
+              server_name: settings.server_name,
+              welcome_message: settings.welcome_message
+            },
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'setting_key' });
+      }
+    } catch (error) {
+      console.error('Error auto-saving design settings:', error);
     }
   };
 
@@ -410,73 +464,85 @@ const DesignManager = () => {
                 <div>
                   <Label className="text-foreground">Primary Color</Label>
                   <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.primary_color || '#339999'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, primary_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.primary_color || '#339999'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, primary_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
+                     <Input
+                       type="color"
+                       value={designSettings.primary_color || '#339999'}
+                       onChange={async (e) => {
+                         const newSettings = { ...designSettings, primary_color: e.target.value };
+                         setDesignSettings(newSettings);
+                         applyDesignSettings(newSettings);
+                         // Auto-save on color change for live updates
+                         await saveDesignSettingsInternal(newSettings);
+                       }}
+                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                     />
+                     <Input
+                       value={designSettings.primary_color || '#339999'}
+                       onChange={async (e) => {
+                         const newSettings = { ...designSettings, primary_color: e.target.value };
+                         setDesignSettings(newSettings);
+                         applyDesignSettings(newSettings);
+                         // Auto-save on color change for live updates
+                         await saveDesignSettingsInternal(newSettings);
+                       }}
+                       className="bg-gaming-dark border-gaming-border text-foreground"
+                     />
                   </div>
                 </div>
                 <div>
                   <Label className="text-foreground">Secondary Color</Label>
                   <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.secondary_color || '#f0e68c'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, secondary_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.secondary_color || '#f0e68c'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, secondary_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
+                     <Input
+                       type="color"
+                       value={designSettings.secondary_color || '#f0e68c'}
+                       onChange={async (e) => {
+                         const newSettings = { ...designSettings, secondary_color: e.target.value };
+                         setDesignSettings(newSettings);
+                         applyDesignSettings(newSettings);
+                         // Auto-save on color change for live updates
+                         await saveDesignSettingsInternal(newSettings);
+                       }}
+                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                     />
+                     <Input
+                       value={designSettings.secondary_color || '#f0e68c'}
+                       onChange={async (e) => {
+                         const newSettings = { ...designSettings, secondary_color: e.target.value };
+                         setDesignSettings(newSettings);
+                         applyDesignSettings(newSettings);
+                         // Auto-save on color change for live updates
+                         await saveDesignSettingsInternal(newSettings);
+                       }}
+                       className="bg-gaming-dark border-gaming-border text-foreground"
+                     />
                   </div>
                 </div>
                 <div>
                   <Label className="text-foreground">Accent Color</Label>
                   <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.accent_color || '#00ccff'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, accent_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.accent_color || '#00ccff'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, accent_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
+                     <Input
+                       type="color"
+                       value={designSettings.accent_color || '#00ccff'}
+                       onChange={async (e) => {
+                         const newSettings = { ...designSettings, accent_color: e.target.value };
+                         setDesignSettings(newSettings);
+                         applyDesignSettings(newSettings);
+                         // Auto-save on color change for live updates
+                         await saveDesignSettingsInternal(newSettings);
+                       }}
+                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
+                     />
+                     <Input
+                       value={designSettings.accent_color || '#00ccff'}
+                       onChange={async (e) => {
+                         const newSettings = { ...designSettings, accent_color: e.target.value };
+                         setDesignSettings(newSettings);
+                         applyDesignSettings(newSettings);
+                         // Auto-save on color change for live updates
+                         await saveDesignSettingsInternal(newSettings);
+                       }}
+                       className="bg-gaming-dark border-gaming-border text-foreground"
+                     />
                   </div>
                 </div>
                 <div>
