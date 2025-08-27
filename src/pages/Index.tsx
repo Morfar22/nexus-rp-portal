@@ -209,30 +209,6 @@ const Index = () => {
       } else {
         // Fallback to default features only if no data exists
         setHomepageFeatures([
-            {
-              title: "Professional RP Community",
-              description: "Join 300+ serious roleplayers in our whitelist-only server",
-              icon: "Users",
-              color: "text-neon-teal"
-            },
-            {
-              title: "Experienced Staff Team",
-              description: "24/7 moderation ensuring fair and immersive gameplay",
-              icon: "Shield",
-              color: "text-neon-gold"
-            },
-            {
-              title: "Custom Content",
-              description: "Unique jobs, vehicles, and locations for endless possibilities",
-              icon: "Map",
-              color: "text-neon-blue"
-            },
-            {
-              title: "99.9% Uptime",
-              description: "Reliable server infrastructure for uninterrupted gameplay",
-              icon: "Clock",
-              color: "text-golden-light"
-            }
         ]);
       }
 
