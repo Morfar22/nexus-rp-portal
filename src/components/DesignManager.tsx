@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,28 @@ const DesignManager = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+
+  // Debounced auto-save function
+  const debouncedAutoSave = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (settings: DesignSettings) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(async () => {
+          await saveDesignSettingsInternal(settings);
+        }, 500);
+      };
+    })(),
+    []
+  );
+
+  // Function to handle color changes with auto-save
+  const handleColorChange = useCallback((colorKey: keyof DesignSettings, value: string) => {
+    const newSettings = { ...designSettings, [colorKey]: value };
+    setDesignSettings(newSettings);
+    applyDesignSettings(newSettings);
+    debouncedAutoSave(newSettings);
+  }, [designSettings, debouncedAutoSave]);
 
   useEffect(() => {
     fetchDesignSettings();
@@ -463,28 +485,16 @@ const DesignManager = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <Label className="text-foreground">Primary Color</Label>
-                  <div className="flex items-center space-x-2">
+                   <div className="flex items-center space-x-2">
                      <Input
                        type="color"
                        value={designSettings.primary_color || '#339999'}
-                       onChange={async (e) => {
-                         const newSettings = { ...designSettings, primary_color: e.target.value };
-                         setDesignSettings(newSettings);
-                         applyDesignSettings(newSettings);
-                         // Auto-save on color change for live updates
-                         await saveDesignSettingsInternal(newSettings);
-                       }}
+                       onChange={(e) => handleColorChange('primary_color', e.target.value)}
                        className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                      />
                      <Input
                        value={designSettings.primary_color || '#339999'}
-                       onChange={async (e) => {
-                         const newSettings = { ...designSettings, primary_color: e.target.value };
-                         setDesignSettings(newSettings);
-                         applyDesignSettings(newSettings);
-                         // Auto-save on color change for live updates
-                         await saveDesignSettingsInternal(newSettings);
-                       }}
+                       onChange={(e) => handleColorChange('primary_color', e.target.value)}
                        className="bg-gaming-dark border-gaming-border text-foreground"
                      />
                   </div>
@@ -495,24 +505,12 @@ const DesignManager = () => {
                      <Input
                        type="color"
                        value={designSettings.secondary_color || '#f0e68c'}
-                       onChange={async (e) => {
-                         const newSettings = { ...designSettings, secondary_color: e.target.value };
-                         setDesignSettings(newSettings);
-                         applyDesignSettings(newSettings);
-                         // Auto-save on color change for live updates
-                         await saveDesignSettingsInternal(newSettings);
-                       }}
+                       onChange={(e) => handleColorChange('secondary_color', e.target.value)}
                        className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                      />
                      <Input
                        value={designSettings.secondary_color || '#f0e68c'}
-                       onChange={async (e) => {
-                         const newSettings = { ...designSettings, secondary_color: e.target.value };
-                         setDesignSettings(newSettings);
-                         applyDesignSettings(newSettings);
-                         // Auto-save on color change for live updates
-                         await saveDesignSettingsInternal(newSettings);
-                       }}
+                       onChange={(e) => handleColorChange('secondary_color', e.target.value)}
                        className="bg-gaming-dark border-gaming-border text-foreground"
                      />
                   </div>
@@ -523,24 +521,12 @@ const DesignManager = () => {
                      <Input
                        type="color"
                        value={designSettings.accent_color || '#00ccff'}
-                       onChange={async (e) => {
-                         const newSettings = { ...designSettings, accent_color: e.target.value };
-                         setDesignSettings(newSettings);
-                         applyDesignSettings(newSettings);
-                         // Auto-save on color change for live updates
-                         await saveDesignSettingsInternal(newSettings);
-                       }}
+                       onChange={(e) => handleColorChange('accent_color', e.target.value)}
                        className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                      />
                      <Input
                        value={designSettings.accent_color || '#00ccff'}
-                       onChange={async (e) => {
-                         const newSettings = { ...designSettings, accent_color: e.target.value };
-                         setDesignSettings(newSettings);
-                         applyDesignSettings(newSettings);
-                         // Auto-save on color change for live updates
-                         await saveDesignSettingsInternal(newSettings);
-                       }}
+                       onChange={(e) => handleColorChange('accent_color', e.target.value)}
                        className="bg-gaming-dark border-gaming-border text-foreground"
                      />
                   </div>
@@ -551,20 +537,12 @@ const DesignManager = () => {
                     <Input
                       type="color"
                       value={designSettings.background_color || '#1a1a1a'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, background_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('background_color', e.target.value)}
                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                     />
                     <Input
                       value={designSettings.background_color || '#1a1a1a'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, background_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('background_color', e.target.value)}
                       className="bg-gaming-dark border-gaming-border text-foreground"
                     />
                   </div>
@@ -575,20 +553,12 @@ const DesignManager = () => {
                     <Input
                       type="color"
                       value={designSettings.text_color || '#f5f5dc'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, text_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('text_color', e.target.value)}
                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                     />
                     <Input
                       value={designSettings.text_color || '#f5f5dc'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, text_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('text_color', e.target.value)}
                       className="bg-gaming-dark border-gaming-border text-foreground"
                     />
                   </div>
@@ -599,20 +569,12 @@ const DesignManager = () => {
                     <Input
                       type="color"
                       value={designSettings.border_color || '#2a2a2a'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, border_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('border_color', e.target.value)}
                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                     />
                     <Input
                       value={designSettings.border_color || '#2a2a2a'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, border_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('border_color', e.target.value)}
                       className="bg-gaming-dark border-gaming-border text-foreground"
                     />
                   </div>
@@ -623,20 +585,12 @@ const DesignManager = () => {
                     <Input
                       type="color"
                       value={designSettings.card_color || '#1e1e1e'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, card_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('card_color', e.target.value)}
                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                     />
                     <Input
                       value={designSettings.card_color || '#1e1e1e'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, card_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('card_color', e.target.value)}
                       className="bg-gaming-dark border-gaming-border text-foreground"
                     />
                   </div>
@@ -647,20 +601,12 @@ const DesignManager = () => {
                     <Input
                       type="color"
                       value={designSettings.muted_color || '#404040'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, muted_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('muted_color', e.target.value)}
                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                     />
                     <Input
                       value={designSettings.muted_color || '#404040'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, muted_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('muted_color', e.target.value)}
                       className="bg-gaming-dark border-gaming-border text-foreground"
                     />
                   </div>
@@ -671,20 +617,12 @@ const DesignManager = () => {
                     <Input
                       type="color"
                       value={designSettings.destructive_color || '#ef4444'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, destructive_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('destructive_color', e.target.value)}
                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
                     />
                     <Input
                       value={designSettings.destructive_color || '#ef4444'}
-                      onChange={(e) => {
-                        const newSettings = { ...designSettings, destructive_color: e.target.value };
-                        setDesignSettings(newSettings);
-                        applyDesignSettings(newSettings);
-                      }}
+                      onChange={(e) => handleColorChange('destructive_color', e.target.value)}
                       className="bg-gaming-dark border-gaming-border text-foreground"
                     />
                   </div>
