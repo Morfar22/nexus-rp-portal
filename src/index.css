@@ -9,70 +9,85 @@
 
 @layer base {
   :root {
-    /* === Color Tokens === */
-    --background: 40 15% 12%;         /* Warm dark brown-black */
-    --foreground: 48 96% 89%;         /* Warm cream white */
+    /* === Adventure RP Color System === */
+    --background: 220 30% 8%;         /* Deep navy like the logo background */
+    --foreground: 35 20% 95%;         /* Clean white/cream */
 
-    --card: 40 20% 18%;               /* Warm dark card */
-    --card-foreground: 48 96% 89%;
+    --card: 220 25% 12%;              /* Dark navy card */
+    --card-foreground: 35 20% 95%;
 
-    --popover: 40 20% 15%;
-    --popover-foreground: 48 96% 89%;
+    --popover: 220 30% 10%;
+    --popover-foreground: 35 20% 95%;
 
-    --primary: 185 84% 39%;           /* Beautiful teal as primary */
-    --primary-foreground: 48 96% 89%;
+    --primary: 25 95% 55%;            /* Adventure RP orange */
+    --primary-foreground: 220 30% 8%;
 
-    --secondary: 48 90% 58%;          /* Golden amber as secondary */
-    --secondary-foreground: 40 20% 8%;
+    --secondary: 35 85% 60%;          /* Warm amber */
+    --secondary-foreground: 220 30% 8%;
 
-    --muted: 40 15% 22%;
-    --muted-foreground: 40 30% 70%;
+    --muted: 220 20% 15%;
+    --muted-foreground: 35 15% 70%;
 
-    --accent: 185 84% 50%;            /* Brighter teal accent */
-    --accent-foreground: 48 96% 89%;
+    --accent: 30 90% 50%;             /* Bright orange accent */
+    --accent-foreground: 220 30% 8%;
 
-    --destructive: 0 84% 60%;         /* Vibrant red */
-    --destructive-foreground: 48 96% 89%;
+    --destructive: 0 85% 60%;         /* Red */
+    --destructive-foreground: 35 20% 95%;
 
-    --border: 40 20% 22%;
-    --input: 40 20% 22%;
-    --ring: 185 84% 39%;              /* Teal ring focus */
+    --border: 220 25% 18%;
+    --input: 220 25% 15%;
+    --ring: 25 95% 55%;
 
-    /* === Extended Theme Colors === */
-    --neon-gold: 48 90% 58%;
-    --neon-teal: 185 84% 39%;
-    --neon-blue: 200 100% 50%;
-    --neon-purple: 280 100% 70%;
-    --neon-green: 120 100% 50%;
-    --neon-cream: 48 30% 85%;
+    /* === Adventure RP Extended Palette === */
+    --adventure-orange: 25 95% 55%;
+    --adventure-amber: 35 85% 60%;
+    --adventure-gold: 40 90% 65%;
+    --adventure-cream: 35 20% 95%;
+    --adventure-navy: 220 30% 8%;
+    --adventure-dark: 220 25% 12%;
+    --adventure-border: 220 25% 18%;
+    
+    /* Legacy color names mapped to Adventure RP theme */
+    --neon-gold: 35 85% 60%;
+    --neon-teal: 25 95% 55%;
+    --neon-blue: 200 70% 55%;
+    --neon-purple: 260 60% 65%;
+    --neon-green: 120 60% 55%;
+    --neon-pink: 320 60% 65%;
+    --neon-cream: 35 20% 95%;
     --patriot-navy: 220 30% 15%;
-    --golden-light: 48 100% 70%;
-    --golden-dark: 48 80% 45%;
-    --teal-light: 185 100% 50%;
-    --teal-dark: 185 84% 30%;
-    --cyber-gold: 48 90% 58%;
+    --golden-light: 35 85% 70%;
+    --golden-dark: 30 80% 45%;
+    --teal-light: 25 95% 65%;
+    --teal-dark: 25 75% 40%;
+    --cyber-gold: 35 85% 60%;
 
-    --gaming-dark: 40 15% 12%;
-    --gaming-darker: 40 20% 8%;
-    --gaming-card: 40 25% 15%;
-    --gaming-border: 40 20% 25%;
-    --gaming-border-hover: 185 84% 39%;
+    --gaming-dark: 220 30% 8%;
+    --gaming-darker: 220 35% 6%;
+    --gaming-card: 220 25% 12%;
+    --gaming-border: 220 25% 18%;
+    --gaming-border-hover: 25 95% 55%;
 
-    /* === Gradients === */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
-    --gradient-hero: linear-gradient(140deg, hsl(var(--gaming-darker)), hsl(var(--gaming-dark)), hsl(var(--primary)), hsl(var(--secondary)));
-    --gradient-card: linear-gradient(145deg, hsl(var(--gaming-card)), hsl(var(--gaming-dark)));
-    --gradient-neon: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--neon-teal)));
-    --gradient-cyber: linear-gradient(43deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--teal-light)));
+    /* === Adventure RP Gradients === */
+    --gradient-primary: linear-gradient(135deg, hsl(25 95% 55%), hsl(35 85% 60%));
+    --gradient-hero: linear-gradient(140deg, hsl(220 35% 6%), hsl(220 30% 8%), hsl(25 95% 55%), hsl(35 85% 60%));
+    --gradient-card: linear-gradient(145deg, hsl(220 25% 12%), hsl(220 30% 8%));
+    --gradient-neon: linear-gradient(90deg, hsl(25 95% 55%), hsl(30 90% 50%), hsl(35 85% 60%));
+    --gradient-cyber: linear-gradient(45deg, hsl(25 95% 55%), hsl(35 85% 60%), hsl(40 90% 65%));
+    --gradient-electric: linear-gradient(120deg, hsl(25 95% 55%), hsl(35 85% 60%), hsl(40 90% 65%));
+    --gradient-gaming: linear-gradient(160deg, hsl(220 35% 6%), hsl(25 95% 55% / 0.1), hsl(220 25% 12%));
+    --gradient-adventure: linear-gradient(180deg, hsl(25 95% 55%), hsl(35 85% 60%), hsl(40 90% 65%));
 
-    /* === Effects === */
-    --glow-primary: 0 0 20px hsl(var(--primary) / 0.4), 0 0 40px hsl(var(--primary) / 0.2);
-    --glow-secondary: 0 0 20px hsl(var(--secondary) / 0.4), 0 0 40px hsl(var(--secondary) / 0.2);
-    --glow-golden: 0 0 18px hsl(var(--neon-gold) / 0.34), 0 0 36px hsl(var(--neon-gold) / 0.19);
-    --glow-cyber: 0 0 25px hsl(var(--primary) / 0.3), 0 0 50px hsl(var(--secondary) / 0.2);
-    --shadow-gaming: 0 10px 30px hsl(var(--gaming-darker) / 0.8);
-    --shadow-neon: 0 5px 20px hsl(var(--primary) / 0.3);
-    --shadow-elegant: 0 4px 20px hsl(var(--gaming-darker) / 0.4);
+    /* === Adventure RP Effects === */
+    --glow-primary: 0 0 25px hsl(25 95% 55% / 0.5), 0 0 50px hsl(25 95% 55% / 0.3), 0 0 75px hsl(25 95% 55% / 0.1);
+    --glow-secondary: 0 0 25px hsl(35 85% 60% / 0.5), 0 0 50px hsl(35 85% 60% / 0.3);
+    --glow-accent: 0 0 25px hsl(30 90% 50% / 0.5), 0 0 50px hsl(30 90% 50% / 0.3);
+    --glow-golden: 0 0 20px hsl(35 85% 60% / 0.4), 0 0 40px hsl(35 85% 60% / 0.2);
+    --glow-cyber: 0 0 30px hsl(25 95% 55% / 0.4), 0 0 60px hsl(35 85% 60% / 0.3);
+    --shadow-gaming: 0 15px 40px hsl(220 35% 6% / 0.9);
+    --shadow-neon: 0 8px 25px hsl(25 95% 55% / 0.4);
+    --shadow-elegant: 0 6px 25px hsl(220 35% 6% / 0.6);
+    --shadow-electric: 0 0 40px hsl(25 95% 55% / 0.3), 0 0 80px hsl(35 85% 60% / 0.2);
 
     /* === Animation Variables === */
     --animation-speed-fast: 0.15s;
@@ -103,33 +118,33 @@
   }
 
   .dark {
-    --background: 40 20% 5%;
-    --foreground: 48 96% 89%;
-    --card: 40 25% 10%;
-    --card-foreground: 48 96% 89%;
-    --popover: 40 20% 9%;
-    --popover-foreground: 48 96% 89%;
-    --primary: 48 90% 58%;
-    --primary-foreground: 40 20% 5%;
-    --secondary: 185 84% 39%;
-    --secondary-foreground: 48 96% 89%;
-    --muted: 40 20% 11%;
-    --muted-foreground: 40 30% 70%;
-    --accent: 185 84% 39%;
-    --accent-foreground: 48 96% 89%;
-    --destructive: 0 71% 48%;
-    --destructive-foreground: 48 96% 89%;
-    --border: 40 20% 11%;
-    --input: 40 20% 11%;
-    --ring: 48 90% 58%;
-    --sidebar-background: 40 25% 10%;
-    --sidebar-foreground: 185 84% 39%;
-    --sidebar-primary: 48 90% 58%;
-    --sidebar-primary-foreground: 40 20% 5%;
-    --sidebar-accent: 185 84% 39%;
-    --sidebar-accent-foreground: 40 20% 11%;
-    --sidebar-border: 40 20% 12%;
-    --sidebar-ring: 185 84% 39%;
+    --background: 220 35% 4%;
+    --foreground: 35 20% 98%;
+    --card: 220 30% 8%;
+    --card-foreground: 35 20% 98%;
+    --popover: 220 35% 6%;
+    --popover-foreground: 35 20% 98%;
+    --primary: 25 95% 60%;
+    --primary-foreground: 220 35% 4%;
+    --secondary: 35 85% 65%;
+    --secondary-foreground: 220 35% 4%;
+    --muted: 220 25% 12%;
+    --muted-foreground: 35 15% 75%;
+    --accent: 30 90% 55%;
+    --accent-foreground: 220 35% 4%;
+    --destructive: 0 85% 65%;
+    --destructive-foreground: 35 20% 98%;
+    --border: 220 25% 14%;
+    --input: 220 25% 10%;
+    --ring: 25 95% 60%;
+    --sidebar-background: 220 30% 8%;
+    --sidebar-foreground: 25 95% 55%;
+    --sidebar-primary: 25 95% 60%;
+    --sidebar-primary-foreground: 220 35% 4%;
+    --sidebar-accent: 35 85% 65%;
+    --sidebar-accent-foreground: 220 25% 10%;
+    --sidebar-border: 220 25% 12%;
+    --sidebar-ring: 25 95% 55%;
   }
 }
 
@@ -140,6 +155,9 @@
   body {
     @apply bg-background text-foreground font-inter;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-image: radial-gradient(circle at 25% 25%, hsl(25 95% 55% / 0.05) 0%, transparent 50%),
+                      radial-gradient(circle at 75% 75%, hsl(35 85% 60% / 0.05) 0%, transparent 50%);
+    min-height: 100vh;
   }
 }
 

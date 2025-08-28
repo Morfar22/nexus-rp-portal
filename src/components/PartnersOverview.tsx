@@ -10,8 +10,8 @@ interface Partner {
   is_active: boolean;
   description?: string;
   website_url?: string;
-  created_at: string;
   discount_code?: string;
+  created_at: string;
 }
 
 interface PartnersOverviewProps {

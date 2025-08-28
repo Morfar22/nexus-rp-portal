@@ -140,9 +140,9 @@ export default function PartnerManager() {
       description: "",
       logo_url: "",
       website_url: "",
+      discount_code: "",
       is_active: true,
-      order_index: 0,
-      discount_code: ""
+      order_index: 0
     });
     setEditingPartner(null);
     setIsDialogOpen(false);

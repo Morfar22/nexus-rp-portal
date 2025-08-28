@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,53 +37,8 @@ const DesignManager = () => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
-  // Debounced auto-save function
-  const debouncedAutoSave = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (settings: DesignSettings) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(async () => {
-          await saveDesignSettingsInternal(settings);
-        }, 500);
-      };
-    })(),
-    []
-  );
-
-  // Function to handle color changes with auto-save
-  const handleColorChange = useCallback((colorKey: keyof DesignSettings, value: string) => {
-    const newSettings = { ...designSettings, [colorKey]: value };
-    setDesignSettings(newSettings);
-    applyDesignSettings(newSettings);
-    debouncedAutoSave(newSettings);
-  }, [designSettings, debouncedAutoSave]);
-
   useEffect(() => {
     fetchDesignSettings();
-    
-    // Set up real-time subscription for design settings
-    const channel = supabase
-      .channel('design-settings-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'server_settings',
-          filter: 'setting_key=in.(design_settings,general_settings)'
-        },
-        (payload) => {
-          console.log('Design settings updated:', payload);
-          // Refresh settings when they change
-          fetchDesignSettings();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   useEffect(() => {
@@ -161,37 +116,6 @@ const DesignManager = () => {
       toast({ title: "Upload Failed", description: "Failed to upload image. Check console for details.", variant: "destructive" });
     } finally {
       setUploading(false);
-    }
-  };
-
-  const saveDesignSettingsInternal = async (settings: DesignSettings) => {
-    try {
-      const designData = { ...settings };
-      delete designData.server_name;
-      delete designData.welcome_message;
-      
-      await supabase
-        .from('server_settings')
-        .upsert({
-          setting_key: 'design_settings',
-          setting_value: designData,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'setting_key' });
-
-      if (settings.server_name || settings.welcome_message) {
-        await supabase
-          .from('server_settings')
-          .upsert({
-            setting_key: 'general_settings',
-            setting_value: {
-              server_name: settings.server_name,
-              welcome_message: settings.welcome_message
-            },
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'setting_key' });
-      }
-    } catch (error) {
-      console.error('Error auto-saving design settings:', error);
     }
   };
 
@@ -421,7 +345,6 @@ const DesignManager = () => {
         <Tabs defaultValue="hero" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="hero">Hero Section</TabsTrigger>
-            <TabsTrigger value="colors">Colors</TabsTrigger>
             <TabsTrigger value="typography">Typography</TabsTrigger>
             <TabsTrigger value="layout">Layout</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
@@ -475,157 +398,6 @@ const DesignManager = () => {
                     rows={6}
                     className="bg-gaming-dark border-gaming-border text-foreground"
                   />
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-          <TabsContent value="colors" className="space-y-6">
-            <Card className="p-4 bg-gaming-darker border-gaming-border">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">Color Scheme</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-foreground">Primary Color</Label>
-                   <div className="flex items-center space-x-2">
-                     <Input
-                       type="color"
-                       value={designSettings.primary_color || '#339999'}
-                       onChange={(e) => handleColorChange('primary_color', e.target.value)}
-                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                     />
-                     <Input
-                       value={designSettings.primary_color || '#339999'}
-                       onChange={(e) => handleColorChange('primary_color', e.target.value)}
-                       className="bg-gaming-dark border-gaming-border text-foreground"
-                     />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-foreground">Secondary Color</Label>
-                  <div className="flex items-center space-x-2">
-                     <Input
-                       type="color"
-                       value={designSettings.secondary_color || '#f0e68c'}
-                       onChange={(e) => handleColorChange('secondary_color', e.target.value)}
-                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                     />
-                     <Input
-                       value={designSettings.secondary_color || '#f0e68c'}
-                       onChange={(e) => handleColorChange('secondary_color', e.target.value)}
-                       className="bg-gaming-dark border-gaming-border text-foreground"
-                     />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-foreground">Accent Color</Label>
-                  <div className="flex items-center space-x-2">
-                     <Input
-                       type="color"
-                       value={designSettings.accent_color || '#00ccff'}
-                       onChange={(e) => handleColorChange('accent_color', e.target.value)}
-                       className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                     />
-                     <Input
-                       value={designSettings.accent_color || '#00ccff'}
-                       onChange={(e) => handleColorChange('accent_color', e.target.value)}
-                       className="bg-gaming-dark border-gaming-border text-foreground"
-                     />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-foreground">Background Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.background_color || '#1a1a1a'}
-                      onChange={(e) => handleColorChange('background_color', e.target.value)}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.background_color || '#1a1a1a'}
-                      onChange={(e) => handleColorChange('background_color', e.target.value)}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-foreground">Text Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.text_color || '#f5f5dc'}
-                      onChange={(e) => handleColorChange('text_color', e.target.value)}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.text_color || '#f5f5dc'}
-                      onChange={(e) => handleColorChange('text_color', e.target.value)}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-foreground">Border Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.border_color || '#2a2a2a'}
-                      onChange={(e) => handleColorChange('border_color', e.target.value)}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.border_color || '#2a2a2a'}
-                      onChange={(e) => handleColorChange('border_color', e.target.value)}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-foreground">Card Background</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.card_color || '#1e1e1e'}
-                      onChange={(e) => handleColorChange('card_color', e.target.value)}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.card_color || '#1e1e1e'}
-                      onChange={(e) => handleColorChange('card_color', e.target.value)}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-foreground">Muted Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.muted_color || '#404040'}
-                      onChange={(e) => handleColorChange('muted_color', e.target.value)}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.muted_color || '#404040'}
-                      onChange={(e) => handleColorChange('muted_color', e.target.value)}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-foreground">Destructive Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="color"
-                      value={designSettings.destructive_color || '#ef4444'}
-                      onChange={(e) => handleColorChange('destructive_color', e.target.value)}
-                      className="w-16 h-10 p-1 bg-gaming-dark border-gaming-border"
-                    />
-                    <Input
-                      value={designSettings.destructive_color || '#ef4444'}
-                      onChange={(e) => handleColorChange('destructive_color', e.target.value)}
-                      className="bg-gaming-dark border-gaming-border text-foreground"
-                    />
-                  </div>
                 </div>
               </div>
             </Card>
