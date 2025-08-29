@@ -31,11 +31,17 @@ export function SubscriptionOverview() {
       setLoading(true);
       const { data, error } = await supabase
         .from("subscribers")
-        .select("*")
-        .eq("subscribed", true)
+        .select(`
+          *,
+          profiles (
+            username,
+            avatar_url
+          )
+        `)
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
+      console.log("Fetched subscriptions:", data);
       setSubscriptions(data || []);
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
@@ -99,10 +105,10 @@ export function SubscriptionOverview() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
-              Active Subscriptions
+              Subscription Management
             </CardTitle>
             <CardDescription>
-              Overview of all active user subscriptions
+              Overview and management of all user subscriptions (active and inactive)
             </CardDescription>
           </div>
           <Button
@@ -119,7 +125,7 @@ export function SubscriptionOverview() {
       <CardContent>
         {subscriptions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No active subscriptions found
+            No subscriptions found
           </div>
         ) : (
           <div className="space-y-4">
@@ -166,8 +172,29 @@ export function SubscriptionOverview() {
             </div>
             
             <div className="border-t pt-4 mt-6">
-              <div className="text-sm text-muted-foreground">
-                Total Active Subscriptions: <span className="font-medium text-foreground">{subscriptions.length}</span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Total Subscriptions:</span>
+                  <span className="font-medium text-foreground ml-2">{subscriptions.length}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Active:</span>
+                  <span className="font-medium text-green-500 ml-2">
+                    {subscriptions.filter(s => s.subscribed).length}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Inactive:</span>
+                  <span className="font-medium text-red-500 ml-2">
+                    {subscriptions.filter(s => !s.subscribed).length}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">With Tiers:</span>
+                  <span className="font-medium text-foreground ml-2">
+                    {subscriptions.filter(s => s.subscription_tier).length}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
