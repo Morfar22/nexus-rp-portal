@@ -29,20 +29,40 @@ export function SubscriptionOverview() {
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // First get all subscribers
+      const { data: subscribersData, error: subscribersError } = await supabase
         .from("subscribers")
-        .select(`
-          *,
-          profiles (
-            username,
-            avatar_url
-          )
-        `)
+        .select("*")
         .order("updated_at", { ascending: false });
 
-      if (error) throw error;
-      console.log("Fetched subscriptions:", data);
-      setSubscriptions(data || []);
+      if (subscribersError) throw subscribersError;
+      
+      // Then get profiles for all user_ids
+      const userIds = subscribersData?.map(s => s.user_id).filter(Boolean) || [];
+      let profilesData = [];
+      
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .in("id", userIds);
+        
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+      
+      // Combine the data
+      const combinedData = subscribersData?.map(subscriber => ({
+        ...subscriber,
+        profiles: profilesData.find(p => p.id === subscriber.user_id) || null
+      })) || [];
+      
+      console.log("Fetched subscriptions:", combinedData);
+      setSubscriptions(combinedData);
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
       toast.error("Failed to load subscriptions");
