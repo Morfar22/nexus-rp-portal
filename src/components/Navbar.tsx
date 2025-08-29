@@ -234,12 +234,12 @@ const Navbar = () => {
           <Link 
             key={item.id}
             to={item.path} 
-            className={`
-              relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 group
+             className={`
+              relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 group
               block md:inline-block
               ${location.pathname === item.path 
-                ? "bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/30 shadow-md"
-                : "text-muted-foreground hover:text-foreground hover:bg-gaming-darker/80 hover:scale-105"
+                ? "bg-gradient-primary text-white shadow-glow-primary border border-primary/50"
+                : "text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:scale-105"
               }
             `}
             onClick={() => setIsOpen(false)}
@@ -375,7 +375,7 @@ const Navbar = () => {
           </div>
         </Link>
         
-        <div className="hidden md:flex items-center space-x-1">
+        <div className="hidden md:flex items-center space-x-2 bg-gaming-darker/30 rounded-xl px-4 py-2 border border-gaming-border/50">
           <NavLinks />
         </div>
         

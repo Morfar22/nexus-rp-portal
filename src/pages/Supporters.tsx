@@ -57,7 +57,7 @@ export default function Supporters() {
           message,
           is_anonymous,
           is_featured,
-          profiles!inner (
+          profiles (
             username,
             avatar_url
           )
@@ -67,6 +67,8 @@ export default function Supporters() {
         .limit(50);
 
       if (error) throw error;
+      
+      console.log("Supporters data:", data);
       
       const typedData = (data || []).map(item => ({
         ...item,
