@@ -14,6 +14,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import Navbar from "@/components/Navbar";
 import { StaffSidebar } from "@/components/StaffSidebar";
+import TeamManagementTabs from "@/components/TeamManagementTabs";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
@@ -57,7 +58,7 @@ import ApplicationManager from "@/components/ApplicationManager";
 import RulesManager from "@/components/RulesManager";
 import StaffManager from "@/components/StaffManager";
 import UserManagementSection from "@/components/UserManagementSection";
-import TeamManager from "@/components/TeamManager";
+
 import ServerManager from "@/components/ServerManager";
 import EmailTest from "@/components/EmailTest";
 import PartnerManager from "@/components/PartnerManager";
@@ -980,11 +981,9 @@ const StaffPanel = () => {
               )}
 
               {activeTab === "team" && (
-                <PermissionGate permission="content.manage" showFallback={true}>
-                  <div className="space-y-6">
-                    <TeamManager />
-                  </div>
-                </PermissionGate>
+                <div className="space-y-6">
+                  <TeamManagementTabs />
+                </div>
               )}
 
               {activeTab === "partners" && (

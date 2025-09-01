@@ -342,7 +342,85 @@ const TeamManager = () => {
               </DialogHeader>
 
               <div className="space-y-4">
-                {/* Form inputs... */}
+                <div>
+                  <Label htmlFor="member-name" className="text-foreground">Member Name</Label>
+                  <Input
+                    id="member-name"
+                    value={newMember.name}
+                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    placeholder="Enter member name"
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="member-role" className="text-foreground">Staff Role</Label>
+                  <Select value={newMember.staff_role_id} onValueChange={(value) => setNewMember({ ...newMember, staff_role_id: value })}>
+                    <SelectTrigger className="bg-gaming-dark border-gaming-border text-foreground">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gaming-dark border-gaming-border">
+                      {staffRoles.map((role) => (
+                        <SelectItem key={role.id} value={role.id} className="text-foreground">
+                          {role.display_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="member-bio" className="text-foreground">Bio</Label>
+                  <Textarea
+                    id="member-bio"
+                    value={newMember.bio}
+                    onChange={(e) => setNewMember({ ...newMember, bio: e.target.value })}
+                    placeholder="Enter member bio"
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="member-image" className="text-foreground">Image URL</Label>
+                  <Input
+                    id="member-image"
+                    value={newMember.image_url}
+                    onChange={(e) => setNewMember({ ...newMember, image_url: e.target.value })}
+                    placeholder="Enter image URL"
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="member-location" className="text-foreground">Location</Label>
+                  <Input
+                    id="member-location"
+                    value={newMember.location}
+                    onChange={(e) => setNewMember({ ...newMember, location: e.target.value })}
+                    placeholder="Enter location"
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="member-order" className="text-foreground">Display Order</Label>
+                  <Input
+                    id="member-order"
+                    type="number"
+                    value={newMember.order_index}
+                    onChange={(e) => setNewMember({ ...newMember, order_index: parseInt(e.target.value) || 0 })}
+                    placeholder="Enter display order"
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={newMember.is_active}
+                    onCheckedChange={(checked) => setNewMember({ ...newMember, is_active: checked })}
+                  />
+                  <Label className="text-foreground">Active Member</Label>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -423,6 +501,32 @@ const TeamManager = () => {
                             </div>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2 mt-4">
+                          <Button variant="outline" size="sm" onClick={() => setEditingMember(member)}>
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-gaming-card border-gaming-border">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-foreground">Delete Team Member</AlertDialogTitle>
+                                <AlertDialogDescription className="text-muted-foreground">
+                                  Are you sure you want to delete {member.name}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteTeamMember(member.id)}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </Card>
                   );
@@ -431,6 +535,107 @@ const TeamManager = () => {
             ))
           )}
         </div>
+
+        {/* Edit Member Dialog */}
+        {editingMember && (
+          <Dialog open={!!editingMember} onOpenChange={() => setEditingMember(null)}>
+            <DialogContent className="max-w-lg bg-gaming-card border-gaming-border">
+              <DialogHeader>
+                <DialogTitle className="text-foreground">Edit Team Member</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Update team member information
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-member-name" className="text-foreground">Member Name</Label>
+                  <Input
+                    id="edit-member-name"
+                    value={editingMember.name}
+                    onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-member-role" className="text-foreground">Staff Role</Label>
+                  <Select value={editingMember.staff_role_id} onValueChange={(value) => setEditingMember({ ...editingMember, staff_role_id: value })}>
+                    <SelectTrigger className="bg-gaming-dark border-gaming-border text-foreground">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gaming-dark border-gaming-border">
+                      {staffRoles.map((role) => (
+                        <SelectItem key={role.id} value={role.id} className="text-foreground">
+                          {role.display_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-member-bio" className="text-foreground">Bio</Label>
+                  <Textarea
+                    id="edit-member-bio"
+                    value={editingMember.bio}
+                    onChange={(e) => setEditingMember({ ...editingMember, bio: e.target.value })}
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-member-image" className="text-foreground">Image URL</Label>
+                  <Input
+                    id="edit-member-image"
+                    value={editingMember.image_url}
+                    onChange={(e) => setEditingMember({ ...editingMember, image_url: e.target.value })}
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-member-location" className="text-foreground">Location</Label>
+                  <Input
+                    id="edit-member-location"
+                    value={editingMember.location}
+                    onChange={(e) => setEditingMember({ ...editingMember, location: e.target.value })}
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-member-order" className="text-foreground">Display Order</Label>
+                  <Input
+                    id="edit-member-order"
+                    type="number"
+                    value={editingMember.order_index}
+                    onChange={(e) => setEditingMember({ ...editingMember, order_index: parseInt(e.target.value) || 0 })}
+                    className="bg-gaming-dark border-gaming-border text-foreground"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={editingMember.is_active}
+                    onCheckedChange={(checked) => setEditingMember({ ...editingMember, is_active: checked })}
+                  />
+                  <Label className="text-foreground">Active Member</Label>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setEditingMember(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => updateTeamMember(editingMember.id, editingMember)}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Update Member
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </Card>
     </div>
   );
