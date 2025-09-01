@@ -37,7 +37,7 @@ const OurTeam = () => {
         .from('team_members')
         .select(`
           *,
-          staff_roles (
+          staff_roles!fk_team_members_staff_role (
             id,
             display_name,
             color,
@@ -58,38 +58,32 @@ const OurTeam = () => {
     }
   };
 
-  // Rolle-gruppering og sortering med hierarki
-  const groupedByRole: { [role: string]: TeamMember[] } = {};
-  const hierarchyOrder: { [role: string]: number } = {
-    'owner': 1,
-    'founder': 1,
-    'co-owner': 2,
-    'admin': 3,
-    'administrator': 3,
-    'developer': 4,
-    'head moderator': 5,
-    'senior moderator': 6,
-    'moderator': 7,
-    'mod': 7,
-    'helper': 8,
-    'supporter': 9,
-    'staff': 10
-  };
-
-  teamMembers.forEach((member) => {
-    // Use staff role display name if available, otherwise fallback to role field
-    const roleKey = member.staff_roles?.display_name || member.role.trim();
-    if (!groupedByRole[roleKey]) {
-      groupedByRole[roleKey] = [];
+  // Group members by role and sort by hierarchy level from staff_roles
+  const groupedMembers = teamMembers.reduce((groups, member) => {
+    const roleName = member.staff_roles?.display_name || member.role || 'Unknown';
+    if (!groups[roleName]) {
+      groups[roleName] = [];
     }
-    groupedByRole[roleKey].push(member);
-  });
+    groups[roleName].push(member);
+    return groups;
+  }, {} as Record<string, TeamMember[]>);
 
-  // Sortér roller efter hierarki
-  const dynamicRoleOrder = Object.keys(groupedByRole).sort((a, b) => {
-    const aLevel = hierarchyOrder[a.toLowerCase()] || 999;
-    const bLevel = hierarchyOrder[b.toLowerCase()] || 999;
-    return aLevel - bLevel;
+  // Get unique roles with their hierarchy levels and sort them
+  const sortedRoleNames = Object.keys(groupedMembers).sort((a, b) => {
+    const roleA = groupedMembers[a][0].staff_roles;
+    const roleB = groupedMembers[b][0].staff_roles;
+    
+    // If both have staff_roles, sort by hierarchy_level (lower = higher priority)
+    if (roleA && roleB) {
+      return roleA.hierarchy_level - roleB.hierarchy_level;
+    }
+    
+    // If only one has staff_roles, prioritize it
+    if (roleA && !roleB) return -1;
+    if (!roleA && roleB) return 1;
+    
+    // If neither has staff_roles, sort alphabetically
+    return a.localeCompare(b);
   });
 
   return (
@@ -116,7 +110,7 @@ const OurTeam = () => {
                 <div className="text-sm text-muted-foreground">Aktive</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-accent">{dynamicRoleOrder.length}</div>
+                <div className="text-3xl font-bold text-accent">{sortedRoleNames.length}</div>
                 <div className="text-sm text-muted-foreground">Roller</div>
               </div>
             </div>
@@ -136,7 +130,7 @@ const OurTeam = () => {
               </div>
             ))}
           </div>
-        ) : dynamicRoleOrder.length === 0 ? (
+        ) : sortedRoleNames.length === 0 ? (
           <div className="text-center py-16">
             <div className="bg-gaming-card border-gaming-border rounded-2xl p-12 max-w-lg mx-auto">
               <Users className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
@@ -148,10 +142,10 @@ const OurTeam = () => {
           </div>
         ) : (
           <div className="space-y-16">
-            {dynamicRoleOrder.map((role, roleIndex) => {
-              const roleMembers = groupedByRole[role];
+            {sortedRoleNames.map((role, roleIndex) => {
+              const roleMembers = groupedMembers[role];
               const firstMember = roleMembers[0];
-              const roleHierarchy = firstMember.staff_roles?.hierarchy_level || hierarchyOrder[role.toLowerCase()] || 999;
+              const roleHierarchy = firstMember.staff_roles?.hierarchy_level || 999;
               const isHighLevel = roleHierarchy <= 25;
               
               return (
