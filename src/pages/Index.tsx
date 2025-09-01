@@ -15,8 +15,11 @@ import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-image.webp";
 import LiveChatWidget from "@/components/LiveChatWidget";
 import GoogleAd from "@/components/GoogleAds";
+import SocialMediaLinks from "@/components/SocialMediaLinks";
+import { useTranslation } from 'react-i18next';
 
 const Index = () => {
+  const { t } = useTranslation();
   const [serverJoinLink, setServerJoinLink] = useState('');
   const [serverInfo, setServerInfo] = useState({
     displayIp: 'connect panel.adventurerp.dk:30120',
@@ -25,16 +28,16 @@ const Index = () => {
   });
   const [homepageFeatures, setHomepageFeatures] = useState<any[]>([]);
   const [homepageFeaturesSection, setHomepageFeaturesSection] = useState<any>({
-    title: "Why Choose Adventure rp?",
-    description: "We've built the most immersive FiveM experience with attention to every detail"
+    title: t('homepage.why_choose_us'),
+    description: t('homepage.immersive_experience')
   });
   const [homepageCta, setHomepageCta] = useState<any>({
-    title: "Ready to Join the Future?",
-    description: "Our whitelist application ensures quality roleplay. Tell us about your character, your RP experience, and join hundreds of players in the most advanced FiveM server.",
+    title: t('homepage.ready_to_join'),
+    description: t('homepage.whitelist_description'),
     features: [
-      "Professional development team",
-      "Weekly content updates", 
-      "Active Discord community"
+      t('homepage.professional_team'),
+      t('homepage.weekly_updates'), 
+      t('homepage.active_community')
     ]
   });
   const [designSettings, setDesignSettings] = useState<any>({});
@@ -126,8 +129,8 @@ const Index = () => {
 
       if (!connectInfo.connect_enabled) {
         toast({
-          title: "Server Unavailable",
-          description: "The server connection is currently disabled.",
+          title: t('homepage.server_unavailable'),
+          description: t('homepage.connection_disabled'),
           variant: "destructive",
         });
         return;
@@ -137,14 +140,14 @@ const Index = () => {
       await navigator.clipboard.writeText(connectCommand);
       
       toast({
-        title: "Connect Command Copied!",
-        description: `Press F8 in FiveM and paste: ${connectCommand}`,
+        title: t('homepage.connect_copied'),
+        description: t('homepage.press_f8_instruction', { command: connectCommand }),
       });
     } catch (error) {
       console.error('Error copying connect command:', error);
       toast({
-        title: "Error",
-        description: "Failed to copy connect command",
+        title: t('common.error'),
+        description: t('homepage.copy_failed'),
         variant: "destructive",
       });
     }
@@ -155,8 +158,8 @@ const Index = () => {
       window.open(serverInfo.discordUrl, '_blank');
     } else {
       toast({
-        title: "Discord Link Not Available",
-        description: "The Discord link has not been configured yet.",
+        title: t('homepage.discord_unavailable'),
+        description: t('homepage.discord_not_configured'),
         variant: "destructive",
       });
     }
@@ -276,7 +279,7 @@ const Index = () => {
               onClick={handleConnectNow}
             >
               <PlayCircle className="h-6 w-6 mr-2" />
-              CONNECT NOW
+              {t('homepage.connect_now')}
             </Button>
             <Button 
               variant="hero" 
@@ -286,10 +289,13 @@ const Index = () => {
             >
               <Link to="/apply">
                 <Zap className="h-6 w-6 mr-2" />
-                APPLY WHITELIST
+                {t('homepage.apply_whitelist')}
               </Link>
             </Button>
           </div>
+
+          {/* Social Media Links in Hero */}
+          <SocialMediaLinks variant="hero" className="mt-8" />
           
           {/* Detailed Server Dashboard */}
           <div className="max-w-6xl mx-auto mt-12">
@@ -366,17 +372,17 @@ const Index = () => {
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-foreground mb-6 font-orbitron flex items-center justify-center group-hover:text-teal-primary transition-colors duration-300">
                   <Gamepad2 className="h-6 w-6 mr-2 text-teal-primary group-hover:scale-110 transition-transform duration-300" />
-                  SERVER INFORMATION
+                  {t('homepage.server_information')}
                 </h3>
                 <div className="space-y-6">
                   <div className="flex justify-between items-center p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <span className="text-muted-foreground font-inter">Server IP:</span>
+                    <span className="text-muted-foreground font-inter">{t('homepage.server_ip')}:</span>
                     <code className="bg-gaming-dark px-4 py-2 rounded font-mono text-teal-primary border border-teal-primary/30">
                       {serverInfo.displayIp}
                     </code>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <span className="text-muted-foreground font-inter">Discord:</span>
+                    <span className="text-muted-foreground font-inter">{t('homepage.discord')}:</span>
                     <Button 
                       variant="neon" 
                       size="sm"
@@ -385,14 +391,14 @@ const Index = () => {
                       disabled={!serverInfo.discordUrl}
                     >
                       <Globe className="h-4 w-4 mr-2" />
-                      JOIN DISCORD
+                      {t('homepage.join_discord')}
                     </Button>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <span className="text-muted-foreground font-inter">Status:</span>
+                    <span className="text-muted-foreground font-inter">{t('homepage.status')}:</span>
                     <Badge className={`${getStatusStyle(serverInfo.status)} font-orbitron px-4 py-2`}>
                       <Award className="h-3 w-3 mr-1" />
-                      {serverInfo.status.toUpperCase()}
+                      {t(`homepage.status_${serverInfo.status}`)}
                     </Badge>
                   </div>
                 </div>

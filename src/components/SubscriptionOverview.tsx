@@ -61,7 +61,7 @@ export function SubscriptionOverview() {
       
       if (userIds.length > 0) {
         const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
+          .from("custom_users")
           .select("id, username, avatar_url")
           .in("id", userIds);
         
@@ -156,14 +156,39 @@ export function SubscriptionOverview() {
 
   const createSubscription = async () => {
     try {
-      // Check if user exists
-      const { data: userData, error: userError } = await supabase
-        .from("profiles")
+      console.log("Creating subscription for:", newSubscription.email);
+      
+      // Check if subscription already exists for this email
+      const { data: existingSubscription, error: existingError } = await supabase
+        .from("subscribers")
         .select("id")
         .eq("email", newSubscription.email)
-        .single();
+        .maybeSingle();
 
-      if (userError && userError.code !== 'PGRST116') throw userError;
+      if (existingError) {
+        console.error("Error checking existing subscription:", existingError);
+        throw existingError;
+      }
+
+      if (existingSubscription) {
+        console.log("Found existing subscription:", existingSubscription);
+        toast.error("A subscription already exists for this email. Please edit the existing subscription instead.");
+        return;
+      }
+
+      console.log("No existing subscription found, proceeding with creation");
+
+      // Check if user exists
+      const { data: userData, error: userError } = await supabase
+        .from("custom_users")
+        .select("id")
+        .eq("email", newSubscription.email)
+        .maybeSingle();
+
+      if (userError) {
+        console.error("Error checking user:", userError);
+        throw userError;
+      }
 
       const subscriptionData = {
         email: newSubscription.email,
@@ -172,6 +197,8 @@ export function SubscriptionOverview() {
         subscription_tier: newSubscription.subscription_tier || null,
         subscription_end: newSubscription.subscription_end || null,
       };
+
+      console.log("Inserting subscription data:", subscriptionData);
 
       const { error } = await supabase
         .from("subscribers")
@@ -189,7 +216,11 @@ export function SubscriptionOverview() {
       });
     } catch (error) {
       console.error("Error creating subscription:", error);
-      toast.error("Failed to create subscription");
+      if (error.code === '23505') {
+        toast.error("A subscription with this email already exists. Please use a different email or edit the existing subscription.");
+      } else {
+        toast.error("Failed to create subscription");
+      }
     }
   };
 

@@ -78,6 +78,10 @@ serve(async (req) => {
           }
         ],
         customer_email: user.email,
+        automatic_tax: {
+          enabled: true
+        },
+        billing_address_collection: "required",
         success_url: `${origin}/packages?success=true`,
         cancel_url: `${origin}/packages?canceled=true`
       });
@@ -92,9 +96,12 @@ serve(async (req) => {
         .select("*")
         .eq("id", packageId)
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
-      if (packageError || !packageData) {
+      if (packageError) {
+        throw new Error(`Database error: ${packageError.message}`);
+      }
+      if (!packageData) {
         throw new Error("Package not found or inactive");
       }
       logStep("Package found", { packageName: packageData.name, price: packageData.price_amount });
@@ -133,6 +140,13 @@ serve(async (req) => {
           }
         ],
         mode: "subscription",
+        automatic_tax: {
+          enabled: true
+        },
+        billing_address_collection: "required",
+        customer_update: customerId ? {
+          address: "auto"
+        } : undefined,
         success_url: `${origin}/packages?success=true`,
         cancel_url: `${origin}/packages?canceled=true`
       });

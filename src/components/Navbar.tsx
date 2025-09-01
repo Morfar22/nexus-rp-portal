@@ -1,16 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { Server, LogIn, LogOut, User, Menu, X } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavbarOverflow } from "@/hooks/useNavbarOverflow";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CFXStatusIndicator from "@/components/CFXStatusIndicator";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useCustomAuth();
+  const { t } = useTranslation();
   const [isStaff, setIsStaff] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -18,21 +22,41 @@ const Navbar = () => {
   const [serverName, setServerName] = useState("adventure rp");
   const [navbarConfig, setNavbarConfig] = useState({
     items: [
-      { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false },
-      { id: 'apply', label: 'Apply', path: '/apply', visible: true, order: 1, staffOnly: false },
-      { id: 'rules', label: 'Rules', path: '/rules', visible: true, order: 2, staffOnly: false },
-      { id: 'laws', label: 'Laws', path: '/laws', visible: true, order: 3, staffOnly: false },
-      { id: 'packages', label: 'Packages', path: '/packages', visible: true, order: 4, staffOnly: false },
-      { id: 'team', label: 'Our Team', path: '/team', visible: true, order: 5, staffOnly: false },
-      { id: 'partners', label: 'Partners', path: '/partners', visible: true, order: 6, staffOnly: false },
-      { id: 'supporters', label: 'Supporters', path: '/supporters', visible: true, order: 7, staffOnly: false },
-      { id: 'live', label: 'Live', path: '/live', visible: true, order: 8, staffOnly: false },
-      { id: 'staff', label: 'Staff Panel', path: '/staff', visible: true, order: 9, staffOnly: true },
-      { id: 'servers', label: 'Servers', path: '/servers', visible: true, order: 10, staffOnly: true },
-      { id: 'users', label: 'Users', path: '/users', visible: true, order: 11, staffOnly: true }
+      { id: 'home', label: t('navigation.home'), path: '/', visible: true, order: 0, staffOnly: false },
+      { id: 'apply', label: t('navigation.apply'), path: '/apply', visible: true, order: 1, staffOnly: false },
+      { id: 'rules', label: t('navigation.rules'), path: '/rules', visible: true, order: 2, staffOnly: false },
+      { id: 'laws', label: t('navigation.laws'), path: '/laws', visible: true, order: 3, staffOnly: false },
+      { id: 'packages', label: t('navigation.packages'), path: '/packages', visible: true, order: 4, staffOnly: false },
+      { id: 'team', label: t('navigation.team'), path: '/team', visible: true, order: 5, staffOnly: false },
+      { id: 'partners', label: t('navigation.partners'), path: '/partners', visible: true, order: 6, staffOnly: false },
+      { id: 'supporters', label: t('navigation.supporters'), path: '/supporters', visible: true, order: 7, staffOnly: false },
+      { id: 'live', label: t('navigation.live'), path: '/live', visible: true, order: 8, staffOnly: false },
+      { id: 'characters', label: 'Characters', path: '/characters', visible: true, order: 9, staffOnly: false },
+      { id: 'events', label: 'Events', path: '/events', visible: true, order: 10, staffOnly: false },
+      { id: 'voting', label: 'Voting', path: '/voting', visible: true, order: 11, staffOnly: false },
+      { id: 'achievements', label: 'Achievements', path: '/achievements', visible: true, order: 12, staffOnly: false },
+      { id: 'staff', label: t('navigation.staff_panel'), path: '/staff', visible: true, order: 13, staffOnly: true },
+      { id: 'servers', label: t('navigation.server_management'), path: '/servers', visible: true, order: 14, staffOnly: true },
+      { id: 'analytics', label: 'Analytics', path: '/analytics', visible: true, order: 15, staffOnly: true },
+      { id: 'creative-tools', label: 'Creative Tools', path: '/creative-tools', visible: true, order: 16, staffOnly: true },
+      { id: 'users', label: t('navigation.user_management'), path: '/users', visible: true, order: 17, staffOnly: true }
     ]
   });
   const isMobile = useIsMobile();
+
+  // Get visible navigation items for overflow detection
+  const getVisibleItems = () => {
+    if (!configLoaded) return [];
+    return navbarConfig.items
+      .filter(item => item.visible && (!item.staffOnly || isStaff))
+      .sort((a, b) => a.order - b.order);
+  };
+
+  const visibleItems = getVisibleItems();
+  const { isOverflowing, containerRef, contentRef } = useNavbarOverflow(visibleItems, !isMobile);
+  
+  // Force collapse to hamburger menu if overflowing on desktop
+  const shouldUseHamburgerMenu = isMobile || isOverflowing;
 
   // Fetch user profile data
   useEffect(() => {
@@ -70,7 +94,7 @@ const Navbar = () => {
           {
             event: '*',
             schema: 'public',
-            table: 'profiles',
+            table: 'custom_users',
             filter: `id=eq.${user.id}`
           },
           (payload) => {
@@ -205,12 +229,33 @@ const Navbar = () => {
     };
   }, []);
 
-  // Add a separate effect to force re-render when config changes
+  // Update navbar config items with translations when language changes
   useEffect(() => {
-    console.log('Navbar config updated in component:', navbarConfig);
-  }, [navbarConfig]);
+    const getTranslationKey = (itemId: string) => {
+      switch (itemId) {
+        case 'staff': return 'navigation.staff_panel';
+        case 'servers': return 'navigation.server_management';
+        case 'users': return 'staff.user_management';
+        case 'characters': return 'navigation.characters';
+        case 'events': return 'navigation.events';
+        case 'voting': return 'navigation.voting';
+        case 'achievements': return 'navigation.achievements';
+        case 'analytics': return 'navigation.analytics';
+        case 'creative-tools': return 'navigation.creative_tools';
+        default: return `navigation.${itemId}`;
+      }
+    };
 
-  const NavLinks = () => {
+    setNavbarConfig(prev => ({
+      ...prev,
+      items: prev.items.map(item => ({
+        ...item,
+        label: t(getTranslationKey(item.id)) || item.label
+      }))
+    }));
+  }, [t]);
+
+  const NavLinks = ({ forceVertical = false }: { forceVertical?: boolean } = {}) => {
     const location = useLocation();
     
     // Don't render until config is loaded
@@ -218,25 +263,20 @@ const Navbar = () => {
       return null;
     }
 
-    // Filter and sort navigation items based on configuration
-    const visibleItems = navbarConfig.items
-      .filter(item => {
-        console.log(`Item ${item.id}: visible=${item.visible}, staffOnly=${item.staffOnly}, isStaff=${isStaff}`);
-        return item.visible && (!item.staffOnly || isStaff);
-      })
-      .sort((a, b) => a.order - b.order);
+    // Use the pre-calculated visible items
+    const items = visibleItems;
 
-    console.log('Visible navigation items:', visibleItems.map(item => item.id));
+    console.log('Visible navigation items:', items.map(item => item.id));
 
     return (
       <>
-        {visibleItems.map((item) => (
+        {items.map((item) => (
           <Link 
             key={item.id}
             to={item.path} 
              className={`
               relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 group
-              block md:inline-block
+              ${forceVertical || shouldUseHamburgerMenu ? 'block' : 'inline-block'}
               ${location.pathname === item.path 
                 ? "bg-gradient-primary text-white shadow-glow-primary border border-primary/50"
                 : "text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:scale-105"
@@ -261,15 +301,15 @@ const Navbar = () => {
           <Link to="/profile" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <Avatar className="h-8 w-8">
               <AvatarImage 
-                src={userProfile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture} 
-                alt={userProfile?.username || user.email || 'User'} 
+                src={userProfile?.avatar_url || user.avatar_url} 
+                alt={userProfile?.username || user.username || user.email || 'User'} 
               />
               <AvatarFallback className="bg-neon-purple/20 text-neon-purple text-xs">
-                {(userProfile?.username || user.email || 'U').charAt(0).toUpperCase()}
+                {(userProfile?.username || user.username || user.email || 'U').charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <span className="text-sm text-foreground">
-              {userProfile?.username || user.user_metadata?.full_name || user.email}
+              {userProfile?.username || user.username || user.full_name || user.email}
             </span>
           </Link>
           <Button 
@@ -282,7 +322,7 @@ const Navbar = () => {
             className="hover:border-neon-purple/50 w-full md:w-auto"
           >
             <LogOut className="h-4 w-4 mr-1" />
-            Sign Out
+            {t('common.logout')}
           </Button>
         </>
       ) : (
@@ -294,35 +334,36 @@ const Navbar = () => {
         >
           <Link to="/auth" onClick={() => setIsOpen(false)}>
             <LogIn className="h-4 w-4 mr-1" />
-            Sign In
+            {t('common.login')}
           </Link>
         </Button>
       )}
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <nav className="border-b border-gaming-border bg-gaming-card/95 backdrop-blur-xl sticky top-0 z-50 shadow-lg">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary transition-all duration-300 group-hover:scale-110">
-              <Server className="h-6 w-6 text-white" />
-            </div>
-            <div className="animate-fade-in">
-              <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                {serverName}
-              </span>
-              <p className="text-xs text-muted-foreground -mt-1">Gaming Server</p>
-            </div>
-          </Link>
-          
+  return (
+     <nav className="border-b border-gaming-border bg-gaming-darker/95 backdrop-blur-xl sticky top-0 z-50 shadow-lg">
+      <div ref={containerRef} className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <Link to="/" className="flex items-center space-x-3 group">
+          <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary transition-all duration-300 group-hover:scale-110">
+            <Server className="h-6 w-6 text-white" />
+          </div>
+          <div className="animate-fade-in">
+            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              {serverName}
+            </span>
+            <p className="text-xs text-muted-foreground -mt-1">{t('common.dashboard')}</p>
+          </div>
+        </Link>
+        
+        {shouldUseHamburgerMenu ? (
+          /* Hamburger menu for mobile and desktop overflow */
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="md:hidden hover:bg-gaming-darker/80 hover:scale-110 transition-all duration-300 rounded-lg"
+                className="hover:bg-gaming-darker/80 hover:scale-110 transition-all duration-300 rounded-lg"
               >
                 <Menu className="h-6 w-6 text-foreground" />
               </Button>
@@ -342,11 +383,15 @@ const Navbar = () => {
                 </div>
                 
                 <div className="flex flex-col space-y-2">
-                  <NavLinks />
+                  <NavLinks forceVertical={true} />
                 </div>
                 
                 <div className="border-t border-gaming-border pt-6">
                   <CFXStatusIndicator />
+                </div>
+                
+                <div className="border-t border-gaming-border pt-6">
+                  <LanguageSwitcher />
                 </div>
                 
                 <div className="border-t border-gaming-border pt-6">
@@ -355,34 +400,27 @@ const Navbar = () => {
               </div>
             </SheetContent>
           </Sheet>
-        </div>
-      </nav>
-    );
-  }
-
-  return (
-    <nav className="border-b border-gaming-border bg-gaming-card/95 backdrop-blur-xl sticky top-0 z-50 shadow-lg">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-3 group">
-          <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary transition-all duration-300 group-hover:scale-110">
-            <Server className="h-6 w-6 text-white" />
-          </div>
-          <div className="animate-fade-in">
-            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              {serverName}
-            </span>
-            <p className="text-xs text-muted-foreground -mt-1">Gaming Server</p>
-          </div>
-        </Link>
+        ) : (
+          /* Desktop navigation when not overflowing */
+          <>
+            <div ref={contentRef} className="flex items-center space-x-2 bg-gaming-darker/30 rounded-xl px-4 py-2 border border-gaming-border/50">
+              <NavLinks />
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <CFXStatusIndicator />
+              <LanguageSwitcher />
+              <UserSection />
+            </div>
+          </>
+        )}
         
-        <div className="hidden md:flex items-center space-x-2 bg-gaming-darker/30 rounded-xl px-4 py-2 border border-gaming-border/50">
-          <NavLinks />
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <CFXStatusIndicator />
-          <UserSection />
-        </div>
+        {shouldUseHamburgerMenu && (
+          /* Show basic user controls when using hamburger menu */
+          <div className="flex items-center space-x-2">
+            <CFXStatusIndicator />
+          </div>
+        )}
       </div>
     </nav>
   );

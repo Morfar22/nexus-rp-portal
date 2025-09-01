@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,7 @@ interface Subscription {
 }
 
 export default function Packages() {
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const [packages, setPackages] = useState<Package[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -223,7 +223,8 @@ const handleCustomSubscribe = async (amount: number) => {
   };
 
   const formatPrice = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
+    const locale = currency.toLowerCase() === 'dkk' ? 'da-DK' : 'en-US';
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: currency.toUpperCase(),
     }).format(amount / 100);

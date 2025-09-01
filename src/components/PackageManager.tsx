@@ -185,7 +185,8 @@ Are you sure you want to continue?`;
   };
 
   const formatPrice = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
+    const locale = currency.toLowerCase() === 'dkk' ? 'da-DK' : 'en-US';
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency.toUpperCase(),
     }).format(amount / 100);
@@ -228,7 +229,7 @@ Are you sure you want to continue?`;
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Price (in dollars)</Label>
+                <Label htmlFor="price">Price Amount</Label>
                 <Input
                   id="price"
                   type="number"
@@ -250,6 +251,7 @@ Are you sure you want to continue?`;
                     <SelectItem value="usd">USD</SelectItem>
                     <SelectItem value="eur">EUR</SelectItem>
                     <SelectItem value="gbp">GBP</SelectItem>
+                    <SelectItem value="dkk">DKK</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

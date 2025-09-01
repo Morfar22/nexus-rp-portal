@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Settings, Users, Save, UserX, Shield } from "lucide-react";
+import { MessageSquare, Settings, Users, Save, UserX, Shield, Bell } from "lucide-react";
 import LiveChatSupport from "./LiveChatSupport";
+import { TranslatedNotificationSettings } from "./TranslatedNotificationSettings";
 
 interface ChatSettings {
   enabled: boolean;
@@ -222,15 +223,20 @@ const LiveChatManager = () => {
         </div>
 
         <Tabs defaultValue="support" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="support">Live Support</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="banned">Banned Users</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="support">
             <LiveChatSupport />
+          </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-6">
+            <TranslatedNotificationSettings />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

@@ -8,7 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageCircle, User, Clock, Send, Ban, Shield } from "lucide-react";
+import { useSimpleNotifications } from "@/hooks/useSimpleNotifications";
+import { MessageCircle, User, Clock, Send, Ban, Shield, Bell, BellOff, Volume2, VolumeX } from "lucide-react";
 
 interface ChatSession {
   id: string;
@@ -55,6 +56,15 @@ const LiveChatSupport = () => {
   const [visitorProfile, setVisitorProfile] = useState<VisitorProfile | null>(null);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { 
+    settings: notificationSettings, 
+    setSettings: setNotificationSettings,
+    hasPermission,
+    isAway,
+    requestPermissions,
+    notify,
+    playNotificationSound
+  } = useSimpleNotifications();
 
   useEffect(() => {
     loadSessions();
@@ -80,7 +90,7 @@ const LiveChatSupport = () => {
       if (!user) return;
 
       const { data: profile, error } = await supabase
-        .from('profiles')
+        .from('custom_users')
         .select('id, username, avatar_url, email')
         .eq('id', user.id)
         .single();
@@ -113,8 +123,8 @@ const LiveChatSupport = () => {
     try {
       if (selectedSession.user_id) {
         const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('id, username, email, avatar_url, discord_username, created_at')
+          .from('custom_users')
+          .select('id, username, email, avatar_url, created_at')
           .eq('id', selectedSession.user_id)
           .single();
 
@@ -160,8 +170,20 @@ const LiveChatSupport = () => {
           schema: 'public',
           table: 'chat_sessions'
         },
-        () => {
+        (payload) => {
           loadSessions();
+          
+          // Handle new chat notifications
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const newSession = payload.new as ChatSession;
+            if (newSession.status === 'waiting') {
+              notify({
+                sessionId: newSession.id,
+                visitorName: newSession.visitor_name,
+                type: 'new_chat'
+              });
+            }
+          }
         }
       )
       .subscribe();
@@ -188,10 +210,22 @@ const LiveChatSupport = () => {
         },
         (payload) => {
           console.log('LiveChatSupport: Received new message via real-time:', payload);
+          const newMessage = payload.new as ChatMessage;
+          
           setMessages(prev => {
             console.log('LiveChatSupport: Adding message to state. Previous count:', prev.length);
-            return [...prev, payload.new as ChatMessage];
+            return [...prev, newMessage];
           });
+          
+          // Notify about new visitor messages
+          if (newMessage.sender_type === 'visitor' && selectedSession) {
+            notify({
+              sessionId: selectedSession.id,
+              visitorName: selectedSession.visitor_name,
+              message: newMessage.message,
+              type: 'new_message'
+            });
+          }
         }
       )
       .subscribe((status) => {

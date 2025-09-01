@@ -20,16 +20,24 @@ const supabaseAdmin = createClient(
 
 serve(async (req) => {
   console.log("=== DISCORD LOGGER FUNCTION START ===")
+  console.log("Timestamp:", new Date().toISOString())
+  console.log("Method:", req.method)
+  console.log("URL:", req.url)
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log("CORS preflight request handled")
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { type, data, settings } = await req.json()
-    console.log("Discord logger request:", { type, data: !!data, settings: !!settings })
-    console.log("FULL DATA RECEIVED:", JSON.stringify(data, null, 2))
+    console.log("=== REQUEST DATA ===")
+    console.log("Event type:", type)
+    console.log("Data received:", !!data)
+    console.log("Settings received:", !!settings)
+    console.log("FULL REQUEST DATA:", JSON.stringify({ type, data, settings }, null, 2))
+    console.log("Request headers:", Object.fromEntries(req.headers.entries()))
 
     // Get Discord logging settings from database
     let discordSettings: any = {}
@@ -78,9 +86,17 @@ serve(async (req) => {
       errors: discordSettings.errors_webhook || ''
     }
 
-    console.log("Available webhooks:", webhooks)
-    console.log("Application Discord Settings:", applicationDiscordSettings)
-    console.log("General Discord Settings:", discordSettings)
+    console.log("=== AVAILABLE WEBHOOKS ===")
+    console.log("Applications webhook:", webhooks.applications)
+    console.log("Staff webhook:", webhooks.staff)
+    console.log("Security webhook:", webhooks.security)
+    console.log("General webhook:", webhooks.general)
+    console.log("Packages webhook:", webhooks.packages)
+    console.log("Errors webhook:", webhooks.errors)
+    console.log("=== DISCORD SETTINGS ===")
+    console.log("General Discord Settings:", JSON.stringify(discordSettings, null, 2))
+    console.log("Application Discord Settings:", JSON.stringify(applicationDiscordSettings, null, 2))
+
 
     let webhookUrl = ''
     let embed: any = {}
@@ -90,7 +106,6 @@ serve(async (req) => {
     switch (type) {
       case 'application_submitted':
         webhookUrl = webhooks.applications
-        console.log('Application submitted - webhook URL found:', webhookUrl)
         
         // Get user profile data if user_id or email is available
         let userProfile = null;
@@ -328,24 +343,36 @@ serve(async (req) => {
 
       case 'purchase_completed':
         webhookUrl = webhooks.packages
+        
+        if (!webhookUrl) {
+          console.log('No packages webhook URL configured - trying general webhook')
+          webhookUrl = webhooks.general
+        }
+        
         const formattedPrice = new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: data.currency || 'USD',
         }).format((data.price || 0) / 100);
         
-        content = `🎉 **New package purchase** from **${data.username || data.customerName || data.customerEmail}**!`
+        const customerName = data.username || data.customerName || data.customerEmail?.split('@')[0] || 'Unknown Customer';
+        
+        content = `💰 **New package purchase** from **${customerName}**!`
         embed = {
-          title: '💰 New Purchase Completed!',
-          color: 0x00ff00, // Green
+          title: '🎉 New Purchase Completed!',
+          color: 0x00ff00, // Bright Green
           fields: [
-            { name: 'Customer Email', value: data.customerEmail || 'Not provided', inline: true },
-            { name: 'Username', value: data.username || data.customerName || 'Not provided', inline: true },
-            { name: 'Package', value: data.packageName || 'Not specified', inline: true },
-            { name: 'Amount', value: formattedPrice, inline: true },
-            { name: 'Purchase Date', value: new Date().toLocaleString(), inline: true }
+            { name: '👤 Customer', value: customerName, inline: true },
+            { name: '📧 Email', value: data.customerEmail || 'Not provided', inline: true },
+            { name: '📦 Package', value: data.packageName || 'Not specified', inline: true },
+            { name: '💵 Amount', value: formattedPrice, inline: true },
+            { name: '💱 Currency', value: (data.currency || 'USD').toUpperCase(), inline: true },
+            { name: '📅 Purchase Date', value: new Date().toLocaleString(), inline: true }
           ],
           timestamp: new Date().toISOString(),
-          footer: { text: 'Package Purchase System' }
+          footer: { text: '🛒 Package Purchase System' },
+          thumbnail: {
+            url: 'https://cdn-icons-png.flaticon.com/512/3514/3514447.png' // Money bag icon
+          }
         }
         break
 
@@ -361,7 +388,6 @@ serve(async (req) => {
     }
 
     if (!webhookUrl) {
-      console.log('No webhook URL configured for event type:', type)
       return new Response(
         JSON.stringify({ error: 'No webhook URL configured' }), 
         { 
@@ -371,15 +397,10 @@ serve(async (req) => {
       )
     }
 
-    console.log('FULL DATA RECEIVED:', data)
-    console.log('Sending to Discord webhook:', webhookUrl)
-
     const payload = {
       content,
       embeds: [embed]
     }
-
-    console.log('Discord payload:', JSON.stringify(payload, null, 2))
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -390,15 +411,11 @@ serve(async (req) => {
     })
 
     const responseText = await response.text()
-    console.log('Discord webhook response status:', response.status)
-    console.log('Discord webhook response:', responseText)
 
     if (!response.ok) {
       console.error('Discord webhook error:', response.status, responseText)
       throw new Error(`Discord webhook failed: ${response.status} - ${responseText}`)
     }
-
-    console.log('Discord message sent successfully')
 
     return new Response(
       JSON.stringify({ 

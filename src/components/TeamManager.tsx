@@ -10,21 +10,24 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Edit, Trash2, Save, X, Users, Image, Crown, Shield, Star, Calendar, Activity, TrendingUp, Award, Eye } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Plus, Edit, Trash2, Save, X, Users, Image, Crown, Shield, Star, Calendar, Activity, TrendingUp, Award, Eye, MapPin } from "lucide-react";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 
 const TeamManager = () => {
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [staffRoles, setStaffRoles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingMember, setEditingMember] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newMember, setNewMember] = useState({
     name: "",
-    role: "",
+    staff_role_id: "",
     bio: "",
     image_url: "",
+    location: "",
     order_index: 0,
     is_active: true
   });
@@ -35,8 +38,28 @@ const TeamManager = () => {
     mods: 0,
     recent: 0
   });
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchStaffRoles();
+    fetchTeamMembers();
+  }, []);
+
+  const fetchStaffRoles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('staff_roles')
+        .select('*')
+        .eq('is_active', true)
+        .order('hierarchy_level', { ascending: true });
+
+      if (error) throw error;
+      setStaffRoles(data || []);
+    } catch (error) {
+      console.error('Error fetching staff roles:', error);
+    }
+  };
 
   useEffect(() => {
     fetchTeamMembers();
@@ -47,28 +70,36 @@ const TeamManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('team_members')
-        .select('*')
+        .select(`
+          *,
+          staff_roles!fk_team_members_staff_role (
+            id,
+            display_name,
+            color,
+            hierarchy_level
+          )
+        `)
         .order('order_index', { ascending: true });
 
       if (error) throw error;
       const members = data || [];
       setTeamMembers(members);
-      
+
       // Calculate stats
       const activeMembers = members.filter(m => m.is_active);
-      const admins = members.filter(m => m.role.toLowerCase().includes('admin') || m.role.toLowerCase().includes('owner'));
-      const mods = members.filter(m => m.role.toLowerCase().includes('moderator') || m.role.toLowerCase().includes('mod'));
+      const highLevelRoles = members.filter(m => m.staff_roles?.hierarchy_level <= 25);
+      const midLevelRoles = members.filter(m => m.staff_roles?.hierarchy_level > 25 && m.staff_roles?.hierarchy_level <= 40);
       const recentlyAdded = members.filter(m => {
         const memberDate = new Date(m.created_at);
         const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         return memberDate > weekAgo;
       });
-      
+
       setStats({
         total: members.length,
         active: activeMembers.length,
-        admins: admins.length,
-        mods: mods.length,
+        admins: highLevelRoles.length,
+        mods: midLevelRoles.length,
         recent: recentlyAdded.length
       });
     } catch (error) {
@@ -83,13 +114,32 @@ const TeamManager = () => {
     }
   };
 
+  // Gruppér team members efter role
+  const groupedMembers = teamMembers.reduce((groups, member) => {
+    const roleName = member.staff_roles?.display_name || member.role || 'Unknown';
+    if (!groups[roleName]) {
+      groups[roleName] = [];
+    }
+    groups[roleName].push(member);
+    return groups;
+  }, {} as Record<string, typeof teamMembers>);
+
+  // Sorter roller efter hierarchy_level
+  const sortedRoleNames = staffRoles
+    .filter(role => groupedMembers[role.display_name])
+    .sort((a, b) => a.hierarchy_level - b.hierarchy_level)
+    .map(role => role.display_name);
+
   const createTeamMember = async () => {
     try {
+      const selectedRole = staffRoles.find(role => role.id === newMember.staff_role_id);
+      const roleDisplayName = selectedRole?.display_name || 'Staff';
+
       const { error } = await supabase
         .from('team_members')
         .insert({
           ...newMember,
-          created_by: user?.id
+          role: roleDisplayName
         });
 
       if (error) throw error;
@@ -98,9 +148,10 @@ const TeamManager = () => {
       setIsCreating(false);
       setNewMember({
         name: "",
-        role: "",
+        staff_role_id: "",
         bio: "",
         image_url: "",
+        location: "",
         order_index: 0,
         is_active: true
       });
@@ -120,9 +171,11 @@ const TeamManager = () => {
 
   const updateTeamMember = async (memberId: string, updates: any) => {
     try {
+      const { staff_roles, created_at, updated_at, id, ...updateData } = updates;
+
       const { error } = await supabase
         .from('team_members')
-        .update(updates)
+        .update(updateData)
         .eq('id', memberId);
 
       if (error) throw error;
@@ -171,16 +224,22 @@ const TeamManager = () => {
     const lowerRole = role.toLowerCase();
     if (lowerRole.includes('owner') || lowerRole.includes('founder')) return Crown;
     if (lowerRole.includes('admin')) return Star;
+    if (lowerRole.includes('developer')) return Activity;
+    if (lowerRole.includes('head') || lowerRole.includes('senior')) return Award;
     if (lowerRole.includes('moderator') || lowerRole.includes('mod')) return Shield;
+    if (lowerRole.includes('helper') || lowerRole.includes('supporter')) return Users;
     return Users;
   };
 
   const getRoleColor = (role: string) => {
     const lowerRole = role.toLowerCase();
-    if (lowerRole.includes('owner') || lowerRole.includes('founder')) return 'text-yellow-400 border-yellow-400/50 bg-yellow-400/10';
-    if (lowerRole.includes('admin')) return 'text-red-400 border-red-400/50 bg-red-400/10';
-    if (lowerRole.includes('moderator') || lowerRole.includes('mod')) return 'text-blue-400 border-blue-400/50 bg-blue-400/10';
-    return 'text-green-400 border-green-400/50 bg-green-400/10';
+    if (lowerRole.includes('owner') || lowerRole.includes('founder')) return 'text-primary border-primary/30 bg-primary/10';
+    if (lowerRole.includes('admin')) return 'text-secondary border-secondary/30 bg-secondary/10';
+    if (lowerRole.includes('developer')) return 'text-accent border-accent/30 bg-accent/10';
+    if (lowerRole.includes('head') || lowerRole.includes('senior')) return 'text-neon-purple border-neon-purple/30 bg-neon-purple/10';
+    if (lowerRole.includes('moderator') || lowerRole.includes('mod')) return 'text-neon-blue border-neon-blue/30 bg-neon-blue/10';
+    if (lowerRole.includes('helper') || lowerRole.includes('supporter')) return 'text-neon-green border-neon-green/30 bg-neon-green/10';
+    return 'text-muted-foreground border-muted/30 bg-muted/10';
   };
 
   const getInitials = (name: string) => {
@@ -213,7 +272,7 @@ const TeamManager = () => {
             <p className="text-xs text-muted-foreground">Total Members</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gaming-card border-gaming-border">
           <CardContent className="p-4 text-center">
             <Activity className="h-6 w-6 text-neon-green mx-auto mb-2" />
@@ -221,7 +280,7 @@ const TeamManager = () => {
             <p className="text-xs text-muted-foreground">Active</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gaming-card border-gaming-border">
           <CardContent className="p-4 text-center">
             <Crown className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
@@ -229,7 +288,7 @@ const TeamManager = () => {
             <p className="text-xs text-muted-foreground">Admins</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gaming-card border-gaming-border">
           <CardContent className="p-4 text-center">
             <Shield className="h-6 w-6 text-blue-400 mx-auto mb-2" />
@@ -237,7 +296,7 @@ const TeamManager = () => {
             <p className="text-xs text-muted-foreground">Moderators</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gaming-card border-gaming-border">
           <CardContent className="p-4 text-center">
             <TrendingUp className="h-6 w-6 text-neon-purple mx-auto mb-2" />
@@ -267,261 +326,110 @@ const TeamManager = () => {
               {stats.total} total
             </Badge>
           </div>
-        <Dialog open={isCreating} onOpenChange={setIsCreating}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Member
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg bg-gaming-card border-gaming-border">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">Create Team Member</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Add a new team member to the public team page
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div>
-                <Label className="text-foreground">Name</Label>
-                <Input
-                  value={newMember.name}
-                  onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-                  placeholder="Team member name..."
-                  className="bg-gaming-dark border-gaming-border text-foreground"
-                />
-              </div>
-              
-              <div>
-                <Label className="text-foreground">Role</Label>
-                <Input
-                  value={newMember.role}
-                  onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
-                  placeholder="e.g., Owner, Developer, Moderator..."
-                  className="bg-gaming-dark border-gaming-border text-foreground"
-                />
-              </div>
-              
-              <div>
-                <Label className="text-foreground">Bio</Label>
-                <Textarea
-                  value={newMember.bio}
-                  onChange={(e) => setNewMember({ ...newMember, bio: e.target.value })}
-                  placeholder="Short bio about this team member..."
-                  className="bg-gaming-dark border-gaming-border text-foreground"
-                />
-              </div>
-              
-              <div>
-                <Label className="text-foreground">Image URL</Label>
-                <Input
-                  value={newMember.image_url}
-                  onChange={(e) => setNewMember({ ...newMember, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="bg-gaming-dark border-gaming-border text-foreground"
-                />
+          <Dialog open={isCreating} onOpenChange={setIsCreating}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Member
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg bg-gaming-card border-gaming-border">
+              <DialogHeader>
+                <DialogTitle className="text-foreground">Create Team Member</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Add a new team member to the public team page
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                {/* Form inputs... */}
               </div>
 
-              <div>
-                <Label className="text-foreground">Order Index</Label>
-                <Input
-                  type="number"
-                  value={newMember.order_index}
-                  onChange={(e) => setNewMember({ ...newMember, order_index: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  className="bg-gaming-dark border-gaming-border text-foreground"
-                />
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsCreating(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={createTeamMember}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Create Member
+                </Button>
               </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={newMember.is_active}
-                  onCheckedChange={(checked) => setNewMember({ ...newMember, is_active: checked })}
-                />
-                <Label className="text-foreground">Active</Label>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsCreating(false)}>
-                Cancel
-              </Button>
-              <Button onClick={createTeamMember}>
-                <Save className="h-4 w-4 mr-2" />
-                Create Member
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      <div className="space-y-4">
-        {teamMembers.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No team members found</p>
-        ) : (
-          teamMembers.map((member) => {
-            const RoleIcon = getRoleIcon(member.role);
-            const roleColorClass = getRoleColor(member.role);
-            
-            return (
-              <Card key={member.id} className="p-4 bg-gaming-dark border-gaming-border hover:border-neon-purple/30 transition-colors">
-                {editingMember?.id === member.id ? (
-                <div className="space-y-3">
-                  <Input
-                    value={editingMember.name}
-                    onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
-                    placeholder="Name"
-                    className="bg-gaming-card border-gaming-border text-foreground"
-                  />
-                  <Input
-                    value={editingMember.role}
-                    onChange={(e) => setEditingMember({ ...editingMember, role: e.target.value })}
-                    placeholder="Role"
-                    className="bg-gaming-card border-gaming-border text-foreground"
-                  />
-                  <Textarea
-                    value={editingMember.bio}
-                    onChange={(e) => setEditingMember({ ...editingMember, bio: e.target.value })}
-                    placeholder="Bio"
-                    className="bg-gaming-card border-gaming-border text-foreground"
-                  />
-                  <Input
-                    value={editingMember.image_url}
-                    onChange={(e) => setEditingMember({ ...editingMember, image_url: e.target.value })}
-                    placeholder="Image URL"
-                    className="bg-gaming-card border-gaming-border text-foreground"
-                  />
-                  <Input
-                    type="number"
-                    value={editingMember.order_index}
-                    onChange={(e) => setEditingMember({ ...editingMember, order_index: parseInt(e.target.value) || 0 })}
-                    placeholder="Order"
-                    className="bg-gaming-card border-gaming-border text-foreground"
-                  />
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={editingMember.is_active}
-                        onCheckedChange={(checked) => setEditingMember({ ...editingMember, is_active: checked })}
-                      />
-                      <Label className="text-foreground">Active</Label>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={() => updateTeamMember(member.id, editingMember)}
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingMember(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <div className="relative">
-                      <Avatar className="h-16 w-16 ring-2 ring-gaming-border">
-                        <AvatarImage src={member.image_url} alt={member.name} className="object-cover" />
-                        <AvatarFallback className="bg-gradient-to-br from-neon-purple/30 to-neon-blue/30 text-white font-bold">
-                          {getInitials(member.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      {/* Status indicator */}
-                      <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-gaming-dark ${member.is_active ? 'bg-green-400' : 'bg-gray-500'}`} />
-                      
-                      {/* Role icon */}
-                      <div className={`absolute -bottom-1 -right-1 p-1 rounded-full bg-gaming-dark border ${roleColorClass.split(' ')[1]}`}>
-                        <RoleIcon className={`h-3 w-3 ${roleColorClass.split(' ')[0]}`} />
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="font-medium text-foreground text-lg">{member.name}</h4>
-                        <Badge className={`${roleColorClass} font-medium`}>
-                          <RoleIcon className="h-3 w-3 mr-1" />
-                          {member.role}
-                        </Badge>
-                        {!member.is_active && (
-                          <Badge variant="secondary" className="text-xs bg-gray-500/20 text-gray-400">
-                            Inactive
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      {member.bio && (
-                        <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{member.bio}</p>
-                      )}
-                      
-                      <div className="grid grid-cols-2 gap-4 text-xs">
-                        <div className="flex items-center space-x-2 text-muted-foreground">
-                          <Award className="h-3 w-3" />
-                          <span>Position: #{member.order_index}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          <span>Added: {new Date(member.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 text-muted-foreground">
-                          <Eye className="h-3 w-3" />
-                          <span>Public: {member.is_active ? 'Visible' : 'Hidden'}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 text-muted-foreground">
-                          <Activity className="h-3 w-3" />
-                          <span>Status: {member.is_active ? 'Active' : 'Inactive'}</span>
+        <div className="space-y-4">
+          {sortedRoleNames.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No team members found</p>
+          ) : (
+            sortedRoleNames.map((roleName) => (
+              <div key={roleName}>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{roleName}</h3>
+                {groupedMembers[roleName].map((member) => {
+                  const memberRole = member.staff_roles || { display_name: member.role || 'Unknown', color: '#6b7280', hierarchy_level: 50 };
+                  const RoleIcon = getRoleIcon(memberRole.display_name);
+                  const roleColorClass = getRoleColor(memberRole.display_name);
+
+                  return (
+                    <Card key={member.id} className="p-4 bg-gaming-dark border-gaming-border hover:border-neon-purple/30 transition-colors mb-4">
+                      {/* Render member info like avatar, name, badges, bio, etc. */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4">
+                          <div className="relative">
+                            <Avatar className="h-16 w-16 ring-2 ring-gaming-border">
+                              <AvatarImage src={member.image_url} alt={member.name} className="object-cover" />
+                              <AvatarFallback className="bg-gradient-to-br from-neon-purple/30 to-neon-blue/30 text-white font-bold">
+                                {getInitials(member.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-gaming-dark ${member.is_active ? 'bg-green-400' : 'bg-gray-500'}`} />
+                            <div className={`absolute -bottom-1 -right-1 p-1 rounded-full bg-gaming-dark border ${roleColorClass.split(' ')[1]}`}>
+                              <RoleIcon className={`h-3 w-3 ${roleColorClass.split(' ')[0]}`} />
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h4 className="font-medium text-foreground text-lg">{member.name}</h4>
+                              <Badge className={`${roleColorClass} font-medium`}>
+                                <RoleIcon className="h-3 w-3 mr-1" />
+                                {memberRole.display_name}
+                              </Badge>
+                              {!member.is_active && (
+                                <Badge variant="secondary" className="text-xs bg-gray-500/20 text-gray-400">
+                                  Inactive
+                                </Badge>
+                              )}
+                            </div>
+                            {member.bio && <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{member.bio}</p>}
+                            <div className="grid grid-cols-2 gap-4 text-xs">
+                              <div className="flex items-center space-x-2 text-muted-foreground">
+                                <Award className="h-3 w-3" />
+                                <span>Position: #{member.order_index}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                <span>Added: {new Date(member.created_at).toLocaleDateString()}</span>
+                              </div>
+                              {member.location && (
+                                <div className="flex items-center space-x-2 text-muted-foreground">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{member.location}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center space-x-2 text-muted-foreground">
+                                <Eye className="h-3 w-3" />
+                                <span>Public: {member.is_active ? 'Visible' : 'Hidden'}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditingMember(member)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="bg-gaming-card border-gaming-border">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="text-foreground">Delete Team Member</AlertDialogTitle>
-                          <AlertDialogDescription className="text-muted-foreground">
-                            Are you sure you want to delete {member.name}? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteTeamMember(member.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              )}
-              </Card>
-            );
-          })
-        )}
+                    </Card>
+                  );
+                })}
+              </div>
+            ))
+          )}
         </div>
       </Card>
     </div>

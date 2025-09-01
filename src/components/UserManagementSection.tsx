@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Ban, Shield, Trash2, Eye, Mail, Calendar, Clock, UserX, CheckCircle, AlertTriangle, Edit2, Save, X, User, Globe, Gamepad2, MessageSquare } from "lucide-react";
+import { Search, Ban, Shield, Trash2, Eye, Mail, Calendar, Clock, UserX, CheckCircle, AlertTriangle, Edit2, Save, X, User, Globe, Gamepad2, MessageSquare, LogOut } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,37 +36,19 @@ const UserManagementSection = () => {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
+      
+      // Fetch users from custom_users table instead of profiles
       const { data, error } = await supabase
-        .from('profiles')
+        .from('custom_users')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Get user roles separately
-      const userIds = data?.map(profile => profile.id) || [];
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .in('user_id', userIds);
+      // Since custom_users already has role information, we don't need separate role queries
+      const userIds = data?.map(user => user.id) || [];
 
-      if (rolesError) throw rolesError;
-
-      // Get new staff role assignments
-      const { data: staffRoles, error: staffRolesError } = await supabase
-        .from('user_role_assignments')
-        .select(`
-          user_id,
-          is_active,
-          expires_at,
-          staff_roles!inner(name, display_name, color, hierarchy_level)
-        `)
-        .eq('is_active', true)
-        .in('user_id', userIds);
-
-      if (staffRolesError) console.error('Error fetching staff roles:', staffRolesError);
-
-      // Fetch recent applications for these users without FK join (no FK required)
+      // Fetch recent applications for these users
       let appsByUser: Record<string, any[]> = {};
       if (userIds.length > 0) {
         const { data: apps, error: appsError } = await supabase
@@ -81,14 +63,28 @@ const UserManagementSection = () => {
         }, {});
       }
 
-      // Combine the data
-      const usersWithRoles = data?.map(profile => ({
-        ...profile,
-        user_roles: roles?.filter(role => role.user_id === profile.id) || [],
-        staff_roles: staffRoles?.filter(role => role.user_id === profile.id) || []
+      // Map custom_users to the expected format
+      const usersWithData = data?.map(user => ({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        role: user.role, // This comes directly from custom_users
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        banned: user.banned,
+        banned_at: user.banned_at,
+        banned_by: user.banned_by,
+        email_verified: user.email_verified,
+        last_login: user.last_login,
+        // Keep compatibility with existing code
+        user_roles: [{ user_id: user.id, role: user.role }],
+        staff_roles: [],
+        applications: appsByUser[user.id] || []
       })) || [];
 
-      setUsers(usersWithRoles);
+      setUsers(usersWithData);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -113,26 +109,23 @@ const handleBanUser = async (user: any, reason: string) => {
   }
 
   try {
-    // Always get staff info for both DB and notification
-    const staff = await supabase.auth.getUser();
-    const staffId = staff.data.user?.id; // UUID for banned_by DB column
-    const staffDisplayName =
-      staff.data.user?.email ||
-      "Unknown Staff";
+    // Get current admin user from custom auth
+    const staffId = user.id; // We'll use the current user's ID for banned_by
+    const staffDisplayName = user.email || "Unknown Staff";
 
-    // Mark user as banned in your profiles table (use UUID!)
+    // Mark user as banned in custom_users table
     const { error } = await supabase
-      .from('profiles')
+      .from('custom_users')
       .update({ 
         banned: true, 
         banned_at: new Date().toISOString(),
-        banned_by: staffId // <-- UUID, never display name/email
+        banned_by: staffId
       })
       .eq('id', user.id);
 
     if (error) throw error;
 
-    // Send ban notification via edge function – use name/email for email template
+    // Send ban notification via edge function
     try {
       await supabase.functions.invoke('send-ban-notification', {
         body: {
@@ -140,7 +133,7 @@ const handleBanUser = async (user: any, reason: string) => {
           userName: user.username,
           isBanned: true,
           banReason: reason,
-          staffName: staffDisplayName // display name/email for notification only
+          staffName: staffDisplayName
         }
       });
     } catch (fnError) {
@@ -166,7 +159,7 @@ const handleBanUser = async (user: any, reason: string) => {
   const handleUnbanUser = async (userId: string) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('custom_users')
         .update({ 
           banned: false,
           banned_at: null,
@@ -194,7 +187,7 @@ const handleBanUser = async (user: any, reason: string) => {
   const handleDeleteUser = async (userId: string) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('custom_users')
         .delete()
         .eq('id', userId);
 
@@ -238,6 +231,28 @@ const resetUserPassword = async (userId: string, email: string) => {
   }
 };
 
+const forceLogoutUser = async (userId: string, username: string) => {
+  try {
+    const { error } = await supabase.functions.invoke('force-logout-user', {
+      body: { userId }
+    });
+
+    if (error) throw error;
+
+    toast({
+      title: "Success",
+      description: `${username} has been logged out of all sessions`,
+    });
+  } catch (error) {
+    console.error('Error forcing logout:', error);
+    toast({
+      title: "Error",
+      description: "Failed to logout user",
+      variant: "destructive",
+    });
+  }
+};
+
 const userEditSchema = z.object({
   username: z.string().min(1, "Username is required").max(50, "Username must be less than 50 characters"),
   full_name: z.string().max(100, "Full name must be less than 100 characters").optional(),
@@ -246,7 +261,7 @@ const userEditSchema = z.object({
 const handleUpdateUser = async (userId: string, data: z.infer<typeof userEditSchema>) => {
   try {
     const { error } = await supabase
-      .from('profiles')
+      .from('custom_users')
       .update({
         username: data.username,
         full_name: data.full_name || null,
@@ -768,6 +783,15 @@ const handleUpdateUser = async (userId: string, data: z.infer<typeof userEditSch
                         </DialogContent>
                       </Dialog>
                     )}
+
+                    <Button
+                      onClick={() => forceLogoutUser(user.id, user.username || 'User')}
+                      variant="outline"
+                      size="sm"
+                      title="Force logout all user sessions"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

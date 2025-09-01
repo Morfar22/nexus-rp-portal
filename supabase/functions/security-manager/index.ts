@@ -5,47 +5,63 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[SECURITY-MANAGER] ${step}${detailsStr}`);
+};
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+logStep("Environment check", { hasSupabaseUrl: !!supabaseUrl, hasSupabaseKey: !!supabaseKey });
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 Deno.serve(async (req) => {
+  logStep("Function started", { method: req.method, url: req.url });
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    logStep("CORS preflight handled");
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log('=== SECURITY MANAGER FUNCTION START ===');
-
   try {
     const { action, data } = await req.json();
-    console.log('Security action:', action, 'data:', data);
+    logStep("Request parsed", { action, hasData: !!data });
 
     let result;
     switch (action) {
       case 'log_audit_event':
+        logStep("Processing log_audit_event action");
         result = await logAuditEvent(data);
         break;
       case 'get_audit_logs':
+        logStep("Processing get_audit_logs action", { limit: data.limit });
         result = await getAuditLogs(data.limit || 50);
         break;
       case 'track_failed_login':
+        logStep("Processing track_failed_login action", { ipAddress: data.ipAddress });
         result = await trackFailedLogin(data);
         break;
       case 'check_rate_limit':
+        logStep("Processing check_rate_limit action", { type: data.type, ipAddress: data.ipAddress });
         result = await checkRateLimit(data);
         break;
       case 'cleanup_expired_sessions':
+        logStep("Processing cleanup_expired_sessions action");
         result = await cleanupExpiredSessions();
         break;
       case 'get_security_stats':
+        logStep("Processing get_security_stats action");
         result = await getSecurityStats();
         break;
       default:
+        logStep("ERROR: Unknown action", { action });
         throw new Error(`Unknown action: ${action}`);
     }
 
+    logStep("Action completed successfully", { action, resultType: typeof result });
     return new Response(
       JSON.stringify({ success: true, data: result }),
       {
@@ -55,7 +71,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Security manager error:', error);
+    logStep("ERROR in security-manager", { message: error.message, stack: error.stack });
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -79,7 +95,9 @@ async function logAuditEvent(eventData: {
   ipAddress?: string;
   userAgent?: string;
 }) {
-  console.log('Logging audit event:', eventData);
+  const logStep = (step: string, details?: any) => console.log(`[LOG-AUDIT-EVENT] ${step}${details ? ` - ${JSON.stringify(details)}` : ''}`);
+  
+  logStep("Starting audit event logging", { action: eventData.action, userId: eventData.userId });
 
   const { error } = await supabase
     .from('audit_logs')
@@ -95,11 +113,11 @@ async function logAuditEvent(eventData: {
     });
 
   if (error) {
-    console.error('Error logging audit event:', error);
+    logStep("ERROR logging audit event", { error: error.message });
     throw error;
   }
 
-  console.log('Audit event logged successfully');
+  logStep("Audit event logged successfully");
   return { logged: true };
 }
 

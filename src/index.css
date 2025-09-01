@@ -2,10 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ================= DESIGN SYSTEM ================= */
-/* All color tokens, gradients, and effects are HSL. */
-/* Enhanced professional cyberpunk/gaming visual quality */
-/* Inspired by deep blue/purple/cyan/pink hero image! */
+/* ================= ADVENTURE RP DESIGN SYSTEM ================= */
+/* Professional gaming/roleplay aesthetic with vibrant orange/amber accents */
+/* Inspired by cyberpunk and FiveM roleplay servers */
 
 @layer base {
   :root {
@@ -47,9 +46,9 @@
     --adventure-dark: 220 25% 12%;
     --adventure-border: 220 25% 18%;
     
-    /* Legacy color names mapped to Adventure RP theme */
+    /* Gaming color names */
     --neon-gold: 35 85% 60%;
-    --neon-teal: 25 95% 55%;
+    --neon-teal: 180 70% 55%;
     --neon-blue: 200 70% 55%;
     --neon-purple: 260 60% 65%;
     --neon-green: 120 60% 55%;
@@ -58,8 +57,8 @@
     --patriot-navy: 220 30% 15%;
     --golden-light: 35 85% 70%;
     --golden-dark: 30 80% 45%;
-    --teal-light: 25 95% 65%;
-    --teal-dark: 25 75% 40%;
+    --teal-light: 180 70% 65%;
+    --teal-dark: 180 70% 40%;
     --cyber-gold: 35 85% 60%;
 
     --gaming-dark: 220 30% 8%;
@@ -161,9 +160,9 @@
   }
 }
 
-/* ================= COMPONENTS & ANIMATIONS ================= */
+/* ================= GAMING COMPONENTS & ANIMATIONS ================= */
 @layer components {
-  /* --- Enhanced Animations --- */
+  /* --- Enhanced Gaming Animations --- */
   @keyframes float {
     0%, 100% { transform: translateY(0px) rotate(-2deg); }
     50% { transform: translateY(-18px) rotate(2deg); }
@@ -219,7 +218,7 @@
     to { transform: scale(1); opacity: 1; }
   }
 
-  /* --- Enhanced Utility Classes --- */
+  /* --- Enhanced Gaming Utility Classes --- */
   .text-glow {
     animation: text-glow 3s ease-in-out infinite;
     font-weight: 600;
@@ -295,7 +294,7 @@
     animation: float 6s ease-in-out infinite;
   }
 
-  /* --- Enhanced Card Components --- */
+  /* --- Enhanced Gaming Card Components --- */
   .card-gaming {
     background: hsl(var(--gaming-card));
     border: 1px solid hsl(var(--gaming-border));
@@ -325,7 +324,7 @@
     box-shadow: var(--glow-primary);
   }
 
-  /* --- Enhanced Input Components --- */
+  /* --- Enhanced Gaming Input Components --- */
   .input-gaming {
     background: hsl(var(--gaming-card));
     border: 2px solid hsl(var(--gaming-border));
@@ -344,7 +343,7 @@
     border-color: hsl(var(--primary) / 0.5);
   }
 
-  /* --- Enhanced Badge Component --- */
+  /* --- Enhanced Gaming Badge Component --- */
   .badge-cyber {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
     color: hsl(var(--foreground));
@@ -363,7 +362,7 @@
     box-shadow: var(--glow-primary);
   }
 
-  /* --- Enhanced Modal and Overlay --- */
+  /* --- Enhanced Gaming Modal and Overlay --- */
   .modal-cyber {
     background: hsl(var(--gaming-card));
     backdrop-filter: blur(20px);
@@ -373,7 +372,7 @@
     color: hsl(var(--foreground));
   }
 
-  /* --- Custom Scrollbar Styling --- */
+  /* --- Custom Gaming Scrollbar Styling --- */
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -407,7 +406,7 @@
   .staff-panel-scrollbar::-webkit-scrollbar-corner { background: transparent; }
   .staff-panel-scrollbar { scrollbar-width: thin; scrollbar-color: hsl(var(--gaming-border)) transparent; }
 
-  /* --- Loading States --- */
+  /* --- Gaming Loading States --- */
   .loading-shimmer {
     background: linear-gradient(
       90deg,
@@ -419,7 +418,7 @@
     animation: shimmer 1.5s infinite;
   }
 
-  /* --- Interactive Elements --- */
+  /* --- Gaming Interactive Elements --- */
   .interactive-element {
     transition: all var(--animation-speed-normal) var(--animation-ease);
     cursor: pointer;

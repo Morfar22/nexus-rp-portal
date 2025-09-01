@@ -1,0 +1,711 @@
+import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Palette, Wand2, FileText, Image, Download, Copy,
+  Sparkles, Brush, Type, Camera, Video, Music, AlertCircle
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface CreativeProject {
+  id: string;
+  title: string;
+  type: 'content' | 'image' | 'banner' | 'logo' | 'video' | 'audio';
+  content: string;
+  settings: any;
+  created_at: string;
+  updated_at: string;
+}
+
+const CreativeTools = () => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  const [projects, setProjects] = useState<CreativeProject[]>([]);
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [generatedImageUrl, setGeneratedImageUrl] = useState('');
+
+  // AI Content Generator
+  const [contentPrompt, setContentPrompt] = useState('');
+  const [contentType, setContentType] = useState<'story' | 'description' | 'announcement' | 'rules'>('story');
+
+  // Image Generator
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [imageStyle, setImageStyle] = useState<'realistic' | 'artistic' | 'cartoon' | 'cyberpunk'>('realistic');
+  const [imageSize, setImageSize] = useState<'512x512' | '1024x1024' | '1920x1080'>('1024x1024');
+
+  // Banner Creator
+  const [bannerText, setBannerText] = useState('');
+  const [bannerStyle, setBannerStyle] = useState<'gaming' | 'minimal' | 'neon' | 'retro'>('gaming');
+  const [bannerColor, setBannerColor] = useState('#6366f1');
+
+  const generateAIContent = async () => {
+    if (!contentPrompt.trim()) {
+      toast({
+        title: t('common.error'),
+        description: t('creative.error_no_prompt'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-ai-assistant', {
+        body: {
+          message: `Generate ${contentType} content for a FiveM roleplay server. Prompt: ${contentPrompt}. 
+                   Write in Danish. Make it engaging and appropriate for a gaming community.`,
+          sessionId: 'creative-tools-' + Date.now(),
+          userType: 'visitor'
+        }
+      });
+
+      if (error) {
+        console.error('AI Error:', error);
+        // Provide fallback content if AI fails
+        setGeneratedContent(generateFallbackContent(contentType, contentPrompt));
+        toast({
+          title: t('common.info'),
+          description: 'AI service midlertidigt utilgængelig, viser standard indhold',
+          variant: 'default'
+        });
+      } else {
+        setGeneratedContent(data.response || generateFallbackContent(contentType, contentPrompt));
+        toast({
+          title: t('common.success'),
+          description: t('creative.success_generated')
+        });
+      }
+    } catch (error) {
+      console.error('Error generating content:', error);
+      setGeneratedContent(generateFallbackContent(contentType, contentPrompt));
+      toast({
+        title: t('common.info'),
+        description: 'Viser standard indhold baseret på din prompt'
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateFallbackContent = (type: string, prompt: string): string => {
+    const templates = {
+      story: `📖 **Roleplay Historie: ${prompt}**
+
+Dette er en spændende historie i Adventure RP's cyberpunk verden, hvor ${prompt.toLowerCase()} spiller en central rolle. 
+
+**Baggrund:**
+I Neo-Copenhagens neonbelyste gader, hvor teknologi og kriminalitet mødes, udspiller sig en historie om ${prompt.toLowerCase()}. Her skal karaktererne navigere i en verden fuld af muligheder og farer.
+
+**Handlingen:**
+Vores historie begynder når ${prompt.toLowerCase()} bliver opdaget af de forkerte mennesker. Nu må protagonisten træffe svære valg der vil påvirke hele samfundet.
+
+**Konklusion:**
+I Adventure RP kan enhver historie blive til virkelighed - det er kun fantasien der sætter grænser.`,
+
+      description: `🎮 **${prompt} - Adventure RP**
+
+Oplev ${prompt.toLowerCase()} i vores cyberpunk-inspirerede FiveM server. Adventure RP tilbyder en unik roleplaying-oplevelse hvor enhver historie kan udfolde sig.
+
+**Hvad vi tilbyder:**
+• Professionel staff 24/7
+• Custom scripts og indhold  
+• Aktiv community på +200 spillere
+• Realistisk økonomi og job-system
+• Omfattende karakter-udvikling
+
+**${prompt} Features:**
+Her kan du opleve ${prompt.toLowerCase()} på en helt ny måde med vores specialdesignede systemer og scripts.
+
+Kom og vær en del af Adventure RP - hvor din historia tæller!`,
+
+      announcement: `📢 **Vigtig Meddelelse: ${prompt}**
+
+Kære Adventure RP Community,
+
+Vi vil gerne informere jer om ${prompt.toLowerCase()}. Dette er vigtigt for alle spillere at være opmærksomme på.
+
+**Detaljer:**
+${prompt} vil påvirke serveren på følgende måder:
+• Forbedret gameplay-oplevelse
+• Nye muligheder for roleplay
+• Øget server-stabilitet
+
+**Hvad skal I gøre:**
+Sørg for at læse denne meddelelse grundigt og følg eventuelle instruktioner.
+
+Tak for jeres forståelse og fortsæt den fantastiske roleplay!
+
+- Adventure RP Staff Team`,
+
+      rules: `📋 **Regel Forklaring: ${prompt}**
+
+**Regel:** ${prompt}
+
+**Formål:**
+Denne regel eksisterer for at sikre en fair og sjov oplevelse for alle spillere på Adventure RP.
+
+**Hvad betyder det:**
+${prompt.toLowerCase()} refererer til følgende adfærd og handlinger som enten er påkrævet eller forbudt på serveren.
+
+**Eksempler:**
+• ✅ Korrekt: Følg regelens ånd og bogstav
+• ❌ Forkert: Bryd ikke denne regel
+
+**Konsekvenser:**
+Overtrædelse af denne regel kan resultere i:
+• Advarsel
+• Midlertidigt ban
+• Permanent ban (ved gentagne overtrædelser)
+
+Har du spørgsmål? Kontakt staff via vores Discord eller in-game admin system.`
+    };
+
+    return templates[type as keyof typeof templates] || `Indhold om: ${prompt}`;
+  };
+
+  const generateImage = async () => {
+    if (!imagePrompt.trim()) {
+      toast({
+        title: t('common.error'),
+        description: t('creative.error_no_prompt'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Use Lovable's image generation
+      const dimensions = imageSize.split('x').map(Number);
+      const [width, height] = dimensions;
+      
+      const stylePrompt = {
+        realistic: 'photorealistic, high detail, professional',
+        artistic: 'artistic, painterly, creative',
+        cartoon: 'cartoon style, animated, colorful',
+        cyberpunk: 'cyberpunk, neon, futuristic, dark'
+      }[imageStyle];
+
+      const fullPrompt = `${imagePrompt}, ${stylePrompt}, high quality`;
+      
+      // Use OpenAI image generation through Supabase
+      const { data, error } = await supabase.functions.invoke('generate-image', {
+        body: {
+          prompt: fullPrompt,
+          size: imageSize,
+          style: imageStyle
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.image) {
+        setGeneratedImageUrl(data.image);
+        
+        toast({
+          title: t('common.success'),
+          description: t('creative.success_image_generated')
+        });
+      } else {
+        throw new Error('No image data received');
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      toast({
+        title: t('common.error'),
+        description: t('creative.error_generation_failed'),
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const createBanner = () => {
+    if (!bannerText.trim()) {
+      toast({
+        title: t('common.error'),
+        description: t('creative.error_no_text'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size
+    canvas.width = 1200;
+    canvas.height = 400;
+
+    // Create gradient background based on style
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    
+    switch (bannerStyle) {
+      case 'gaming':
+        gradient.addColorStop(0, bannerColor);
+        gradient.addColorStop(1, '#1a1a2e');
+        break;
+      case 'minimal':
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(1, '#f8f9fa');
+        break;
+      case 'neon':
+        gradient.addColorStop(0, '#ff006e');
+        gradient.addColorStop(0.5, '#8338ec');
+        gradient.addColorStop(1, '#3a86ff');
+        break;
+      case 'retro':
+        gradient.addColorStop(0, '#ff9a00');
+        gradient.addColorStop(1, '#ff0080');
+        break;
+    }
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add text
+    ctx.fillStyle = bannerStyle === 'minimal' ? '#000000' : '#ffffff';
+    ctx.font = 'bold 48px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Add text shadow for better readability
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    
+    ctx.fillText(bannerText, canvas.width / 2, canvas.height / 2);
+
+    toast({
+      title: t('common.success'),
+      description: t('creative.success_banner_created')
+    });
+  };
+
+  const downloadBanner = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const link = document.createElement('a');
+    link.download = `banner-${bannerText.replace(/\s+/g, '-').toLowerCase()}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: t('common.success'),
+      description: t('creative.copy_to_clipboard')
+    });
+  };
+
+  const copyBannerHTML = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dataURL = canvas.toDataURL();
+    const html = `<img src="${dataURL}" alt="${bannerText}" style="width: 100%; max-width: 1200px; height: auto;" />`;
+    copyToClipboard(html);
+  };
+
+  const ToolCard = ({ icon: Icon, title, description, toolKey, comingSoon = false }: {
+    icon: any;
+    title: string;
+    description: string;
+    toolKey: string;
+    comingSoon?: boolean;
+  }) => (
+    <Card 
+      className={`p-6 bg-gaming-card border-gaming-border transition-all duration-300 cursor-pointer
+                 ${comingSoon ? 'opacity-50' : 'hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20'}`}
+      onClick={() => !comingSoon && setSelectedTool(toolKey)}
+    >
+      <div className="flex items-center space-x-4">
+        <div className="p-3 rounded-full bg-primary/20">
+          <Icon className="h-6 w-6 text-primary" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-foreground">{title}</h3>
+          <p className="text-sm text-muted-foreground">{description}</p>
+          {comingSoon && (
+            <Badge variant="secondary" className="mt-2">{t('creative.coming_soon')}</Badge>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-foreground">{t('creative.creative_tools')}</h2>
+          <p className="text-muted-foreground">{t('creative.tools_description')}</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <span className="text-sm text-muted-foreground">{t('creative.ai_powered')}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ToolCard
+          icon={FileText}
+          title={t('creative.ai_content_generator')}
+          description={t('creative.ai_content_description')}
+          toolKey="content"
+        />
+        <ToolCard
+          icon={Image}
+          title={t('creative.ai_image_generator')}
+          description={t('creative.ai_image_description')}
+          toolKey="image"
+        />
+        <ToolCard
+          icon={Brush}
+          title={t('creative.banner_creator')}
+          description={t('creative.banner_description')}
+          toolKey="banner"
+        />
+        <ToolCard
+          icon={Type}
+          title={t('creative.logo_designer')}
+          description={t('creative.logo_description')}
+          toolKey="logo"
+          comingSoon
+        />
+        <ToolCard
+          icon={Video}
+          title={t('creative.video_editor')}
+          description={t('creative.video_description')}
+          toolKey="video"
+          comingSoon
+        />
+        <ToolCard
+          icon={Music}
+          title={t('creative.audio_mixer')}
+          description={t('creative.audio_description')}
+          toolKey="audio"
+          comingSoon
+        />
+      </div>
+
+      {/* AI Content Generator Dialog */}
+      <Dialog open={selectedTool === 'content'} onOpenChange={() => setSelectedTool(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>{t('creative.ai_content_generator')}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t('creative.content_type')}</Label>
+                <Select value={contentType} onValueChange={(value: any) => setContentType(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="story">{t('creative.story')}</SelectItem>
+                    <SelectItem value="description">{t('creative.description')}</SelectItem>
+                    <SelectItem value="announcement">{t('creative.announcement')}</SelectItem>
+                    <SelectItem value="rules">{t('creative.rules')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Beskrivelse / Prompt</Label>
+              <Textarea
+                value={contentPrompt}
+                onChange={(e) => setContentPrompt(e.target.value)}
+                placeholder={t('creative.prompt_placeholder')}
+                rows={4}
+              />
+            </div>
+
+            <Button 
+              onClick={generateAIContent} 
+              disabled={isGenerating}
+              className="w-full"
+            >
+              {isGenerating ? (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                  {t('creative.generating')}
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  {t('creative.generate_content')}
+                </>
+              )}
+            </Button>
+
+            {generatedContent && (
+              <Card className="p-4 bg-gaming-dark border-gaming-border">
+                <div className="flex items-center justify-between mb-2">
+                  <Label>{t('creative.generated_content')}</Label>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => copyToClipboard(generatedContent)}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Kopier
+                  </Button>
+                </div>
+                <div className="max-h-60 overflow-y-auto">
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{generatedContent}</p>
+                </div>
+              </Card>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Image Generator Dialog */}
+      <Dialog open={selectedTool === 'image'} onOpenChange={() => setSelectedTool(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Image className="h-5 w-5" />
+              <span>{t('creative.ai_image_generator')}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Billede Beskrivelse</Label>
+              <Textarea
+                value={imagePrompt}
+                onChange={(e) => setImagePrompt(e.target.value)}
+                placeholder={t('creative.image_prompt_placeholder')}
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t('creative.style')}</Label>
+                <Select value={imageStyle} onValueChange={(value: any) => setImageStyle(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="realistic">{t('creative.realistic')}</SelectItem>
+                    <SelectItem value="artistic">{t('creative.artistic')}</SelectItem>
+                    <SelectItem value="cartoon">{t('creative.cartoon')}</SelectItem>
+                    <SelectItem value="cyberpunk">{t('creative.cyberpunk')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t('creative.size')}</Label>
+                <Select value={imageSize} onValueChange={(value: any) => setImageSize(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="512x512">512x512 (Kvadrat)</SelectItem>
+                    <SelectItem value="1024x1024">1024x1024 (Stor)</SelectItem>
+                    <SelectItem value="1920x1080">1920x1080 (Banner)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button 
+              onClick={generateImage} 
+              disabled={isGenerating}
+              className="w-full"
+            >
+              {isGenerating ? (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                  Genererer Billede...
+                </>
+              ) : (
+                <>
+                  <Camera className="h-4 w-4 mr-2" />
+                  {t('creative.generate_image')}
+                </>
+              )}
+            </Button>
+
+            {generatedImageUrl && (
+              <Card className="p-4 bg-gaming-dark border-gaming-border">
+                <div className="space-y-4">
+                  <Label>Genereret Billede</Label>
+                  <img 
+                    src={generatedImageUrl} 
+                    alt="Generated" 
+                    className="w-full rounded-lg border border-gaming-border"
+                  />
+                  <div className="flex space-x-2">
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = generatedImageUrl;
+                        link.download = 'generated-image.png';
+                        link.click();
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Banner Creator Dialog */}
+      <Dialog open={selectedTool === 'banner'} onOpenChange={() => setSelectedTool(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Brush className="h-5 w-5" />
+              <span>{t('creative.banner_creator')}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Banner Tekst</Label>
+              <Input
+                value={bannerText}
+                onChange={(e) => setBannerText(e.target.value)}
+                placeholder={t('creative.banner_text_placeholder')}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t('creative.style')}</Label>
+                <Select value={bannerStyle} onValueChange={(value: any) => setBannerStyle(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gaming">{t('creative.gaming')}</SelectItem>
+                    <SelectItem value="minimal">{t('creative.minimal')}</SelectItem>
+                    <SelectItem value="neon">{t('creative.neon')}</SelectItem>
+                    <SelectItem value="retro">{t('creative.retro')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t('creative.primary_color')}</Label>
+                <Input
+                  type="color"
+                  value={bannerColor}
+                  onChange={(e) => setBannerColor(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="border-2 border-dashed border-gaming-border rounded-lg p-8 text-center">
+              <canvas
+                ref={canvasRef}
+                className="max-w-full h-auto border border-gaming-border rounded"
+                style={{ display: bannerText ? 'block' : 'none', margin: '0 auto' }}
+              />
+              {bannerText && (
+                <div className="mt-2">
+                  <p className="text-sm text-muted-foreground">{t('creative.preview')}</p>
+                </div>
+              )}
+              {!bannerText && (
+                <div 
+                  className="inline-block px-8 py-4 rounded-lg text-white font-bold text-xl"
+                  style={{ backgroundColor: bannerColor }}
+                >
+                  {t('creative.your_banner_text')}
+                </div>
+              )}
+            </div>
+
+            <div className="flex space-x-2">
+              <Button onClick={createBanner} className="flex-1">
+                <Brush className="h-4 w-4 mr-2" />
+                {t('creative.create_banner')}
+              </Button>
+            </div>
+
+            {bannerText && (
+              <div className="flex space-x-2">
+                <Button onClick={downloadBanner} className="flex-1">
+                  <Download className="h-4 w-4 mr-2" />
+                  {t('creative.download_banner')}
+                </Button>
+                <Button variant="outline" onClick={copyBannerHTML}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  {t('creative.copy_html')}
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recent Projects */}
+      <Card className="p-6 bg-gaming-card border-gaming-border">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-foreground">{t('creative.recent_projects')}</h3>
+          <Button variant="outline" size="sm">
+            {t('creative.see_all')}
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { id: 1, title: 'Server Regel Forklaring', type: 'content', hours: 2 },
+            { id: 2, title: 'Cyberpunk Banner', type: 'banner', hours: 5 },
+            { id: 3, title: 'Karakter Historie', type: 'content', hours: 8 }
+          ].map((project) => (
+            <Card key={project.id} className="p-4 bg-gaming-dark border-gaming-border">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded bg-primary/20">
+                  <FileText className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-foreground">{project.title}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Oprettet for {project.hours} timer siden
+                  </p>
+                </div>
+                <Button size="sm" variant="ghost">
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+export default CreativeTools;

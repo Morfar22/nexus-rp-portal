@@ -12,13 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Trash2, Save, X, GripVertical } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 
 const FormFieldEditor = ({ applicationTypeId, initialFields, onSave }: any) => {
   const [fields, setFields] = useState(initialFields || []);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
 
   const fieldTypes = [
     { value: 'text', label: 'Text Input' },

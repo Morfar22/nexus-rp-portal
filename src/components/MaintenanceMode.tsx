@@ -1,5 +1,5 @@
 import { useServerSettings } from '@/hooks/useServerSettings';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Settings, Clock } from 'lucide-react';
@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const MaintenanceMode = () => {
   const { settings } = useServerSettings();
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const [isStaff, setIsStaff] = useState(false);
   const [checkingStaff, setCheckingStaff] = useState(true);
 

@@ -5,9 +5,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[DISCORD-BOT] ${step}${detailsStr}`);
+};
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const discordBotToken = Deno.env.get('DISCORD_BOT_TOKEN');
+
+logStep("Environment check", {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasSupabaseKey: !!supabaseKey,
+  hasDiscordBotToken: !!discordBotToken
+});
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

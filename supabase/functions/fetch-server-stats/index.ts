@@ -6,18 +6,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[FETCH-SERVER-STATS] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
+  logStep("Function started", { method: req.method, url: req.url });
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    logStep("CORS preflight handled");
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    logStep("Initializing Supabase client");
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    logStep("Fetching server IP from settings");
     // Get server IP from settings
     const { data: serverIpSetting } = await supabase
       .from('server_settings')
@@ -26,6 +36,7 @@ serve(async (req) => {
       .maybeSingle()
 
     if (!serverIpSetting?.setting_value) {
+      logStep("ERROR: Server IP not configured");
       return new Response(
         JSON.stringify({ error: 'Server IP not configured' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -33,9 +44,10 @@ serve(async (req) => {
     }
 
     const serverIp = serverIpSetting.setting_value as string
-    console.log('Fetching stats from server:', serverIp)
+    logStep("Server IP found, fetching stats", { serverIp });
 
     // Fetch server data from FiveM endpoints
+    logStep("Making requests to FiveM endpoints");
     const [playersResponse, infoResponse, dynamicResponse] = await Promise.allSettled([
       fetch(`http://${serverIp}/players.json`, { 
         method: 'GET',
@@ -51,6 +63,12 @@ serve(async (req) => {
       })
     ])
 
+    logStep("Endpoint responses received", {
+      playersStatus: playersResponse.status,
+      infoStatus: infoResponse.status,
+      dynamicStatus: dynamicResponse.status
+    });
+
     let playersOnline = 0
     let maxPlayers = 300
     let queueCount = 0
@@ -60,10 +78,12 @@ serve(async (req) => {
       try {
         const playersData = await playersResponse.value.json()
         playersOnline = Array.isArray(playersData) ? playersData.length : 0
-        console.log('Players online:', playersOnline)
+        logStep("Players data parsed successfully", { playersOnline, playersDataType: typeof playersData });
       } catch (error) {
-        console.error('Error parsing players data:', error)
+        logStep("ERROR parsing players data", { error: error.message });
       }
+    } else {
+      logStep("Players endpoint failed", { status: playersResponse.status });
     }
 
     // Parse server info
@@ -71,10 +91,12 @@ serve(async (req) => {
       try {
         const infoData = await infoResponse.value.json()
         maxPlayers = infoData.vars?.sv_maxClients || infoData.maxPlayers || 300
-        console.log('Max players:', maxPlayers)
+        logStep("Info data parsed successfully", { maxPlayers, hasVars: !!infoData.vars });
       } catch (error) {
-        console.error('Error parsing info data:', error)
+        logStep("ERROR parsing info data", { error: error.message });
       }
+    } else {
+      logStep("Info endpoint failed", { status: infoResponse.status });
     }
 
     // Parse dynamic data (for queue and other stats)
@@ -83,26 +105,31 @@ serve(async (req) => {
         const dynamicData = await dynamicResponse.value.json()
         // Some servers expose queue data in dynamic.json
         queueCount = dynamicData.queue || 0
-        console.log('Queue count:', queueCount)
+        logStep("Dynamic data parsed successfully", { queueCount, hasQueue: !!dynamicData.queue });
       } catch (error) {
-        console.error('Error parsing dynamic data:', error)
+        logStep("ERROR parsing dynamic data", { error: error.message });
       }
+    } else {
+      logStep("Dynamic endpoint failed", { status: dynamicResponse.status });
     }
 
     // Calculate uptime (simplified - you might want to track this differently)
     const uptimePercentage = playersResponse.status === 'fulfilled' && playersResponse.value.ok ? 99.9 : 0.0
-
+    
     // Simulate ping (you might want to measure actual ping)
     const pingMs = Math.floor(Math.random() * 30) + 10 // 10-40ms range
-
-    console.log('Updating database with stats:', {
+    
+    const statsToUpdate = {
       playersOnline,
       maxPlayers,
       queueCount,
       uptimePercentage,
       pingMs
-    })
+    };
 
+    logStep("Final stats calculated", statsToUpdate);
+
+    logStep("Updating database with server stats");
     // Update the server_stats table
     const { error: updateError } = await supabase
       .from('server_stats')
@@ -117,7 +144,7 @@ serve(async (req) => {
       .eq('id', (await supabase.from('server_stats').select('id').limit(1).single()).data?.id)
 
     if (updateError) {
-      console.error('Database update error:', updateError)
+      logStep("ERROR updating database", { error: updateError.message });
       return new Response(
         JSON.stringify({ error: 'Failed to update database', details: updateError.message }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
@@ -136,14 +163,14 @@ serve(async (req) => {
       }
     }
 
-    console.log('Successfully updated server stats:', result)
+    logStep("Server stats updated successfully", result);
 
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error in fetch-server-stats function:', error)
+    logStep("ERROR in fetch-server-stats function", { message: error.message, stack: error.stack });
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 

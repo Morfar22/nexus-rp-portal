@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import Navbar from "@/components/Navbar";
 import { StaffSidebar } from "@/components/StaffSidebar";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { useServerSettings } from "@/hooks/useServerSettings";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceOptimization";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { 
@@ -35,8 +38,16 @@ import {
   GripVertical,
   EyeOff,
   Shield,
-  X
+  X,
+  Zap
 } from "lucide-react";
+
+// Lazy load heavy components
+const LazyPerformanceOptimizer = lazy(() => 
+  import("@/components/performance/PerformanceOptimizer").then(module => ({
+    default: module.PerformanceOptimizer
+  }))
+);
 import HomepageContentManager from "@/components/HomepageContentManager";
 import ClosedApplications from "@/components/ClosedApplications";
 import LogsViewer from "@/components/LogsViewer";
@@ -62,16 +73,19 @@ import { PartnersOverview } from "@/components/PartnersOverview";
 import { EmailTemplateManager } from "@/components/EmailTemplateManager";
 import TwitchStreamersManager from "@/components/TwitchStreamersManager";
 import { DeploymentSettings } from "@/components/DeploymentSettings";
-import RoleManagement from "@/components/RoleManagement";
+import { RoleManagement } from "@/components/RoleManagement";
+import { PermissionGate } from "@/components/PermissionGate";
 import LiveChatManager from "@/components/LiveChatManager";
 import DesignManager from "@/components/DesignManager";
 import ServerInfoCard from "@/components/ServerInfoCard";
 import { PackageManager } from "@/components/PackageManager";
 import { SubscriptionOverview } from "@/components/SubscriptionOverview";
 import LawsManager from "@/components/LawsManager";
+import SocialMediaManager from "@/components/SocialMediaManager";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
+  const [applicationDiscordSettings, setApplicationDiscordSettings] = useState<any>({});
   const [loadingSettings, setLoadingSettings] = useState(false);
   const { toast } = useToast();
 
@@ -81,31 +95,46 @@ const DiscordLogsManager = () => {
 
   const fetchDiscordSettings = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch general Discord logging settings
+      const { data: generalSettings, error: generalError } = await supabase
         .from('server_settings')
         .select('setting_value')
         .eq('setting_key', 'discord_logging_settings')
         .maybeSingle();
 
-      if (error) throw error;
-      setDiscordSettings(data?.setting_value || {});
+      if (generalError) throw generalError;
+      setDiscordSettings(generalSettings?.setting_value || {});
+
+      // Fetch application-specific Discord settings
+      const { data: appSettings, error: appError } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'application_discord_settings')
+        .maybeSingle();
+
+      if (appError) throw appError;
+      setApplicationDiscordSettings(appSettings?.setting_value || {});
     } catch (error) {
       console.error('Error fetching Discord settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load Discord webhook settings.",
+        variant: "destructive",
+      });
     }
   };
 
   const updateDiscordSettings = async (settings: any) => {
     setLoadingSettings(true);
     try {
-      // Check if record exists first
-      const { data: existingData } = await supabase
+      // Update general Discord logging settings
+      const { data: existingGeneral } = await supabase
         .from('server_settings')
         .select('id')
         .eq('setting_key', 'discord_logging_settings')
         .maybeSingle();
 
-      if (existingData) {
-        // Update existing record
+      if (existingGeneral) {
         const { error } = await supabase
           .from('server_settings')
           .update({
@@ -113,10 +142,8 @@ const DiscordLogsManager = () => {
             updated_at: new Date().toISOString()
           })
           .eq('setting_key', 'discord_logging_settings');
-
         if (error) throw error;
       } else {
-        // Insert new record
         const { error } = await supabase
           .from('server_settings')
           .insert({
@@ -124,7 +151,6 @@ const DiscordLogsManager = () => {
             setting_value: settings,
             created_by: (await supabase.auth.getUser()).data.user?.id
           });
-
         if (error) throw error;
       }
       
@@ -145,26 +171,126 @@ const DiscordLogsManager = () => {
     }
   };
 
+  const updateApplicationDiscordSettings = async (settings: any) => {
+    setLoadingSettings(true);
+    try {
+      // Update application-specific Discord settings
+      const { data: existingApp } = await supabase
+        .from('server_settings')
+        .select('id')
+        .eq('setting_key', 'application_discord_settings')
+        .maybeSingle();
+
+      if (existingApp) {
+        const { error } = await supabase
+          .from('server_settings')
+          .update({
+            setting_value: settings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('setting_key', 'application_discord_settings');
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('server_settings')
+          .insert({
+            setting_key: 'application_discord_settings',
+            setting_value: settings,
+            created_by: (await supabase.auth.getUser()).data.user?.id
+          });
+        if (error) throw error;
+      }
+      
+      setApplicationDiscordSettings(settings);
+      toast({
+        title: "Application Settings Updated",
+        description: "Application Discord settings have been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating application Discord settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application Discord settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
   const testDiscordLog = async (type: string) => {
     try {
       let testData = {};
       
-      if (type === 'purchase_completed') {
-        testData = {
-          customerEmail: 'test@example.com',
-          customerName: 'Test Customer',
-          username: 'TestUser',
-          packageName: 'Test Package',
-          price: 4999, // $49.99 in cents
-          currency: 'USD'
-        };
-      } else {
-        testData = {
-          staff_name: 'Test Staff',
-          action: 'Test Action',
-          target: 'Test Target',
-          reason: 'Testing Discord logging system'
-        };
+      switch (type) {
+        case 'purchase_completed':
+          testData = {
+            customerEmail: 'test@example.com',
+            customerName: 'Test Customer',
+            username: 'TestUser',
+            packageName: 'Test Package',
+            price: 4999, // $49.99 in cents
+            currency: 'USD'
+          };
+          break;
+        case 'application_submitted':
+          testData = {
+            user_email: 'test@example.com',
+            steam_name: 'Test Player',
+            discord_tag: 'TestUser#1234',
+            fivem_name: 'Test_Player',
+            age: 25
+          };
+          break;
+        case 'application_approved':
+          testData = {
+            steam_name: 'Test Player',
+            discord_tag: 'TestUser#1234',
+            fivem_name: 'Test_Player',
+            review_notes: 'Test approval - all requirements met'
+          };
+          break;
+        case 'application_denied':
+          testData = {
+            steam_name: 'Test Player',
+            discord_tag: 'TestUser#1234',
+            fivem_name: 'Test_Player',
+            review_notes: 'Test denial - insufficient RP experience'
+          };
+          break;
+        case 'staff_action':
+          testData = {
+            staff_name: 'Test Staff',
+            action: 'User Warning',
+            target: 'Test Player',
+            reason: 'Testing Discord logging system'
+          };
+          break;
+        case 'user_banned':
+          testData = {
+            username: 'Test Player',
+            banned_by: 'Test Admin',
+            reason: 'Testing security logging'
+          };
+          break;
+        case 'server_start':
+          testData = {
+            server_name: 'Test Server',
+            max_players: 128
+          };
+          break;
+        case 'error_occurred':
+          testData = {
+            component: 'Test Component',
+            error_type: 'Test Error',
+            message: 'This is a test error message'
+          };
+          break;
+        default:
+          testData = {
+            test: true,
+            message: 'Generic test message'
+          };
       }
       
       console.log('Sending test log:', { type, testData });
@@ -201,128 +327,244 @@ const DiscordLogsManager = () => {
     <Card className="p-6 bg-gaming-card border-gaming-border">
       <div className="flex items-center space-x-2 mb-6">
         <Settings className="h-5 w-5 text-neon-purple" />
-        <h2 className="text-xl font-semibold text-foreground">Discord Logging Settings</h2>
+        <h2 className="text-xl font-semibold text-foreground">Discord Webhook Management</h2>
       </div>
       
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
-          <div className="space-y-2">
-            <Label className="text-foreground">Staff Webhook</Label>
-            <Input
-              value={discordSettings.staff_webhook || ''}
-              onChange={(e) => setDiscordSettings({
-                ...discordSettings,
-                staff_webhook: e.target.value
-              })}
-              placeholder="Discord webhook URL for staff logs"
-              className="bg-gaming-dark border-gaming-border text-foreground"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-foreground">Security Webhook</Label>
-            <Input
-              value={discordSettings.security_webhook || ''}
-              onChange={(e) => setDiscordSettings({
-                ...discordSettings,
-                security_webhook: e.target.value
-              })}
-              placeholder="Discord webhook URL for security logs"
-              className="bg-gaming-dark border-gaming-border text-foreground"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-foreground">General Webhook</Label>
-            <Input
-              value={discordSettings.general_webhook || ''}
-              onChange={(e) => setDiscordSettings({
-                ...discordSettings,
-                general_webhook: e.target.value
-              })}
-              placeholder="Discord webhook URL for general logs"
-              className="bg-gaming-dark border-gaming-border text-foreground"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-foreground">Packages Webhook</Label>
-            <Input
-              value={discordSettings.packages_webhook || ''}
-              onChange={(e) => setDiscordSettings({
-                ...discordSettings,
-                packages_webhook: e.target.value
-              })}
-              placeholder="Discord webhook URL for package purchase logs"
-              className="bg-gaming-dark border-gaming-border text-foreground"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-foreground">Errors Webhook</Label>
-            <Input
-              value={discordSettings.errors_webhook || ''}
-              onChange={(e) => setDiscordSettings({
-                ...discordSettings,
-                errors_webhook: e.target.value
-              })}
-              placeholder="Discord webhook URL for error logs"
-              className="bg-gaming-dark border-gaming-border text-foreground"
-            />
-          </div>
-        </div>
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="general">General Webhooks</TabsTrigger>
+          <TabsTrigger value="applications">Application Webhooks</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="general" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-foreground">Staff Webhook</Label>
+              <Input
+                value={discordSettings.staff_webhook || ''}
+                onChange={(e) => setDiscordSettings({
+                  ...discordSettings,
+                  staff_webhook: e.target.value
+                })}
+                placeholder="Discord webhook URL for staff actions"
+                className="bg-gaming-dark border-gaming-border text-foreground"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-foreground">Security Webhook</Label>
+              <Input
+                value={discordSettings.security_webhook || ''}
+                onChange={(e) => setDiscordSettings({
+                  ...discordSettings,
+                  security_webhook: e.target.value
+                })}
+                placeholder="Discord webhook URL for security events"
+                className="bg-gaming-dark border-gaming-border text-foreground"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-foreground">General Webhook</Label>
+              <Input
+                value={discordSettings.general_webhook || ''}
+                onChange={(e) => setDiscordSettings({
+                  ...discordSettings,
+                  general_webhook: e.target.value
+                })}
+                placeholder="Discord webhook URL for general server events"
+                className="bg-gaming-dark border-gaming-border text-foreground"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-foreground">Packages Webhook</Label>
+              <Input
+                value={discordSettings.packages_webhook || ''}
+                onChange={(e) => setDiscordSettings({
+                  ...discordSettings,
+                  packages_webhook: e.target.value
+                })}
+                placeholder="Discord webhook URL for package purchases"
+                className="bg-gaming-dark border-gaming-border text-foreground"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-foreground">Errors Webhook</Label>
+              <Input
+                value={discordSettings.errors_webhook || ''}
+                onChange={(e) => setDiscordSettings({
+                  ...discordSettings,
+                  errors_webhook: e.target.value
+                })}
+                placeholder="Discord webhook URL for system errors"
+                className="bg-gaming-dark border-gaming-border text-foreground"
+              />
+            </div>
 
-        <div className="flex justify-between items-center pt-4 border-t border-gaming-border">
-          <div className="flex space-x-2">
+            <div className="space-y-2">
+              <Label className="text-foreground">Applications Webhook (Legacy)</Label>
+              <Input
+                value={discordSettings.applications_webhook || ''}
+                onChange={(e) => setDiscordSettings({
+                  ...discordSettings,
+                  applications_webhook: e.target.value
+                })}
+                placeholder="Discord webhook URL for applications (fallback)"
+                className="bg-gaming-dark border-gaming-border text-foreground"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-gaming-border">
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => testDiscordLog('staff_action')} variant="outline" size="sm">
+                Test Staff
+              </Button>
+              <Button onClick={() => testDiscordLog('user_banned')} variant="outline" size="sm">
+                Test Security
+              </Button>
+              <Button onClick={() => testDiscordLog('server_start')} variant="outline" size="sm">
+                Test General
+              </Button>
+              <Button onClick={() => testDiscordLog('purchase_completed')} variant="outline" size="sm">
+                Test Package
+              </Button>
+              <Button onClick={() => testDiscordLog('error_occurred')} variant="outline" size="sm">
+                Test Error
+              </Button>
+            </div>
+            
             <Button
-              onClick={() => testDiscordLog('staff_action')}
-              variant="outline"
-              size="sm"
+              onClick={() => updateDiscordSettings(discordSettings)}
+              disabled={loadingSettings}
+              className="bg-neon-purple hover:bg-neon-purple/80"
             >
-              Test Staff Log
-            </Button>
-            <Button
-              onClick={() => testDiscordLog('application_submitted')}
-              variant="outline"
-              size="sm"
-            >
-              Test Application Log
-            </Button>
-            <Button
-              onClick={() => testDiscordLog('purchase_completed')}
-              variant="outline"
-              size="sm"
-            >
-              Test Package Log
-            </Button>
-            <Button
-              onClick={() => testDiscordLog('error_occurred')}
-              variant="outline"
-              size="sm"
-            >
-              Test Error Log
+              {loadingSettings ? 'Saving...' : 'Save General'}
             </Button>
           </div>
-          
-          <Button
-            onClick={() => updateDiscordSettings(discordSettings)}
-            disabled={loadingSettings}
-            className="bg-neon-purple hover:bg-neon-purple/80"
-          >
-            {loadingSettings ? 'Saving...' : 'Save Settings'}
-          </Button>
-        </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="applications" className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-foreground">Enable Application Notifications</Label>
+                <p className="text-sm text-muted-foreground">Toggle Discord notifications for applications</p>
+              </div>
+              <Switch
+                checked={applicationDiscordSettings.enabled || false}
+                onCheckedChange={(checked) => setApplicationDiscordSettings({
+                  ...applicationDiscordSettings,
+                  enabled: checked
+                })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">Public Applications Webhook</Label>
+                <Input
+                  value={applicationDiscordSettings.public_webhook_url || ''}
+                  onChange={(e) => setApplicationDiscordSettings({
+                    ...applicationDiscordSettings,
+                    public_webhook_url: e.target.value
+                  })}
+                  placeholder="Discord webhook for new applications"
+                  className="bg-gaming-dark border-gaming-border text-foreground"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-foreground">Staff Applications Webhook</Label>
+                <Input
+                  value={applicationDiscordSettings.staff_webhook_url || ''}
+                  onChange={(e) => setApplicationDiscordSettings({
+                    ...applicationDiscordSettings,
+                    staff_webhook_url: e.target.value
+                  })}
+                  placeholder="Discord webhook for approvals/denials"
+                  className="bg-gaming-dark border-gaming-border text-foreground"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-gaming-border">
+              <h3 className="font-medium text-foreground">Notification Settings</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-foreground">Notify Submissions</Label>
+                  <Switch
+                    checked={applicationDiscordSettings.notify_submissions || false}
+                    onCheckedChange={(checked) => setApplicationDiscordSettings({
+                      ...applicationDiscordSettings,
+                      notify_submissions: checked
+                    })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label className="text-foreground">Notify Approvals</Label>
+                  <Switch
+                    checked={applicationDiscordSettings.notify_approvals || false}
+                    onCheckedChange={(checked) => setApplicationDiscordSettings({
+                      ...applicationDiscordSettings,
+                      notify_approvals: checked
+                    })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label className="text-foreground">Notify Denials</Label>
+                  <Switch
+                    checked={applicationDiscordSettings.notify_denials || false}
+                    onCheckedChange={(checked) => setApplicationDiscordSettings({
+                      ...applicationDiscordSettings,
+                      notify_denials: checked
+                    })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-gaming-border">
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => testDiscordLog('application_submitted')} variant="outline" size="sm">
+                Test Submission
+              </Button>
+              <Button onClick={() => testDiscordLog('application_approved')} variant="outline" size="sm">
+                Test Approval
+              </Button>
+              <Button onClick={() => testDiscordLog('application_denied')} variant="outline" size="sm">
+                Test Denial
+              </Button>
+            </div>
+            
+            <Button
+              onClick={() => updateApplicationDiscordSettings(applicationDiscordSettings)}
+              disabled={loadingSettings}
+              className="bg-neon-purple hover:bg-neon-purple/80"
+            >
+              {loadingSettings ? 'Saving...' : 'Save Application Settings'}
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
     </Card>
   );
 };
 
 const StaffPanel = () => {
+  // Monitor performance
+  usePerformanceMonitor();
+  
   const [isLoading, setIsLoading] = useState(true);
   const [serverSettings, setServerSettings] = useState<any>({});
   const [activeTab, setActiveTab] = useState("overview");
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
 
   // Basic state variables needed for functionality
@@ -667,8 +909,10 @@ const StaffPanel = () => {
                     {activeTab === "logs" && "System Logs"}
                     {activeTab === "emails" && "Email Templates"}
                      {activeTab === "design" && "Design & Appearance"}
+                     {activeTab === "social-media" && "Social Media Management"}
                      {activeTab === "chat" && "Live Chat Management"}
                      {activeTab === "security" && "Security Management"}
+                     {activeTab === "performance" && "Performance Optimization"}
                   </h1>
                 <div className="flex items-center space-x-2 mt-1">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
@@ -712,27 +956,35 @@ const StaffPanel = () => {
               )}
 
               {activeTab === "staff" && (
-                <div className="space-y-6">
-                  <StaffManager onRefresh={refreshData} />
-                </div>
+                <PermissionGate permissions={["users.manage", "roles.assign"]} showFallback={true}>
+                  <div className="space-y-6">
+                    <StaffManager onRefresh={refreshData} />
+                  </div>
+                </PermissionGate>
               )}
 
               {activeTab === "role-management" && (
-                <div className="space-y-6">
-                  <RoleManagement />
-                </div>
+                <PermissionGate permission="roles.manage" showFallback={true}>
+                  <div className="space-y-6">
+                    <RoleManagement />
+                  </div>
+                </PermissionGate>
               )}
 
               {activeTab === "users" && (
-                <div className="space-y-6">
-                  <UserManagementSection />
-                </div>
+                <PermissionGate permissions={["users.manage", "users.view"]} showFallback={true}>
+                  <div className="space-y-6">
+                    <UserManagementSection />
+                  </div>
+                </PermissionGate>
               )}
 
               {activeTab === "team" && (
-                <div className="space-y-6">
-                  <TeamManager />
-                </div>
+                <PermissionGate permission="content.manage" showFallback={true}>
+                  <div className="space-y-6">
+                    <TeamManager />
+                  </div>
+                </PermissionGate>
               )}
 
               {activeTab === "partners" && (
@@ -804,6 +1056,12 @@ const StaffPanel = () => {
                 </div>
               )}
 
+              {activeTab === "social-media" && (
+                <div className="space-y-6">
+                  <SocialMediaManager />
+                </div>
+              )}
+
               {activeTab === "security" && (
                 <div className="space-y-6">
                   <SecurityDashboard />
@@ -818,6 +1076,33 @@ const StaffPanel = () => {
                     setServerSettings={setServerSettings}
                     handleSettingUpdate={handleSettingUpdate}
                   />
+                </div>
+              )}
+
+              {activeTab === "performance" && (
+                <div className="space-y-6">
+                  <Card className="bg-gaming-card border-gaming-border">
+                    <div className="p-6">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <Zap className="h-5 w-5 text-neon-blue" />
+                        <h2 className="text-xl font-semibold text-foreground">Performance Optimization</h2>
+                      </div>
+                      <p className="text-muted-foreground mb-6">
+                        Monitor and optimize your application's Core Web Vitals for better user experience
+                      </p>
+                      <Suspense fallback={
+                        <div className="space-y-4">
+                          <Skeleton className="h-32 w-full" />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Skeleton className="h-24 w-full" />
+                            <Skeleton className="h-24 w-full" />
+                          </div>
+                        </div>
+                      }>
+                        <LazyPerformanceOptimizer />
+                      </Suspense>
+                    </div>
+                  </Card>
                 </div>
               )}
 

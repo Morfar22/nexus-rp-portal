@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Shield, 
@@ -19,10 +20,15 @@ import {
   Lock,
   Globe,
   Timer,
-  Ban
+  Ban,
+  Bot,
+  Settings,
+  Zap
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { AutoSecurityManager } from "./AutoSecurityManager";
+import { AutomationCenter } from "./AutomationCenter";
 
 interface SecuritySettingsProps {
   serverSettings: any;
@@ -112,8 +118,40 @@ export const SecuritySettings = ({ serverSettings, setServerSettings, handleSett
   };
 
   return (
-    <div className="space-y-6">
-      {/* Authentication Security */}
+    <Tabs defaultValue="automation" className="w-full">
+      <TabsList className="grid w-full grid-cols-3 bg-gaming-card">
+        <TabsTrigger value="automation" className="data-[state=active]:bg-primary">
+          <Zap className="h-4 w-4 mr-2" />
+          All Automation
+        </TabsTrigger>
+        <TabsTrigger value="security" className="data-[state=active]:bg-primary">
+          <Bot className="h-4 w-4 mr-2" />
+          Security Auto
+        </TabsTrigger>
+        <TabsTrigger value="manual" className="data-[state=active]:bg-primary">
+          <Settings className="h-4 w-4 mr-2" />
+          Manual Settings
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="automation" className="space-y-6">
+        <AutomationCenter
+          serverSettings={serverSettings}
+          setServerSettings={setServerSettings}
+          handleSettingUpdate={handleSettingUpdate}
+        />
+      </TabsContent>
+
+      <TabsContent value="security" className="space-y-6">
+        <AutoSecurityManager
+          serverSettings={serverSettings}
+          setServerSettings={setServerSettings}
+          handleSettingUpdate={handleSettingUpdate}
+        />
+      </TabsContent>
+
+      <TabsContent value="manual" className="space-y-6">
+        {/* Authentication Security */}
       <Card className="bg-gaming-card border-gaming-border">
         <CardHeader>
           <div className="flex items-center space-x-2">
@@ -424,6 +462,7 @@ export const SecuritySettings = ({ serverSettings, setServerSettings, handleSett
           </CardContent>
         </Card>
       )}
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 };

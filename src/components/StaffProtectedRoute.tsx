@@ -1,50 +1,21 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Ban } from 'lucide-react';
 
 interface StaffProtectedRouteProps {
   children: ReactNode;
 }
 
 const StaffProtectedRoute = ({ children }: StaffProtectedRouteProps) => {
-  const { user, loading: authLoading } = useAuth();
-  const [isStaff, setIsStaff] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading, isBanned } = useCustomAuth();
+  const { hasPermission, loading: permissionsLoading } = usePermissions();
 
-  useEffect(() => {
-    const checkStaffRole = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+  const loading = authLoading || permissionsLoading;
 
-      try {
-        const { data, error } = await supabase
-          .rpc('is_staff', { check_user_uuid: user.id });
-
-        if (error) {
-          console.error('Error checking staff role:', error);
-          setIsStaff(false);
-        } else {
-          setIsStaff(data);
-        }
-      } catch (error) {
-        console.error('Error checking staff role:', error);
-        setIsStaff(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!authLoading) {
-      checkStaffRole();
-    }
-  }, [user, authLoading]);
-
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
         <Card className="p-8 bg-gaming-card border-gaming-border">
@@ -61,8 +32,57 @@ const StaffProtectedRoute = ({ children }: StaffProtectedRouteProps) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isStaff) {
-    return <Navigate to="/" replace />;
+  if (isBanned) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <Card className="p-8 bg-gaming-card border-red-500/50 text-center max-w-md">
+          <div className="space-y-4">
+            <Ban className="h-12 w-12 text-red-500 mx-auto" />
+            <h2 className="text-2xl font-bold text-red-400">Account Suspended</h2>
+            <p className="text-muted-foreground">
+              Your account has been suspended and you cannot access this application. 
+              Please contact support if you believe this is an error.
+            </p>
+            <div className="pt-4">
+              <a 
+                href="/auth" 
+                className="text-neon-purple hover:text-neon-purple/80 underline"
+              >
+                Return to Login
+              </a>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if user has permission to access staff panel
+  const hasStaffAccess = hasPermission('staff.view');
+
+  if (!hasStaffAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <Card className="p-8 bg-gaming-card border-gaming-border text-center max-w-md">
+          <div className="space-y-4">
+            <Ban className="h-12 w-12 text-yellow-500 mx-auto" />
+            <h2 className="text-2xl font-bold text-yellow-400">Access Denied</h2>
+            <p className="text-muted-foreground">
+              You don't have permission to access the staff panel. 
+              Please contact an administrator if you believe this is an error.
+            </p>
+            <div className="pt-4">
+              <a 
+                href="/" 
+                className="text-neon-purple hover:text-neon-purple/80 underline"
+              >
+                Return to Home
+              </a>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return <>{children}</>;

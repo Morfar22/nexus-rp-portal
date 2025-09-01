@@ -7,6 +7,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[FETCH-TWITCH-STREAMS] ${step}${detailsStr}`);
+};
+
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -40,11 +45,14 @@ interface TwitchStreamsResponse {
 async function getTwitchAccessToken(): Promise<string> {
   const clientId = Deno.env.get('TWITCH_CLIENT_ID');
   const clientSecret = Deno.env.get('TWITCH_CLIENT_SECRET');
+  logStep("Getting Twitch access token", { hasClientId: !!clientId, hasClientSecret: !!clientSecret });
   
   if (!clientId || !clientSecret) {
+    logStep("ERROR: Missing Twitch credentials");
     throw new Error('Missing Twitch credentials');
   }
 
+  logStep("Making request to Twitch OAuth endpoint");
   const response = await fetch('https://id.twitch.tv/oauth2/token', {
     method: 'POST',
     headers: {
@@ -59,18 +67,21 @@ async function getTwitchAccessToken(): Promise<string> {
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('Failed to get Twitch access token:', error);
+    logStep("ERROR: Failed to get Twitch access token", { status: response.status, error });
     throw new Error('Failed to authenticate with Twitch API');
   }
 
   const data: TwitchTokenResponse = await response.json();
+  logStep("Twitch access token obtained successfully", { tokenLength: data.access_token?.length });
   return data.access_token;
 }
 
 async function getTwitchStreams(accessToken: string, usernames: string[]): Promise<TwitchStreamData[]> {
   const clientId = Deno.env.get('TWITCH_CLIENT_ID');
+  logStep("Getting Twitch streams", { usernameCount: usernames.length, hasClientId: !!clientId });
   
   if (!clientId) {
+    logStep("ERROR: Missing Twitch client ID");
     throw new Error('Missing Twitch client ID');
   }
 
@@ -79,13 +90,15 @@ async function getTwitchStreams(accessToken: string, usernames: string[]): Promi
   for (let i = 0; i < usernames.length; i += 100) {
     chunks.push(usernames.slice(i, i + 100));
   }
+  logStep("Split usernames into chunks", { chunkCount: chunks.length });
 
   const allStreams: TwitchStreamData[] = [];
 
   for (const chunk of chunks) {
     const url = new URL('https://api.twitch.tv/helix/streams');
     chunk.forEach(username => url.searchParams.append('user_login', username));
-
+    
+    logStep("Making request to Twitch API", { chunkSize: chunk.length, url: url.toString() });
     const response = await fetch(url.toString(), {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -95,26 +108,30 @@ async function getTwitchStreams(accessToken: string, usernames: string[]): Promi
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Failed to fetch Twitch streams:', error);
+      logStep("ERROR: Failed to fetch Twitch streams", { status: response.status, error });
       throw new Error('Failed to fetch stream data from Twitch API');
     }
 
     const data: TwitchStreamsResponse = await response.json();
+    logStep("Twitch API response received", { streamsFound: data.data.length });
     allStreams.push(...data.data);
   }
 
+  logStep("All Twitch streams fetched", { totalStreams: allStreams.length });
   return allStreams;
 }
 
 serve(async (req) => {
+  logStep("Function started", { method: req.method, url: req.url });
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    logStep("CORS preflight handled");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Fetching Twitch stream data...');
-
+    logStep("Fetching active streamers from database");
     // Get active streamers from database
     const { data: streamers, error: streamersError } = await supabase
       .from('twitch_streamers')
@@ -123,28 +140,27 @@ serve(async (req) => {
       .order('order_index', { ascending: true });
 
     if (streamersError) {
-      console.error('Error fetching streamers:', streamersError);
+      logStep("ERROR: Failed to fetch streamers", { error: streamersError.message });
       throw new Error('Failed to fetch streamers from database');
     }
 
     if (!streamers || streamers.length === 0) {
-      console.log('No active streamers found');
+      logStep("No active streamers found");
       return new Response(JSON.stringify({ streamers: [], streamData: {} }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Found ${streamers.length} active streamers`);
+    logStep("Active streamers found", { count: streamers.length, usernames: streamers.map(s => s.twitch_username) });
 
     // Get Twitch access token
     const accessToken = await getTwitchAccessToken();
-    console.log('Successfully obtained Twitch access token');
 
     // Get stream data from Twitch API
     const usernames = streamers.map(s => s.twitch_username);
     const twitchStreams = await getTwitchStreams(accessToken, usernames);
-    console.log(`Found ${twitchStreams.length} live streams`);
 
+    logStep("Processing stream data", { liveStreams: twitchStreams.length });
     // Create stream data object
     const streamData: Record<string, any> = {};
     
@@ -162,7 +178,7 @@ serve(async (req) => {
 
     // Update with live stream data
     twitchStreams.forEach(stream => {
-      console.log(`Processing stream for ${stream.user_login}, thumbnail: ${stream.thumbnail_url}`);
+      logStep("Processing live stream", { username: stream.user_login, viewers: stream.viewer_count, game: stream.game_name });
       streamData[stream.user_login] = {
         is_live: true,
         viewer_count: stream.viewer_count,
@@ -173,14 +189,14 @@ serve(async (req) => {
       };
     });
 
-    console.log('Successfully processed stream data');
+    logStep("Stream data processing completed", { totalStreamers: streamers.length, liveStreams: twitchStreams.length });
 
     return new Response(JSON.stringify({ streamers, streamData }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in fetch-twitch-streams function:', error);
+    logStep("ERROR in fetch-twitch-streams function", { message: error.message, stack: error.stack });
     return new Response(JSON.stringify({ 
       error: error.message,
       streamers: [],

@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import Navbar from '@/components/Navbar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 
 interface Law {
   id: string;
@@ -20,7 +20,7 @@ interface Law {
 }
 
 const Laws = () => {
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const [laws, setLaws] = useState<Law[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);

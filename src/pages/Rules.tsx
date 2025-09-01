@@ -7,10 +7,12 @@ import Navbar from "@/components/Navbar";
 import { Shield, Users, Car, Heart, AlertCircle, ChevronDown, Edit3, Save, X, Plus, Info } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from 'react-i18next';
 
 const Rules = () => {
+  const { t } = useTranslation();
   const [rules, setRules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
@@ -18,7 +20,7 @@ const Rules = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editNotes, setEditNotes] = useState<string[]>([]);
   const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
 
   // Check if user is staff
@@ -127,14 +129,14 @@ const Rules = () => {
       setEditNotes([]);
       
       toast({
-        title: "Success",
-        description: "Important notes updated successfully!",
+        title: t('common.success'),
+        description: t('rules.notes_updated'),
       });
     } catch (error) {
       console.error('Error saving important notes:', error);
       toast({
-        title: "Error",
-        description: "Failed to save important notes",
+        title: t('common.error'),
+        description: t('rules.notes_update_failed'),
         variant: "destructive"
       });
     } finally {
@@ -204,10 +206,10 @@ const Rules = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">Server Rules</h1>
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">{t('rules.server_rules')}</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Følg reglerne for at sikre den bedste RP-oplevelse for alle.<br />
-            Staff kan opdatere regler dynamisk via panel!
+            {t('rules.follow_rules')}<br />
+            {t('rules.staff_can_update')}
           </p>
         </div>
 
@@ -229,7 +231,7 @@ const Rules = () => {
                 >
                   <IconComponent className={`h-6 w-6 ${color} mr-2`} />
                   <h2 className="text-lg md:text-xl font-semibold text-foreground">{categoryName}</h2>
-                  <Badge variant="secondary" className="ml-3">{categoryRules.length} regler</Badge>
+                  <Badge variant="secondary" className="ml-3">{categoryRules.length} {t('rules.rules_count')}</Badge>
                   <ChevronDown className={`ml-auto h-5 w-5 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : "rotate-0"}`} />
                 </button>
 
@@ -260,7 +262,7 @@ const Rules = () => {
         {Object.keys(ruleCategories).length === 0 && (
           <div className="text-center py-12">
             <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Ingen regler fundet. Kontakt staff for at oprette server regler.</p>
+            <p className="text-muted-foreground">{t('rules.no_rules_found')}</p>
           </div>
         )}
 
@@ -273,19 +275,19 @@ const Rules = () => {
                   <Info className="h-5 w-5 text-neon-blue" />
                 </div>
                 <h2 className="text-xl font-semibold bg-gradient-to-r from-neon-blue to-neon-purple bg-clip-text text-transparent">
-                  Vigtige Noter
+                  {t('rules.important_notes')}
                 </h2>
               </div>
               {isStaff && !isEditingNotes && (
-                <Button
-                  onClick={startEditingNotes}
-                  size="sm"
-                  variant="outline"
-                  className="border-neon-blue/30 text-neon-blue hover:bg-neon-blue/10 hover:border-neon-blue transition-all duration-300"
-                >
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
+                  <Button
+                    onClick={startEditingNotes}
+                    size="sm"
+                    variant="outline"
+                    className="border-neon-blue/30 text-neon-blue hover:bg-neon-blue/10 hover:border-neon-blue transition-all duration-300"
+                  >
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    {t('common.edit')}
+                  </Button>
               )}
             </div>
           </div>
@@ -300,7 +302,7 @@ const Rules = () => {
                       <Textarea
                         value={note}
                         onChange={(e) => updateNote(index, e.target.value)}
-                        placeholder="Enter important note..."
+                        placeholder={t('rules.enter_note_placeholder')}
                         className="min-h-[60px] bg-gaming-darker border-gaming-border focus:border-neon-blue transition-colors resize-none"
                       />
                     </div>
@@ -315,35 +317,35 @@ const Rules = () => {
                   </div>
                 ))}
                 
-                <Button
-                  onClick={addNewNote}
-                  variant="outline"
-                  size="sm"
-                  className="w-full border-dashed border-gaming-border hover:border-neon-teal text-neon-teal hover:bg-neon-teal/10 transition-all duration-300"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Note
-                </Button>
+                  <Button
+                    onClick={addNewNote}
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-dashed border-gaming-border hover:border-neon-teal text-neon-teal hover:bg-neon-teal/10 transition-all duration-300"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('rules.add_note')}
+                  </Button>
 
                 <div className="flex items-center justify-end space-x-2 pt-4 border-t border-gaming-border">
-                  <Button
-                    onClick={cancelEditingNotes}
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={saveImportantNotes}
-                    disabled={isSavingNotes}
-                    size="sm"
-                    className="bg-gradient-to-r from-neon-blue to-neon-purple hover:from-neon-blue/80 hover:to-neon-purple/80 transition-all duration-300"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {isSavingNotes ? 'Saving...' : 'Save'}
-                  </Button>
+                    <Button
+                      onClick={cancelEditingNotes}
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      {t('common.cancel')}
+                    </Button>
+                    <Button
+                      onClick={saveImportantNotes}
+                      disabled={isSavingNotes}
+                      size="sm"
+                      className="bg-gradient-to-r from-neon-blue to-neon-purple hover:from-neon-blue/80 hover:to-neon-purple/80 transition-all duration-300"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {isSavingNotes ? t('common.saving') : t('common.save')}
+                    </Button>
                 </div>
               </div>
             ) : (
@@ -364,9 +366,9 @@ const Rules = () => {
                 {importantNotes.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No important notes configured yet.</p>
+                    <p>{t('rules.no_notes_yet')}</p>
                     {isStaff && (
-                      <p className="text-sm mt-1">Click Edit to add some notes.</p>
+                      <p className="text-sm mt-1">{t('rules.click_edit_to_add')}</p>
                     )}
                   </div>
                 )}

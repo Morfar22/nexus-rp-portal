@@ -8,69 +8,58 @@ interface StaffOverviewProps {
 }
 
 export const StaffOverview = ({ staffMembers }: StaffOverviewProps) => {
-  // Calculate statistics
+  // Calculate statistics for staff overview
   const totalStaff = staffMembers.length;
   
-  // Group staff by their roles (both legacy and new system)
+  // Group staff by their roles - unified approach for new role management system
   const roleStats = staffMembers.reduce((acc, member) => {
-    let roleName = member.role;
-    let displayName = member.role;
+    // Prioritize staff_roles data over legacy role data
+    const roleData = member.staff_roles || {
+      name: member.role,
+      display_name: member.role === 'admin' ? 'Administrator' : member.role === 'moderator' ? 'Moderator' : member.role,
+      hierarchy_level: member.role === 'admin' ? 80 : member.role === 'moderator' ? 60 : 0,
+      color: member.role === 'admin' ? '#ef4444' : member.role === 'moderator' ? '#3b82f6' : '#6b7280'
+    };
     
-    // Handle new staff system
-    if (member.staff_roles) {
-      roleName = member.staff_roles.name;
-      displayName = member.staff_roles.display_name;
-    } else {
-      // Handle legacy system
-      displayName = roleName === 'admin' ? 'Administrator' : 'Moderator';
-    }
+    const roleName = roleData.name;
+    const displayName = roleData.display_name;
+    const level = roleData.hierarchy_level;
     
     if (!acc[roleName]) {
       acc[roleName] = {
         count: 0,
         displayName,
-        level: member.staff_roles?.hierarchy_level || (roleName === 'admin' ? 80 : 60)
+        level,
+        color: roleData.color
       };
     }
     acc[roleName].count++;
     return acc;
-  }, {} as Record<string, { count: number; displayName: string; level: number }>);
+  }, {} as Record<string, { count: number; displayName: string; level: number; color: string }>);
 
-  // Sort roles by hierarchy level
+  // Sort roles by hierarchy level (highest first)
   const sortedRoles = Object.entries(roleStats).sort(([,a], [,b]) => 
     (b as { level: number }).level - (a as { level: number }).level
   );
   
-  // Keep legacy variables for backward compatibility
-  const admins = (roleStats.admin?.count || 0) + (roleStats.super_admin?.count || 0);
-  const moderators = roleStats.moderator?.count || 0;
+  // Calculate role-based stats for new system
+  const highLevelRoles = sortedRoles.filter(([,data]) => 
+    (data as { level: number }).level >= 70
+  ).reduce((sum, [,data]) => sum + (data as { count: number }).count, 0);
+  
+  const midLevelRoles = sortedRoles.filter(([,data]) => 
+    (data as { level: number }).level >= 50 && (data as { level: number }).level < 70
+  ).reduce((sum, [,data]) => sum + (data as { count: number }).count, 0);
 
-  // Calculate recent activity (last 7 days) - this would need audit logs integration
-  const recentActivity = 0; // Placeholder for now
-
-  // Calculate active percentage (this would be based on last login/activity)
-  const activeStaff = totalStaff; // Placeholder - assume all active for now
+  // Calculate active percentage (assumes all current staff are active)
+  const activeStaff = totalStaff;
   const activePercentage = totalStaff > 0 ? Math.round((activeStaff / totalStaff) * 100) : 0;
 
-  const getRoleColor = (member: any) => {
-    // Use the color from staff_roles if available, otherwise default colors
-    if (member.staff_roles?.color) {
-      return { color: member.staff_roles.color };
-    }
-    
-    // Fallback for legacy roles
-    switch (member.role) {
-      case 'admin': return { color: '#ef4444' }; // red-500
-      case 'moderator': return { color: '#3b82f6' }; // blue-500
-      default: return { color: '#6b7280' }; // gray-500
-    }
+  const getRoleColor = (roleInfo: { color: string }) => {
+    return roleInfo.color || '#6b7280';
   };
 
-  const getRoleIcon = (member: any) => {
-    const roleName = member.staff_roles?.name || member.role;
-    const hierarchyLevel = member.staff_roles?.hierarchy_level || 
-      (member.role === 'admin' ? 80 : member.role === 'moderator' ? 60 : 0);
-    
+  const getRoleIcon = (hierarchyLevel: number) => {
     // Dynamic icon selection based on hierarchy level
     if (hierarchyLevel >= 90) return Crown; // Super admin level
     if (hierarchyLevel >= 70) return Crown; // Admin level  
@@ -105,29 +94,21 @@ export const StaffOverview = ({ staffMembers }: StaffOverviewProps) => {
           
           <div className="space-y-2">
             {sortedRoles.map(([roleName, roleData]) => {
-              const roleInfo = roleData as { count: number; displayName: string; level: number };
-              // Create a mock member object to get icon and color
-              const mockMember = {
-                role: roleName,
-                staff_roles: staffMembers.find(m => 
-                  (m.staff_roles?.name || m.role) === roleName
-                )?.staff_roles
-              };
-              const RoleIcon = getRoleIcon(mockMember);
-              const roleStyle = getRoleColor(mockMember);
+              const roleInfo = roleData as { count: number; displayName: string; level: number; color: string };
+              const RoleIcon = getRoleIcon(roleInfo.level);
               
               return (
                 <div key={roleName} className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-2">
                     <RoleIcon 
                       className="h-3 w-3" 
-                      style={{ color: roleStyle.color }} 
+                      style={{ color: roleInfo.color }} 
                     />
                     <span className="text-muted-foreground">{roleInfo.displayName}</span>
                   </div>
                   <span 
                     className="font-medium" 
-                    style={{ color: roleStyle.color }}
+                    style={{ color: roleInfo.color }}
                   >
                     {roleInfo.count}
                   </span>
@@ -151,15 +132,8 @@ export const StaffOverview = ({ staffMembers }: StaffOverviewProps) => {
         {/* Quick Stats - Dynamic top 2 roles */}
         <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gaming-border">
           {sortedRoles.slice(0, 2).map(([roleName, roleData]) => {
-            const roleInfo = roleData as { count: number; displayName: string; level: number };
-            const mockMember = {
-              role: roleName,
-              staff_roles: staffMembers.find(m => 
-                (m.staff_roles?.name || m.role) === roleName
-              )?.staff_roles
-            };
-            const RoleIcon = getRoleIcon(mockMember);
-            const roleStyle = getRoleColor(mockMember);
+            const roleInfo = roleData as { count: number; displayName: string; level: number; color: string };
+            const RoleIcon = getRoleIcon(roleInfo.level);
             
             return (
               <div key={roleName} className="text-center">
@@ -169,7 +143,7 @@ export const StaffOverview = ({ staffMembers }: StaffOverviewProps) => {
                 <p className="text-xs text-muted-foreground">{roleInfo.displayName}</p>
                 <p 
                   className="text-sm font-medium" 
-                  style={{ color: roleStyle.color }}
+                  style={{ color: roleInfo.color }}
                 >
                   {roleInfo.count}
                 </p>
@@ -178,16 +152,16 @@ export const StaffOverview = ({ staffMembers }: StaffOverviewProps) => {
           })}
         </div>
 
-        {/* Authority Distribution */}
+        {/* Authority Distribution - Updated for new role system */}
         <div className="pt-3 border-t border-gaming-border">
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Admin Coverage</span>
-              <span className="text-red-400">{totalStaff > 0 ? Math.round((admins / totalStaff) * 100) : 0}%</span>
+              <span className="text-muted-foreground">High Authority</span>
+              <span className="text-red-400">{totalStaff > 0 ? Math.round((highLevelRoles / totalStaff) * 100) : 0}%</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Mod Coverage</span>
-              <span className="text-blue-400">{totalStaff > 0 ? Math.round((moderators / totalStaff) * 100) : 0}%</span>
+              <span className="text-muted-foreground">Mid Authority</span>
+              <span className="text-blue-400">{totalStaff > 0 ? Math.round((midLevelRoles / totalStaff) * 100) : 0}%</span>
             </div>
           </div>
         </div>

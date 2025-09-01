@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Trash2, Save, X, Settings } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import FormFieldEditor from "./FormFieldEditor";
 
 const discordField = {
@@ -38,7 +38,7 @@ const ApplicationTypesManager = () => {
     form_fields: [],
     is_active: true
   });
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
 
   useEffect(() => {

@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Crown, Shield, Star, Calendar, Award, Heart, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Crown } from 'lucide-react';
+import { TeamMemberCard } from '@/components/TeamMemberCard';
 
 interface TeamMember {
   id: string;
@@ -13,15 +11,21 @@ interface TeamMember {
   role: string;
   bio?: string;
   image_url?: string;
+  location?: string;
   order_index: number;
   is_active: boolean;
   created_at: string;
+  staff_roles?: {
+    id: string;
+    display_name: string;
+    color: string;
+    hierarchy_level: number;
+  };
 }
 
 const OurTeam = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openBioId, setOpenBioId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTeamMembers();
@@ -31,7 +35,15 @@ const OurTeam = () => {
     try {
       const { data, error } = await supabase
         .from('team_members')
-        .select('*')
+        .select(`
+          *,
+          staff_roles (
+            id,
+            display_name,
+            color,
+            hierarchy_level
+          )
+        `)
         .eq('is_active', true)
         .order('order_index', { ascending: true });
       if (error) {
@@ -46,163 +58,138 @@ const OurTeam = () => {
     }
   };
 
-  // Rolle-gruppering og sortering
+  // Rolle-gruppering og sortering med hierarki
   const groupedByRole: { [role: string]: TeamMember[] } = {};
-  const dynamicRoleOrder: string[] = [];
+  const hierarchyOrder: { [role: string]: number } = {
+    'owner': 1,
+    'founder': 1,
+    'co-owner': 2,
+    'admin': 3,
+    'administrator': 3,
+    'developer': 4,
+    'head moderator': 5,
+    'senior moderator': 6,
+    'moderator': 7,
+    'mod': 7,
+    'helper': 8,
+    'supporter': 9,
+    'staff': 10
+  };
+
   teamMembers.forEach((member) => {
-    const roleKey = member.role.trim();
+    // Use staff role display name if available, otherwise fallback to role field
+    const roleKey = member.staff_roles?.display_name || member.role.trim();
     if (!groupedByRole[roleKey]) {
       groupedByRole[roleKey] = [];
-      dynamicRoleOrder.push(roleKey);
     }
     groupedByRole[roleKey].push(member);
   });
 
-  const getInitials = (name: string) =>
-    name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
-
-  const getRoleIcon = (role: string) => {
-    const lowerRole = role.toLowerCase();
-    if (lowerRole.includes('owner') || lowerRole.includes('founder')) return Crown;
-    if (lowerRole.includes('admin')) return Star;
-    if (lowerRole.includes('moderator') || lowerRole.includes('mod')) return Shield;
-    return Users;
-  };
-
-  const getRoleColor = (role: string) => {
-    const lowerRole = role.toLowerCase();
-    if (lowerRole.includes('owner') || lowerRole.includes('founder')) return 'text-yellow-400 border-yellow-400/50';
-    if (lowerRole.includes('admin')) return 'text-red-400 border-red-400/50';
-    if (lowerRole.includes('moderator') || lowerRole.includes('mod')) return 'text-blue-400 border-blue-400/50';
-    return 'text-green-400 border-green-400/50';
-  };
-
-  const getJoinedTime = (createdAt: string) => {
-    const date = new Date(createdAt);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 30) return `${diffDays} days ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-    return `${Math.floor(diffDays / 365)} years ago`;
-  };
+  // Sortér roller efter hierarki
+  const dynamicRoleOrder = Object.keys(groupedByRole).sort((a, b) => {
+    const aLevel = hierarchyOrder[a.toLowerCase()] || 999;
+    const bLevel = hierarchyOrder[b.toLowerCase()] || 999;
+    return aLevel - bLevel;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       <main className="container mx-auto px-4 pt-20 pb-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 animate-fade-in">Our Team</h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
-            Mød de dedikerede medlemmer, der holder vores community kørende!
-          </p>
+        {/* Hero Section */}
+        <div className="text-center mb-16 relative">
+          <div className="absolute inset-0 bg-gradient-cyber opacity-10 blur-3xl rounded-full"></div>
+          <div className="relative z-10">
+            <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 text-glow animate-fade-in">
+              Vores Team
+            </h1>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
+              Mød de dedikerede medlemmer, der holder vores community kørende og skaber fantastiske oplevelser!
+            </p>
+            <div className="flex justify-center space-x-8 mt-8">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{teamMembers.length}</div>
+                <div className="text-sm text-muted-foreground">Team Medlemmer</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-secondary">{teamMembers.filter(m => m.is_active).length}</div>
+                <div className="text-sm text-muted-foreground">Aktive</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-accent">{dynamicRoleOrder.length}</div>
+                <div className="text-sm text-muted-foreground">Roller</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {[...Array(8)].map((_, i) => (
-              <Card key={i} className="bg-gaming-card border-gaming-border">
-                <CardHeader className="text-center">
-                  <Skeleton className="h-20 w-20 rounded-full mx-auto mb-4" />
-                  <Skeleton className="h-6 w-24 mx-auto mb-2" />
-                  <Skeleton className="h-4 w-16 mx-auto" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-16 w-full" />
-                </CardContent>
-              </Card>
+              <div key={i} className="bg-gaming-card border-gaming-border rounded-lg p-6 animate-pulse">
+                <div className="text-center">
+                  <Skeleton className="h-20 w-20 rounded-full mx-auto mb-4 bg-muted/20" />
+                  <Skeleton className="h-5 w-32 mx-auto mb-2 bg-muted/20" />
+                  <Skeleton className="h-4 w-20 mx-auto mb-4 bg-muted/20" />
+                </div>
+                <Skeleton className="h-16 w-full bg-muted/20" />
+              </div>
             ))}
           </div>
         ) : dynamicRoleOrder.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="text-2xl font-semibold text-white mb-4">No Team Members Yet</h3>
-            <p className="text-gray-400">
-              Team members will appear here once they're added by staff.
-            </p>
+          <div className="text-center py-16">
+            <div className="bg-gaming-card border-gaming-border rounded-2xl p-12 max-w-lg mx-auto">
+              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+              <h3 className="text-3xl font-semibold text-foreground mb-4">Ingen Team Medlemmer Endnu</h3>
+              <p className="text-muted-foreground text-lg">
+                Team medlemmer vil blive vist her, når de bliver tilføjet af staff.
+              </p>
+            </div>
           </div>
         ) : (
-          dynamicRoleOrder.map(role => (
-            <div key={role} className="mb-12">
-              <h2 className="text-2xl font-bold mb-6 text-foreground">{role}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {groupedByRole[role]
-                  .sort((a, b) => a.order_index - b.order_index)
-                  .map((member, idx) => {
-                    const RoleIcon = getRoleIcon(member.role);
-                    const roleColorClass = getRoleColor(member.role);
-                    return (
-                      <Card
-                        key={member.id}
-                        className="bg-gaming-card border-gaming-border hover:border-neon-purple/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-neon-purple/20 group animate-fade-in"
-                        style={{ animationDelay: `${idx * 100}ms` }}
-                      >
-                        <CardHeader className="text-center relative">
-                          <div className={`absolute top-4 right-4 w-3 h-3 rounded-full ${member.is_active ? 'bg-green-400' : 'bg-gray-500'} shadow-lg`} />
-                          <div className="relative">
-                            <Avatar className="h-24 w-24 mx-auto mb-4 ring-2 ring-gaming-border group-hover:ring-neon-purple/50 transition-all duration-300">
-                              <AvatarImage src={member.image_url} alt={member.name} className="object-cover" />
-                              <AvatarFallback className="bg-gradient-to-br from-neon-purple/30 to-neon-blue/30 text-white text-xl font-bold">
-                                {getInitials(member.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className={`absolute -bottom-2 -right-2 p-2 rounded-full bg-gaming-dark border-2 ${roleColorClass.split(' ')[1]} shadow-lg`}>
-                              <RoleIcon className={`h-4 w-4 ${roleColorClass.split(' ')}`} />
-                            </div>
-                          </div>
-                          <CardTitle className="text-white text-lg mb-2 group-hover:text-neon-purple transition-colors">
-                            {member.name}
-                          </CardTitle>
-                          <Badge variant="outline" className={`${roleColorClass} bg-transparent font-medium`}>
-                            <RoleIcon className="h-3 w-3 mr-1" />
-                            {member.role}
-                          </Badge>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          {member.bio && (
-                            <div>
-                              <button
-                                className="flex items-center mx-auto text-neon-blue hover:underline focus:outline-none"
-                                onClick={() => setOpenBioId(openBioId === member.id ? null : member.id)}
-                              >
-                                <span>{openBioId === member.id ? "Skjul bio" : "Vis bio"}</span>
-                                {openBioId === member.id ? (
-                                  <ChevronUp className="ml-1 h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="ml-1 h-4 w-4" />
-                                )}
-                              </button>
-                              {openBioId === member.id && (
-                                <CardDescription className="text-gray-300 text-center mt-2 leading-relaxed bg-gaming-dark/60 backdrop-blur rounded-md px-4 py-2 shadow-sm border border-gaming-border">
-                                  {member.bio}
-                                </CardDescription>
-                              )}
-                            </div>
-                          )}
-                          <div className="flex items-center justify-center space-x-4 pt-2 border-t border-gaming-border/50">
-                            <div className="flex items-center space-x-1 text-xs text-gray-500">
-                              <Calendar className="h-3 w-3" />
-                              <span>Joined {getJoinedTime(member.created_at)}</span>
-                            </div>
-                            {member.is_active && (
-                              <div className="flex items-center space-x-1 text-xs text-green-400">
-                                <Heart className="h-3 w-3" />
-                                <span>Active</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex justify-center space-x-2 pt-2">
-                            <div className="flex items-center space-x-1 text-xs text-gray-500 bg-gaming-dark/50 px-2 py-1 rounded-full">
-                              <Award className="h-3 w-3" />
-                              <span>Staff</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-              </div>
-            </div>
-          ))
+          <div className="space-y-16">
+            {dynamicRoleOrder.map((role, roleIndex) => {
+              const roleMembers = groupedByRole[role];
+              const firstMember = roleMembers[0];
+              const roleHierarchy = firstMember.staff_roles?.hierarchy_level || hierarchyOrder[role.toLowerCase()] || 999;
+              const isHighLevel = roleHierarchy <= 25;
+              
+              return (
+                <div key={role} className="animate-fade-in" style={{ animationDelay: `${roleIndex * 200}ms` }}>
+                  {/* Role Header */}
+                  <div className="text-center mb-10">
+                    <div className="relative inline-block">
+                      <h2 className={`text-4xl md:text-5xl font-bold mb-4 ${isHighLevel ? 'text-glow' : 'text-foreground'}`}>
+                        {role}
+                      </h2>
+                      {isHighLevel && (
+                        <div className="absolute -top-2 -right-8 text-primary">
+                          <Crown className="h-8 w-8" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-24 h-1 bg-gradient-primary mx-auto rounded-full"></div>
+                    <p className="text-muted-foreground mt-4 text-lg">
+                      {roleMembers.length} medlem{roleMembers.length !== 1 ? 'mer' : ''}
+                    </p>
+                  </div>
+
+                  {/* Team Members Grid */}
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {roleMembers
+                      .sort((a, b) => a.order_index - b.order_index)
+                      .map((member, idx) => (
+                        <TeamMemberCard 
+                          key={member.id} 
+                          member={member} 
+                          index={(roleIndex * 4) + idx}
+                        />
+                      ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </main>
     </div>

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 
@@ -28,7 +28,7 @@ const Apply = () => {
   const [error, setError] = useState("");
   
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
 
   useEffect(() => {
     const fetchApplicationTypes = async () => {

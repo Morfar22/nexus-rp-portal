@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean | null
+          name: string
+          points: number | null
+          rarity: string | null
+          requirements: Json | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          icon: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          points?: number | null
+          rarity?: string | null
+          requirements?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          points?: number | null
+          rarity?: string | null
+          requirements?: Json | null
+        }
+        Relationships: []
+      }
       application_rate_limits: {
         Row: {
           application_count: number
@@ -184,6 +223,150 @@ export type Database = {
         }
         Relationships: []
       }
+      canned_responses: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          message: string
+          shortcut: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          message: string
+          shortcut?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          message?: string
+          shortcut?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      character_profiles: {
+        Row: {
+          age: number | null
+          character_backstory: string | null
+          character_description: string | null
+          character_image_url: string | null
+          character_name: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          occupation: string | null
+          personality_traits: string[] | null
+          relationships: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age?: number | null
+          character_backstory?: string | null
+          character_description?: string | null
+          character_image_url?: string | null
+          character_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          occupation?: string | null
+          personality_traits?: string[] | null
+          relationships?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number | null
+          character_backstory?: string | null
+          character_description?: string | null
+          character_image_url?: string | null
+          character_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          occupation?: string | null
+          personality_traits?: string[] | null
+          relationships?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_ai_interactions: {
+        Row: {
+          ai_response: string
+          confidence_score: number | null
+          created_at: string
+          escalated_to_human: boolean | null
+          id: string
+          session_id: string
+          user_question: string
+          was_helpful: boolean | null
+        }
+        Insert: {
+          ai_response: string
+          confidence_score?: number | null
+          created_at?: string
+          escalated_to_human?: boolean | null
+          id?: string
+          session_id: string
+          user_question: string
+          was_helpful?: boolean | null
+        }
+        Update: {
+          ai_response?: string
+          confidence_score?: number | null
+          created_at?: string
+          escalated_to_human?: boolean | null
+          id?: string
+          session_id?: string
+          user_question?: string
+          was_helpful?: boolean | null
+        }
+        Relationships: []
+      }
+      chat_analytics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_type: string
+          metric_value: number | null
+          recorded_at: string
+          session_id: string
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          metric_value?: number | null
+          recorded_at?: string
+          session_id: string
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          metric_value?: number | null
+          recorded_at?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
       chat_banned_users: {
         Row: {
           banned_at: string
@@ -217,6 +400,45 @@ export type Database = {
           user_id?: string | null
           visitor_email?: string | null
           visitor_name?: string | null
+        }
+        Relationships: []
+      }
+      chat_file_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          message_id: string | null
+          sender_id: string | null
+          sender_type: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id?: string
+          message_id?: string | null
+          sender_id?: string | null
+          sender_type: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          message_id?: string | null
+          sender_id?: string | null
+          sender_type?: string
+          session_id?: string
         }
         Relationships: []
       }
@@ -297,6 +519,212 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_typing_indicators: {
+        Row: {
+          created_at: string
+          id: string
+          is_typing: boolean
+          last_activity: string
+          session_id: string
+          user_id: string | null
+          user_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_typing?: boolean
+          last_activity?: string
+          session_id: string
+          user_id?: string | null
+          user_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_typing?: boolean
+          last_activity?: string
+          session_id?: string
+          user_id?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
+      community_vote_responses: {
+        Row: {
+          created_at: string
+          id: string
+          selected_option: string
+          user_id: string
+          vote_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          selected_option: string
+          user_id: string
+          vote_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          selected_option?: string
+          user_id?: string
+          vote_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_vote_responses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_vote_responses_vote_id_fkey"
+            columns: ["vote_id"]
+            isOneToOne: false
+            referencedRelation: "community_votes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_votes: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          ends_at: string
+          id: string
+          is_active: boolean | null
+          min_participation: number | null
+          options: Json
+          requires_staff_approval: boolean | null
+          starts_at: string
+          title: string
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          ends_at: string
+          id?: string
+          is_active?: boolean | null
+          min_participation?: number | null
+          options: Json
+          requires_staff_approval?: boolean | null
+          starts_at?: string
+          title: string
+          vote_type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean | null
+          min_participation?: number | null
+          options?: Json
+          requires_staff_approval?: boolean | null
+          starts_at?: string
+          title?: string
+          vote_type?: string
+        }
+        Relationships: []
+      }
+      custom_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          last_accessed: string
+          session_token: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          last_accessed?: string
+          session_token: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          last_accessed?: string
+          session_token?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_users: {
+        Row: {
+          avatar_url: string | null
+          banned: boolean
+          banned_at: string | null
+          banned_by: string | null
+          created_at: string
+          email: string
+          email_verified: boolean
+          full_name: string | null
+          id: string
+          last_login: string | null
+          password_hash: string
+          role: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          banned?: boolean
+          banned_at?: string | null
+          banned_by?: string | null
+          created_at?: string
+          email: string
+          email_verified?: boolean
+          full_name?: string | null
+          id?: string
+          last_login?: string | null
+          password_hash: string
+          role?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          banned?: boolean
+          banned_at?: string | null
+          banned_by?: string | null
+          created_at?: string
+          email?: string
+          email_verified?: boolean
+          full_name?: string | null
+          id?: string
+          last_login?: string | null
+          password_hash?: string
+          role?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           body: string
@@ -329,6 +757,83 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      email_verification_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_verification_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_participants: {
+        Row: {
+          character_id: string | null
+          event_id: string
+          id: string
+          joined_at: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          character_id?: string | null
+          event_id: string
+          id?: string
+          joined_at?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          character_id?: string | null
+          event_id?: string
+          id?: string
+          joined_at?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "character_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "rp_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       failed_login_attempts: {
         Row: {
@@ -461,6 +966,44 @@ export type Database = {
         }
         Relationships: []
       }
+      missed_chats: {
+        Row: {
+          created_at: string | null
+          email_sent_at: string | null
+          id: string
+          push_sent_at: string | null
+          session_id: string
+          staff_notified: string[] | null
+          wait_time_minutes: number
+        }
+        Insert: {
+          created_at?: string | null
+          email_sent_at?: string | null
+          id?: string
+          push_sent_at?: string | null
+          session_id: string
+          staff_notified?: string[] | null
+          wait_time_minutes?: number
+        }
+        Update: {
+          created_at?: string | null
+          email_sent_at?: string | null
+          id?: string
+          push_sent_at?: string | null
+          session_id?: string
+          staff_notified?: string[] | null
+          wait_time_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missed_chats_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       packages: {
         Row: {
           created_at: string
@@ -554,10 +1097,45 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "password_reset_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           category: string
-          created_at: string
+          created_at: string | null
           description: string | null
           display_name: string
           id: string
@@ -565,7 +1143,7 @@ export type Database = {
         }
         Insert: {
           category: string
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           display_name: string
           id?: string
@@ -573,7 +1151,7 @@ export type Database = {
         }
         Update: {
           category?: string
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           display_name?: string
           id?: string
@@ -647,21 +1225,45 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string | null
+          id: string
+          subscription: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          subscription: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          subscription?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           permission_id: string
           role_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           permission_id: string
           role_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           permission_id?: string
           role_id?: string
@@ -682,6 +1284,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rp_events: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          duration_minutes: number | null
+          event_date: string
+          event_type: string
+          id: string
+          is_public: boolean | null
+          location: string | null
+          max_participants: number | null
+          requirements: string | null
+          rewards: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          duration_minutes?: number | null
+          event_date: string
+          event_type: string
+          id?: string
+          is_public?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          requirements?: string | null
+          rewards?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          duration_minutes?: number | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          is_public?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          requirements?: string | null
+          rewards?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       rules: {
         Row: {
@@ -944,7 +1600,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "supporters_user_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_members: {
         Row: {
@@ -954,9 +1618,11 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          location: string | null
           name: string
           order_index: number
           role: string
+          staff_role_id: string | null
           updated_at: string
         }
         Insert: {
@@ -966,9 +1632,11 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          location?: string | null
           name: string
           order_index?: number
           role: string
+          staff_role_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -978,12 +1646,22 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          location?: string | null
           name?: string
           order_index?: number
           role?: string
+          staff_role_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_team_members_staff_role"
+            columns: ["staff_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       twitch_streamers: {
         Row: {
@@ -1024,6 +1702,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string
+          id: string
+          progress: number | null
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string
+          id?: string
+          progress?: number | null
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string
+          id?: string
+          progress?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_role_assignments: {
         Row: {
           assigned_at: string
@@ -1058,6 +1768,13 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_role_assignments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
             referencedColumns: ["id"]
           },
         ]
@@ -1116,6 +1833,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_votes: {
+        Row: {
+          id: string
+          selected_option: string
+          user_id: string
+          vote_id: string
+          voted_at: string
+        }
+        Insert: {
+          id?: string
+          selected_option: string
+          user_id: string
+          vote_id: string
+          voted_at?: string
+        }
+        Update: {
+          id?: string
+          selected_option?: string
+          user_id?: string
+          vote_id?: string
+          voted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_votes_vote_id_fkey"
+            columns: ["vote_id"]
+            isOneToOne: false
+            referencedRelation: "community_votes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1128,6 +1877,14 @@ export type Database = {
       calculate_supporter_tier: {
         Args: { total_amount: number }
         Returns: string
+      }
+      check_missed_chats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      get_all_permissions_for_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
@@ -1142,11 +1899,27 @@ export type Database = {
           total_donated: number
         }[]
       }
+      has_admin_hierarchy: {
+        Args: { check_user_uuid?: string }
+        Returns: boolean
+      }
+      has_hierarchy_level: {
+        Args: { check_user_id?: string; min_level?: number }
+        Returns: boolean
+      }
+      has_permission: {
+        Args: { check_user_id?: string; permission_name?: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           check_user_uuid: string
           target_role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      has_super_admin_hierarchy: {
+        Args: { check_user_uuid?: string }
         Returns: boolean
       }
       is_admin: {
@@ -1158,7 +1931,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff: {
-        Args: { check_user_uuid: string }
+        Args: { check_user_uuid?: string }
         Returns: boolean
       }
       log_analytics_event: {
@@ -1169,6 +1942,10 @@ export type Database = {
           resource_type?: string
         }
         Returns: string
+      }
+      upsert_push_subscription: {
+        Args: { p_subscription: Json; p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SupporterBadge } from "@/components/SupporterBadge";
 import Navbar from "@/components/Navbar";
 import { Heart, Users, TrendingUp, Gift, Star, Crown, Diamond, Trophy, Medal } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 
 interface Supporter {
   id: string;
@@ -34,7 +34,7 @@ export default function Supporters() {
   const [stats, setStats] = useState<SupporterStats>({ total_supporters: 0, total_raised: 0, top_tier_count: 0 });
   const [userSupporterStatus, setUserSupporterStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
 
   useEffect(() => {
     fetchSupporters();

@@ -31,94 +31,65 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
   }, []);
 
   const fetchStaffRoles = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('staff_roles')
-        .select('*')
-        .eq('is_active', true)
-        .order('hierarchy_level', { ascending: false });
-
-      if (error) throw error;
-      setStaffRoles(data || []);
-    } catch (error) {
-      console.error('Error fetching staff roles:', error);
-    }
+    // Use hardcoded roles since we're using simple role system
+    const roles = [
+      { id: 'admin', name: 'admin', display_name: 'Administrator', color: '#7c3aed', hierarchy_level: 100 },
+      { id: 'staff', name: 'staff', display_name: 'Staff', color: '#2563eb', hierarchy_level: 70 },
+      { id: 'moderator', name: 'moderator', display_name: 'Moderator', color: '#059669', hierarchy_level: 50 }
+    ];
+    setStaffRoles(roles);
   };
 
   const fetchStaff = async () => {
     try {
       setIsLoading(true);
       
-      // Fetch from new role assignments system
-      const { data: roleAssignments, error: assignmentError } = await supabase
-        .from('user_role_assignments')
-        .select(`
-          *,
-          staff_roles!inner (
-            id,
-            name,
-            display_name,
-            color,
-            hierarchy_level
-          )
-        `)
-        .eq('is_active', true);
-
-      if (assignmentError) throw assignmentError;
-
-      // Fetch from old user_roles system (admin/moderator)
-      const { data: oldRoles, error: oldRolesError } = await supabase
-        .from('user_roles')
+      // Fetch staff from custom_users table where role is admin, staff, or moderator
+      const { data: staffUsers, error } = await supabase
+        .from('custom_users')
         .select('*')
-        .in('role', ['admin', 'moderator']);
+        .in('role', ['admin', 'staff', 'moderator'])
+        .eq('banned', false);
 
-      if (oldRolesError) throw oldRolesError;
+      if (error) throw error;
 
-      // Get all user IDs
-      const assignmentUserIds = roleAssignments?.map(assignment => assignment.user_id) || [];
-      const oldRoleUserIds = oldRoles?.map(role => role.user_id) || [];
-      const allUserIds = [...new Set([...assignmentUserIds, ...oldRoleUserIds])];
+      // Map to staff format with role information
+      const mappedStaff = staffUsers?.map(user => {
+        const roleInfo = {
+          admin: { display_name: 'Administrator', color: '#7c3aed', hierarchy_level: 100 },
+          staff: { display_name: 'Staff', color: '#2563eb', hierarchy_level: 70 },
+          moderator: { display_name: 'Moderator', color: '#059669', hierarchy_level: 50 }
+        };
 
-      // Get user profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, email, full_name')
-        .in('id', allUserIds);
+        return {
+          id: user.id,
+          user_id: user.id,
+          role_id: user.role,
+          assigned_at: user.created_at,
+          assigned_by: null,
+          expires_at: null,
+          is_active: true,
+          staff_roles: {
+            id: user.role,
+            name: user.role,
+            display_name: roleInfo[user.role as keyof typeof roleInfo]?.display_name || user.role,
+            color: roleInfo[user.role as keyof typeof roleInfo]?.color || '#6b7280',
+            hierarchy_level: roleInfo[user.role as keyof typeof roleInfo]?.hierarchy_level || 0
+          },
+          profiles: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            full_name: user.full_name
+          },
+          isLegacy: false
+        };
+      }) || [];
 
-      if (profilesError) throw profilesError;
+      // Sort by hierarchy level
+      mappedStaff.sort((a, b) => (b.staff_roles?.hierarchy_level || 0) - (a.staff_roles?.hierarchy_level || 0));
 
-      // Combine new role assignments with profiles
-      const newStaff = roleAssignments?.map(assignment => ({
-        ...assignment,
-        profiles: profiles?.find(profile => profile.id === assignment.user_id),
-        isLegacy: false
-      })) || [];
-
-      // Convert old roles to new format
-      const legacyStaff = oldRoles?.map(role => ({
-        id: role.id,
-        user_id: role.user_id,
-        role_id: null,
-        assigned_at: role.created_at,
-        assigned_by: null,
-        expires_at: null,
-        is_active: true,
-        staff_roles: {
-          id: null,
-          name: role.role,
-          display_name: role.role === 'admin' ? 'Administrator (Legacy)' : 'Moderator (Legacy)',
-          color: role.role === 'admin' ? '#7c3aed' : '#2563eb',
-          hierarchy_level: role.role === 'admin' ? 80 : 60
-        },
-        profiles: profiles?.find(profile => profile.id === role.user_id),
-        isLegacy: true
-      })) || [];
-
-      // Combine and sort by hierarchy level
-      const allStaff = [...newStaff, ...legacyStaff];
-      allStaff.sort((a, b) => (b.staff_roles?.hierarchy_level || 0) - (a.staff_roles?.hierarchy_level || 0));
-
-      setStaff(allStaff);
+      setStaff(mappedStaff);
     } catch (error) {
       console.error('Error fetching staff:', error);
       toast({
@@ -136,7 +107,7 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
     
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('custom_users')
         .select('*')
         .ilike('email', `%${searchEmail}%`)
         .limit(10);
@@ -155,37 +126,33 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
 
   const promoteUser = async (userId: string, roleId: string) => {
     try {
-      // Check if user already has this role
-      const { data: existingAssignment } = await supabase
-        .from('user_role_assignments')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('role_id', roleId)
-        .eq('is_active', true)
+      // Check current user role
+      const { data: currentUser } = await supabase
+        .from('custom_users')
+        .select('role')
+        .eq('id', userId)
         .single();
 
-      if (existingAssignment) {
+      if (currentUser && ['admin', 'staff', 'moderator'].includes(currentUser.role)) {
         toast({
           title: "Error",
-          description: "User already has this role",
+          description: "User already has a staff role",
           variant: "destructive",
         });
         return;
       }
 
+      // Update user role in custom_users table
       const { error } = await supabase
-        .from('user_role_assignments')
-        .insert({
-          user_id: userId,
-          role_id: roleId,
-          assigned_by: (await supabase.auth.getUser()).data.user?.id
-        });
+        .from('custom_users')
+        .update({ role: roleId })
+        .eq('id', userId);
 
       if (error) throw error;
 
       const selectedStaffRole = staffRoles.find(r => r.id === roleId);
       await fetchStaff();
-      onRefresh?.(); // Refresh parent data
+      onRefresh?.();
       setIsAddingStaff(false);
       setSearchEmail("");
       setSelectedRole("");
@@ -206,41 +173,17 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
 
   const changeUserRole = async (member: any, newRoleId: string) => {
     try {
-      if (member.isLegacy) {
-        // For legacy roles, we need to delete from user_roles and create in user_role_assignments
-        const { error: deleteError } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('id', member.id);
+      // Update user role in custom_users table
+      const { error } = await supabase
+        .from('custom_users')
+        .update({ role: newRoleId })
+        .eq('id', member.user_id);
 
-        if (deleteError) throw deleteError;
-
-        const { error: insertError } = await supabase
-          .from('user_role_assignments')
-          .insert({
-            user_id: member.user_id,
-            role_id: newRoleId,
-            assigned_by: (await supabase.auth.getUser()).data.user?.id
-          });
-
-        if (insertError) throw insertError;
-      } else {
-        // For new system roles, just update
-        const { error } = await supabase
-          .from('user_role_assignments')
-          .update({
-            role_id: newRoleId,
-            assigned_by: (await supabase.auth.getUser()).data.user?.id,
-            assigned_at: new Date().toISOString()
-          })
-          .eq('id', member.id);
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       const newStaffRole = staffRoles.find(r => r.id === newRoleId);
       await fetchStaff();
-      onRefresh?.(); // Refresh parent data
+      onRefresh?.();
       toast({
         title: "Success",
         description: `User role changed to ${newStaffRole?.display_name}`,
@@ -257,26 +200,16 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
 
   const removeStaff = async (member: any) => {
     try {
-      if (member.isLegacy) {
-        // For legacy roles, delete from user_roles table
-        const { error } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('id', member.id);
+      // Demote user back to regular 'user' role
+      const { error } = await supabase
+        .from('custom_users')
+        .update({ role: 'user' })
+        .eq('id', member.user_id);
 
-        if (error) throw error;
-      } else {
-        // For new system roles, set is_active to false
-        const { error } = await supabase
-          .from('user_role_assignments')
-          .update({ is_active: false })
-          .eq('id', member.id);
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       await fetchStaff();
-      onRefresh?.(); // Refresh parent data
+      onRefresh?.();
       toast({
         title: "Success",
         description: "Staff member removed successfully",

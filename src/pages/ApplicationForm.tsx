@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useServerSettings } from "@/hooks/useServerSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -21,16 +22,15 @@ const ApplicationForm = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasExistingApplication, setHasExistingApplication] = useState(false);
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // 1. Find Discord-navn fra brugerprofil/session og husk fallback
-  const discordName =
-    user?.user_metadata?.discord_name ||
-    user?.user_metadata?.user_name ||
-    user?.user_metadata?.username ||
-    "";
+  // Get server settings
+  const { settings: serverSettings } = useServerSettings();
+
+  // Get Discord name from custom auth user profile
+  const discordName = user?.username || "";
 
   useEffect(() => {
     if (user) {
@@ -105,16 +105,56 @@ const ApplicationForm = () => {
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
-      // discord_name tvinges altid til den aktuelle bruger
+      
+      // Only send the required database columns - store form fields in form_data JSONB
       const submission = {
-        ...formData,
-        discord_name: discordName,
         user_id: user.id,
         application_type_id: selectedType.id,
-        status: "pending"
+        status: "pending",
+        form_data: formData, // All dynamic form fields go here
+        discord_name: discordName // Store discord name in dedicated column
       };
+      
       const { error } = await supabase.from('applications').insert(submission);
       if (error) throw error;
+
+      // Send submission confirmation email
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            applicationId: 'temp-submission-id',
+            templateType: 'application_submitted',
+            recipientEmail: user.email,
+            applicantName: formData.karakternavn || user.username || 'Applicant',
+            applicationType: selectedType.name,
+            discordName: discordName,
+            steamName: formData.steam_name || '',
+            fivemName: formData.fivem_name || ''
+          }
+        });
+        console.log('Submission email sent successfully');
+      } catch (emailError) {
+        console.error('Error sending submission email:', emailError);
+      }
+
+      // Send Discord notification
+      try {
+        await supabase.functions.invoke('discord-logger', {
+          body: {
+            type: 'application_submitted',
+            data: {
+              user_id: user.id,
+              application_type: selectedType.name,
+              applicant_name: formData.karakternavn || user.username || 'Applicant',
+              discord_name: discordName,
+              form_data: formData
+            }
+          }
+        });
+        console.log('Discord notification sent successfully');
+      } catch (discordError) {
+        console.error('Error sending Discord notification:', discordError);
+      }
 
       toast({ title: "Success", description: "Your application has been submitted successfully!" });
       navigate('/');
@@ -205,12 +245,16 @@ const ApplicationForm = () => {
     );
   }
 
-  if (hasExistingApplication) {
+  // Check if user has existing application and multiple applications are not allowed
+  if (hasExistingApplication && !serverSettings?.application_settings?.multiple_applications_allowed) {
     return (
       <div className="min-h-screen bg-gaming-dark flex flex-col">
         <Navbar />
         <div className="flex-1 container mx-auto px-4 py-8">
-          <Alert className="max-w-2xl mx-auto"><CheckCircle className="h-4 w-4" /><AlertDescription>You already have a pending application. Please wait for it to be reviewed.</AlertDescription></Alert>
+          <Alert className="max-w-2xl mx-auto">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>You already have a pending application. Please wait for it to be reviewed.</AlertDescription>
+          </Alert>
         </div>
       </div>
     );

@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Eye, Clock, RotateCcw } from "lucide-react";
 
@@ -28,7 +28,7 @@ const ClosedApplications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
 
   useEffect(() => {
     if (user) {

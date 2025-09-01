@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 
 interface ActiveUser {
   user_id: string;
@@ -15,7 +15,7 @@ interface ActiveUser {
 }
 
 export const useGlobalPresence = () => {
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
   const [userPresence, setUserPresence] = useState<any>(null);
 
@@ -30,14 +30,7 @@ export const useGlobalPresence = () => {
       const userAgent = navigator.userAgent;
       const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
       
-      // Get user profile info
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, email')
-        .eq('id', user.id)
-        .single();
-
-      // Get user role
+      // Get user role from user_roles table (if needed)
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -46,9 +39,9 @@ export const useGlobalPresence = () => {
 
       const userStatus = {
         user_id: user.id,
-        username: profile?.username || 'Anonymous',
-        email: profile?.email || user.email,
-        role: roleData?.[0]?.role || 'user',
+        username: user.username || 'Anonymous',
+        email: user.email,
+        role: roleData?.[0]?.role || user.role || 'user',
         joined_at: new Date().toISOString(),
         last_seen: new Date().toISOString(),
         page: window.location.pathname,

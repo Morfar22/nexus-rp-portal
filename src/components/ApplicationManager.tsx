@@ -222,7 +222,7 @@ const ApplicationManager = () => {
       let profileMap: Record<string, any> = {};
       if (userIds.length) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('custom_users')
           .select('id, username, full_name, email')
           .in('id', userIds);
         (profiles || []).forEach((p: any) => {
@@ -352,9 +352,9 @@ const ApplicationManager = () => {
 
       // Send email notification
       try {
-        // Get user email from profiles table
+        // Get user email from custom_users table
         const { data: userProfile, error: profileError } = await supabase
-          .from('profiles')
+          .from('custom_users')
           .select('email')
           .eq('id', appData.user_id)
           .single();
@@ -625,26 +625,22 @@ const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplica
                           {/* Dynamic form fields based on application type */}
                           {selectedApp.application_types?.form_fields ? (
                             <div className="grid grid-cols-1 gap-4">
-                              {(selectedApp.application_types.form_fields as any[]).map((field: any, index: number) => {
-                                const fieldKey = `field_${index}`;
-                                const fieldValue = selectedApp.form_data?.[fieldKey] || 
-                                                 selectedApp.form_data?.[field.id] || 
-                                                 selectedApp[field.label?.toLowerCase().replace(/\s+/g, '_')] || 
-                                                 'N/A';
-                                
-                                return (
-                                  <div key={fieldKey} className="space-y-1">
-                                    <Label className="text-foreground">{field.label}</Label>
-                                    {field.type === 'textarea' ? (
-                                      <div className="text-sm text-muted-foreground p-3 bg-gaming-dark rounded border min-h-[60px]">
-                                        {fieldValue}
-                                      </div>
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground">{fieldValue}</p>
-                                    )}
-                                  </div>
-                                );
-                              })}
+                               {(selectedApp.application_types.form_fields as any[]).map((field: any, index: number) => {
+                                 const fieldValue = selectedApp.form_data?.[field.key] || 'N/A';
+                                 
+                                 return (
+                                   <div key={field.key} className="space-y-1">
+                                     <Label className="text-foreground">{field.label}</Label>
+                                     {field.type === 'textarea' ? (
+                                       <div className="text-sm text-muted-foreground p-3 bg-gaming-dark rounded border min-h-[60px]">
+                                         {fieldValue}
+                                       </div>
+                                     ) : (
+                                       <p className="text-sm text-muted-foreground">{fieldValue}</p>
+                                     )}
+                                   </div>
+                                 );
+                               })}
                             </div>
                           ) : (
                             /* Fallback for old applications without dynamic form fields */

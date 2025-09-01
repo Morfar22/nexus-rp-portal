@@ -1,10 +1,10 @@
 import UserProfileManager from "@/components/UserProfileManager";
 import Navbar from "@/components/Navbar";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { Navigate } from "react-router-dom";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
 
   if (!user) {
     return <Navigate to="/auth" replace />;

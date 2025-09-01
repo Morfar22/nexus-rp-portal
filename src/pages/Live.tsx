@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExternalLink, Users, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from 'react-i18next';
 import Navbar from "@/components/Navbar";
+
+import SimpleLiveChat from "@/components/SimpleLiveChat";
 
 interface TwitchStreamer {
   id: string;
@@ -25,6 +29,7 @@ interface StreamData {
 }
 
 const Live = () => {
+  const { t } = useTranslation();
   const [streamers, setStreamers] = useState<TwitchStreamer[]>([]);
   const [streamData, setStreamData] = useState<Record<string, StreamData>>({});
   const [loading, setLoading] = useState(true);
@@ -147,12 +152,27 @@ const Live = () => {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
-              Live Streams
+              {t('streams.live_streams')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Watch our community members live on Twitch playing on {serverName}
+              {t('streams.streamers_description')}
             </p>
           </div>
+
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="streams" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="streams" className="flex items-center space-x-2">
+                <Users className="h-4 w-4" />
+                <span>{t('streams.live_streams')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="support" className="flex items-center space-x-2">
+                <span>{t('live.support_title')}</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Streams Tab */}
+            <TabsContent value="streams" className="space-y-8">
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -174,7 +194,7 @@ const Live = () => {
                   <div className="flex items-center space-x-2 mb-6">
                     <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                     <h2 className="text-2xl font-semibold text-foreground">
-                      Live Now ({liveStreamers.length})
+                      {t('streams.live_now')} ({liveStreamers.length})
                     </h2>
                   </div>
                   
@@ -266,7 +286,7 @@ const Live = () => {
                               className="w-full inline-flex items-center justify-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 text-sm font-medium group-hover:bg-purple-500"
                             >
                               <ExternalLink className="h-4 w-4 mr-2" />
-                              Watch on Twitch
+                              {t('streams.watch_on_twitch')}
                             </a>
                           </div>
                         </Card>
@@ -280,7 +300,7 @@ const Live = () => {
               {offlineStreamers.length > 0 && (
                 <div>
                   <h2 className="text-2xl font-semibold text-foreground mb-6">
-                    Offline Streamers
+                    {t('streams.offline_streamers')}
                   </h2>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -316,7 +336,7 @@ const Live = () => {
                             className="mt-2 inline-flex items-center text-xs text-neon-purple hover:text-neon-purple/80 transition-colors"
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
-                            View Channel
+                            {t('streams.view_channel')}
                           </a>
                         </div>
                       </Card>
@@ -330,15 +350,33 @@ const Live = () => {
                 <div className="text-center py-12">
                   <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                    No Streamers Yet
+                    {t('streams.no_streams')}
                   </h3>
                   <p className="text-muted-foreground">
-                    Check back later for live streams from our community!
+                    {t('streams.check_back_later')}
                   </p>
                 </div>
               )}
             </div>
           )}
+            </TabsContent>
+
+            {/* Voice Chat Tab */}
+
+            {/* Live Support Tab */}
+            <TabsContent value="support" className="space-y-6">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-semibold text-foreground mb-2">{t('live.support_title')}</h2>
+          <p className="text-muted-foreground">
+            {t('live.support_description')}
+          </p>
+        </div>
+              
+              <div className="max-w-4xl mx-auto">
+                <SimpleLiveChat />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

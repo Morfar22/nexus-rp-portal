@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useCustomAuth } from './useCustomAuth';
 
 interface ServerSettings {
   general_settings: {
@@ -33,6 +33,19 @@ interface ServerSettings {
     log_user_actions: boolean;
     log_system_changes: boolean;
     log_application_actions: boolean;
+  };
+  social_media_settings: {
+    instagram_enabled: boolean;
+    instagram_url: string;
+    facebook_enabled: boolean;
+    facebook_url: string;
+    tiktok_enabled: boolean;
+    tiktok_url: string;
+    youtube_enabled: boolean;
+    youtube_url: string;
+    show_in_footer: boolean;
+    show_in_hero: boolean;
+    animation_enabled: boolean;
   };
 }
 
@@ -75,6 +88,19 @@ const defaultSettings: ServerSettings = {
     log_system_changes: true,
     log_application_actions: true,
   },
+  social_media_settings: {
+    instagram_enabled: false,
+    instagram_url: '',
+    facebook_enabled: false,
+    facebook_url: '',
+    tiktok_enabled: false,
+    tiktok_url: '',
+    youtube_enabled: false,
+    youtube_url: '',
+    show_in_footer: true,
+    show_in_hero: false,
+    animation_enabled: true,
+  },
 };
 
 const ServerSettingsContext = createContext<ServerSettingsContextType | undefined>(undefined);
@@ -82,7 +108,7 @@ const ServerSettingsContext = createContext<ServerSettingsContextType | undefine
 export const ServerSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<ServerSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
 
   const fetchSettings = async () => {
     try {
@@ -95,7 +121,8 @@ export const ServerSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           'security_settings',
           'performance_settings',
           'discord_settings',
-          'discord_logging'
+          'discord_logging',
+          'social_media_settings'
         ]);
 
       if (error) throw error;

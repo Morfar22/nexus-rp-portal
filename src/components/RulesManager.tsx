@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Trash2, GripVertical, Save, X } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 
 const RulesManager = () => {
   const [rules, setRules] = useState<any[]>([]);
@@ -25,7 +25,7 @@ const RulesManager = () => {
     order_index: 0,
     is_active: true
   });
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
 
   useEffect(() => {

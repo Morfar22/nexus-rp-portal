@@ -5,43 +5,62 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[DISCORD-OAUTH] ${step}${detailsStr}`);
+};
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const discordClientId = Deno.env.get('DISCORD_CLIENT_ID');
 const discordClientSecret = Deno.env.get('DISCORD_CLIENT_SECRET');
 
+logStep("Environment check", {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasSupabaseKey: !!supabaseKey,
+  hasDiscordClientId: !!discordClientId,
+  hasDiscordClientSecret: !!discordClientSecret
+});
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 Deno.serve(async (req) => {
+  logStep("Function started", { method: req.method, url: req.url });
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    logStep("CORS preflight handled");
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log('=== DISCORD OAUTH FUNCTION START ===');
-
   try {
     const { action, data } = await req.json();
-    console.log('Discord OAuth action:', action);
+    logStep("Request parsed", { action, hasData: !!data });
 
     let result;
     switch (action) {
       case 'get_auth_url':
+        logStep("Processing get_auth_url action", { redirectUri: data.redirectUri });
         result = await getDiscordAuthUrl(data.redirectUri);
         break;
       case 'exchange_code':
+        logStep("Processing exchange_code action", { hasCode: !!data.code, redirectUri: data.redirectUri });
         result = await exchangeCodeForTokens(data.code, data.redirectUri);
         break;
       case 'refresh_token':
+        logStep("Processing refresh_token action", { hasRefreshToken: !!data.refreshToken });
         result = await refreshDiscordToken(data.refreshToken);
         break;
       case 'disconnect':
+        logStep("Processing disconnect action", { userId: data.userId });
         result = await disconnectDiscord(data.userId);
         break;
       default:
+        logStep("ERROR: Unknown action", { action });
         throw new Error(`Unknown action: ${action}`);
     }
 
+    logStep("Action completed successfully", { action, resultType: typeof result });
     return new Response(
       JSON.stringify({ success: true, data: result }),
       {
@@ -51,7 +70,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Discord OAuth error:', error);
+    logStep("ERROR in discord-oauth", { message: error.message, stack: error.stack });
     return new Response(
       JSON.stringify({ 
         success: false, 
