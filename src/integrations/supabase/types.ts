@@ -1612,12 +1612,15 @@ export type Database = {
       }
       team_members: {
         Row: {
+          auto_synced: boolean | null
           bio: string | null
           created_at: string
           created_by: string | null
+          discord_id: string | null
           id: string
           image_url: string | null
           is_active: boolean
+          last_discord_sync: string | null
           location: string | null
           name: string
           order_index: number
@@ -1626,12 +1629,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_synced?: boolean | null
           bio?: string | null
           created_at?: string
           created_by?: string | null
+          discord_id?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
+          last_discord_sync?: string | null
           location?: string | null
           name: string
           order_index?: number
@@ -1640,12 +1646,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_synced?: boolean | null
           bio?: string | null
           created_at?: string
           created_by?: string | null
+          discord_id?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
+          last_discord_sync?: string | null
           location?: string | null
           name?: string
           order_index?: number
