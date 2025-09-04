@@ -55,8 +55,8 @@ const Navbar = () => {
   const visibleItems = getVisibleItems();
   const { isOverflowing, containerRef, contentRef } = useNavbarOverflow(visibleItems, !isMobile);
   
-  // Force collapse to hamburger menu if overflowing on desktop
-  const shouldUseHamburgerMenu = isMobile || isOverflowing;
+  // Always show desktop navigation with scrolling instead of hamburger menu on overflow
+  const shouldUseHamburgerMenu = isMobile;
 
   // Fetch user profile data
   useEffect(() => {
@@ -403,8 +403,10 @@ const Navbar = () => {
         ) : (
           /* Desktop navigation when not overflowing */
           <>
-            <div ref={contentRef} className="flex items-center space-x-2 bg-gaming-darker/30 rounded-xl px-4 py-2 border border-gaming-border/50">
-              <NavLinks />
+            <div ref={contentRef} className="flex items-center space-x-2 bg-gaming-darker/30 rounded-xl px-4 py-2 border border-gaming-border/50 overflow-x-auto scrollbar-thin scrollbar-track-gaming-darker scrollbar-thumb-primary/50 hover:scrollbar-thumb-primary/70 scrollbar-thumb-rounded-full max-w-[60vw]">
+              <div className="flex items-center space-x-2 min-w-max">
+                <NavLinks />
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
