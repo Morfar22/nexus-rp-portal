@@ -88,17 +88,44 @@ async function makeDiscordRequest(endpoint: string, options: RequestInit = {}) {
   if (!response.ok) {
     const errorData = await response.text();
     console.error(`Discord API error (${response.status}):`, errorData);
-    throw new Error(`Discord API error: ${response.status} - ${errorData}`);
+    
+    let errorMessage = `Discord API error: ${response.status} - ${errorData}`;
+    
+    // Provide more helpful error messages for common issues
+    if (response.status === 404) {
+      const errorObj = JSON.parse(errorData);
+      if (errorObj.code === 10004) {
+        errorMessage = 'Discord server not found. Please check your Discord Server ID or ensure the bot has been added to your server.';
+      }
+    } else if (response.status === 403) {
+      errorMessage = 'Discord bot lacks permissions. Please ensure the bot has "View Server Members" permission in your Discord server.';
+    } else if (response.status === 401) {
+      errorMessage = 'Discord bot token is invalid. Please check your Discord bot configuration.';
+    }
+    
+    throw new Error(errorMessage);
   }
 
   return response.json();
 }
 
 async function fetchGuildMembers(guildId: string): Promise<DiscordMember[]> {
-  console.log(`Fetching guild members for ${guildId}`);
+  console.log(`Fetching guild members for guild ID: ${guildId}`);
+  
+  if (!guildId || guildId.trim() === '') {
+    throw new Error('Guild ID is required. Please configure your Discord Server ID in the settings.');
+  }
+  
+  // First verify the bot can access the guild
+  try {
+    await makeDiscordRequest(`/guilds/${guildId}`);
+  } catch (error) {
+    console.error('Failed to access guild:', error);
+    throw new Error(`Cannot access Discord server with ID ${guildId}. ${error.message}`);
+  }
   
   const members = await makeDiscordRequest(`/guilds/${guildId}/members?limit=1000`);
-  console.log(`Fetched ${members.length} guild members`);
+  console.log(`Successfully fetched ${members.length} guild members`);
   
   return members;
 }
