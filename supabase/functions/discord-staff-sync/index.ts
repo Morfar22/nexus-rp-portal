@@ -141,10 +141,29 @@ async function syncStaffMembers(guildId: string) {
     .single();
 
   if (!settings?.setting_value?.staff_role_mappings) {
-    throw new Error('Discord staff role mappings not configured');
+    console.log('Discord staff role mappings not configured yet');
+    return {
+      success: false,
+      error: 'Discord staff role mappings not configured. Please configure role mappings in the Discord Bot Settings first.',
+      requiresConfiguration: true
+    };
   }
 
   const staffRoleMappings = settings.setting_value.staff_role_mappings;
+  
+  // Check if any role mappings are actually set
+  const hasValidMappings = Object.values(staffRoleMappings).some((roleId: any) => 
+    roleId && typeof roleId === 'string' && roleId.trim() !== ''
+  );
+  
+  if (!hasValidMappings) {
+    console.log('No valid staff role mappings configured');
+    return {
+      success: false,
+      error: 'No Discord role IDs configured in the staff role mappings. Please add at least one Discord role ID.',
+      requiresConfiguration: true
+    };
+  }
   
   // Get all staff roles from database
   const { data: staffRoles } = await supabase

@@ -109,8 +109,6 @@
     "server_management": "Gestion du Serveur",
     "user_management": "Gestion des Utilisateurs"
   },
-    "server_management": "Gestion du Serveur"
-  },
   "auth": {
     "sign_in": "Se Connecter",
     "sign_up": "S'Inscrire",

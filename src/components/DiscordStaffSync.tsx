@@ -52,7 +52,16 @@ const DiscordStaffSync = ({
           description: `Found ${data.data.length} members in Discord server`,
         });
       } else {
-        throw new Error(data.error);
+        // Handle configuration errors with more helpful messages
+        if (data.requiresConfiguration) {
+          toast({
+            title: "Configuration Required",
+            description: data.error || "Please configure Discord role mappings below",
+            variant: "destructive",
+          });
+        } else {
+          throw new Error(data.error);
+        }
       }
     } catch (error) {
       console.error('Discord fetch error:', error);
@@ -95,7 +104,16 @@ const DiscordStaffSync = ({
           description: `Synced ${data.data.syncedCount} staff members from Discord`,
         });
       } else {
-        throw new Error(data.error);
+        // Handle configuration errors with more helpful messages
+        if (data.requiresConfiguration) {
+          toast({
+            title: "Configuration Required",
+            description: data.error || "Please configure Discord role mappings below",
+            variant: "destructive",
+          });
+        } else {
+          throw new Error(data.error);
+        }
       }
     } catch (error) {
       console.error('Discord sync error:', error);
