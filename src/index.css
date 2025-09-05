@@ -406,6 +406,26 @@
   .staff-panel-scrollbar::-webkit-scrollbar-corner { background: transparent; }
   .staff-panel-scrollbar { scrollbar-width: thin; scrollbar-color: hsl(var(--gaming-border)) transparent; }
 
+  /* --- Navbar Gaming Scrollbar --- */
+  .navbar-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+  .navbar-scrollbar::-webkit-scrollbar-track { 
+    background: hsl(var(--gaming-darker) / 0.5); 
+    border-radius: var(--radius-sm); 
+  }
+  .navbar-scrollbar::-webkit-scrollbar-thumb { 
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+    transition: all var(--animation-speed-normal);
+  }
+  .navbar-scrollbar::-webkit-scrollbar-thumb:hover { 
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--secondary) / 0.9));
+    box-shadow: var(--glow-primary);
+    transform: scale(1.1);
+  }
+  .navbar-scrollbar::-webkit-scrollbar-corner { background: transparent; }
+  .navbar-scrollbar { scrollbar-width: thin; scrollbar-color: hsl(var(--primary)) hsl(var(--gaming-darker) / 0.5); }
+
   /* --- Gaming Loading States --- */
   .loading-shimmer {
     background: linear-gradient(

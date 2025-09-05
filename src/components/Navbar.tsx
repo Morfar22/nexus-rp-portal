@@ -403,7 +403,7 @@ const Navbar = () => {
         ) : (
           /* Desktop navigation when not overflowing */
           <>
-            <div ref={contentRef} className="flex items-center space-x-2 bg-gaming-darker/30 rounded-xl px-4 py-2 border border-gaming-border/50 overflow-x-auto scrollbar-thin scrollbar-track-gaming-darker scrollbar-thumb-primary/50 hover:scrollbar-thumb-primary/70 scrollbar-thumb-rounded-full max-w-[60vw]">
+            <div ref={contentRef} className="flex items-center space-x-2 bg-gaming-darker/30 rounded-xl px-4 py-2 border border-gaming-border/50 overflow-x-auto navbar-scrollbar max-w-[60vw]">
               <div className="flex items-center space-x-2 min-w-max">
                 <NavLinks />
               </div>
