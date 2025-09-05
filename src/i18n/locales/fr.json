@@ -90,16 +90,25 @@
   },
   "navigation": {
     "home": "Accueil",
+    "apply": "Postuler",
     "rules": "Règles",
     "laws": "Lois",
     "packages": "Packages",
-    "partners": "Partenaires",
     "team": "Notre Équipe",
+    "partners": "Partenaires",
     "supporters": "Supporters",
-    "apply": "Postuler",
     "live": "Diffusions en Direct",
+    "characters": "Personnages",
+    "events": "Événements",
+    "voting": "Vote Communautaire",
+    "achievements": "Réalisations",
+    "analytics": "Analytiques",
+    "creative_tools": "Outils Créatifs",
     "profile": "Profil",
     "staff_panel": "Panneau du Personnel",
+    "server_management": "Gestion du Serveur",
+    "user_management": "Gestion des Utilisateurs"
+  },
     "server_management": "Gestion du Serveur"
   },
   "auth": {

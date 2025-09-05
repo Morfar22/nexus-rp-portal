@@ -22,33 +22,51 @@ const Navbar = () => {
   const [serverName, setServerName] = useState("adventure rp");
   const [navbarConfig, setNavbarConfig] = useState({
     items: [
-      { id: 'home', label: t('navigation.home'), path: '/', visible: true, order: 0, staffOnly: false },
-      { id: 'apply', label: t('navigation.apply'), path: '/apply', visible: true, order: 1, staffOnly: false },
-      { id: 'rules', label: t('navigation.rules'), path: '/rules', visible: true, order: 2, staffOnly: false },
-      { id: 'laws', label: t('navigation.laws'), path: '/laws', visible: true, order: 3, staffOnly: false },
-      { id: 'packages', label: t('navigation.packages'), path: '/packages', visible: true, order: 4, staffOnly: false },
-      { id: 'team', label: t('navigation.team'), path: '/team', visible: true, order: 5, staffOnly: false },
-      { id: 'partners', label: t('navigation.partners'), path: '/partners', visible: true, order: 6, staffOnly: false },
-      { id: 'supporters', label: t('navigation.supporters'), path: '/supporters', visible: true, order: 7, staffOnly: false },
-      { id: 'live', label: t('navigation.live'), path: '/live', visible: true, order: 8, staffOnly: false },
-      { id: 'characters', label: 'Characters', path: '/characters', visible: true, order: 9, staffOnly: false },
-      { id: 'events', label: 'Events', path: '/events', visible: true, order: 10, staffOnly: false },
-      { id: 'voting', label: 'Voting', path: '/voting', visible: true, order: 11, staffOnly: false },
-      { id: 'achievements', label: 'Achievements', path: '/achievements', visible: true, order: 12, staffOnly: false },
-      { id: 'staff', label: t('navigation.staff_panel'), path: '/staff', visible: true, order: 13, staffOnly: true },
-      { id: 'servers', label: t('navigation.server_management'), path: '/servers', visible: true, order: 14, staffOnly: true },
-      { id: 'analytics', label: 'Analytics', path: '/analytics', visible: true, order: 15, staffOnly: true },
-      { id: 'creative-tools', label: 'Creative Tools', path: '/creative-tools', visible: true, order: 16, staffOnly: true },
-      { id: 'users', label: t('navigation.user_management'), path: '/users', visible: true, order: 17, staffOnly: true }
+      // === PUBLIC PAGES === (No authentication required)
+      { id: 'home', label: t('navigation.home'), path: '/', visible: true, order: 0, staffOnly: false, userOnly: false },
+      { id: 'rules', label: t('navigation.rules'), path: '/rules', visible: true, order: 1, staffOnly: false, userOnly: false },
+      { id: 'laws', label: t('navigation.laws'), path: '/laws', visible: true, order: 2, staffOnly: false, userOnly: false },
+      { id: 'packages', label: t('navigation.packages'), path: '/packages', visible: true, order: 3, staffOnly: false, userOnly: false },
+      { id: 'team', label: t('navigation.team'), path: '/team', visible: true, order: 4, staffOnly: false, userOnly: false },
+      { id: 'partners', label: t('navigation.partners'), path: '/partners', visible: true, order: 5, staffOnly: false, userOnly: false },
+      { id: 'supporters', label: t('navigation.supporters'), path: '/supporters', visible: true, order: 6, staffOnly: false, userOnly: false },
+      { id: 'live', label: t('navigation.live'), path: '/live', visible: true, order: 7, staffOnly: false, userOnly: false },
+      
+      // === COMMUNITY FEATURES === (Public but enhanced for users)
+      { id: 'characters', label: t('navigation.characters'), path: '/characters', visible: true, order: 8, staffOnly: false, userOnly: false },
+      { id: 'events', label: t('navigation.events'), path: '/events', visible: true, order: 9, staffOnly: false, userOnly: false },
+      { id: 'voting', label: t('navigation.voting'), path: '/voting', visible: true, order: 10, staffOnly: false, userOnly: false },
+      { id: 'achievements', label: t('navigation.achievements'), path: '/achievements', visible: true, order: 11, staffOnly: false, userOnly: false },
+      
+      // === USER-ONLY PAGES === (Require authentication)
+      { id: 'apply', label: t('navigation.apply'), path: '/apply', visible: true, order: 12, staffOnly: false, userOnly: true },
+      { id: 'profile', label: t('navigation.profile'), path: '/profile', visible: true, order: 13, staffOnly: false, userOnly: true },
+      
+      // === STAFF-ONLY PAGES === (Require staff permissions)
+      { id: 'staff', label: t('navigation.staff_panel'), path: '/staff', visible: true, order: 14, staffOnly: true, userOnly: false },
+      { id: 'servers', label: t('navigation.server_management'), path: '/servers', visible: true, order: 15, staffOnly: true, userOnly: false },
+      { id: 'analytics', label: t('navigation.analytics'), path: '/analytics', visible: true, order: 16, staffOnly: true, userOnly: false },
+      { id: 'creative-tools', label: t('navigation.creative_tools'), path: '/creative-tools', visible: true, order: 17, staffOnly: true, userOnly: false }
     ]
   });
   const isMobile = useIsMobile();
 
-  // Get visible navigation items for overflow detection
+  // Get visible navigation items with proper permission filtering
   const getVisibleItems = () => {
     if (!configLoaded) return [];
     return navbarConfig.items
-      .filter(item => item.visible && (!item.staffOnly || isStaff))
+      .filter(item => {
+        // Always show if not visible
+        if (!item.visible) return false;
+        
+        // Filter staff-only items
+        if (item.staffOnly && !isStaff) return false;
+        
+        // Filter user-only items (require authentication)
+        if (item.userOnly && !user) return false;
+        
+        return true;
+      })
       .sort((a, b) => a.order - b.order);
   };
 

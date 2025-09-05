@@ -81,17 +81,24 @@
   },
   "navigation": {
     "home": "Início",
+    "apply": "Candidatar-se",
     "rules": "Regras",
     "laws": "Leis",
     "packages": "Pacotes",
-    "partners": "Parceiros",
     "team": "Nossa Equipe",
+    "partners": "Parceiros",
     "supporters": "Apoiadores",
-    "apply": "Candidatar-se",
     "live": "Transmissões ao Vivo",
+    "characters": "Personagens",
+    "events": "Eventos",
+    "voting": "Votação Comunitária",
+    "achievements": "Conquistas",
+    "analytics": "Analíticas",
+    "creative_tools": "Ferramentas Criativas",
     "profile": "Perfil",
     "staff_panel": "Painel da Equipe",
-    "server_management": "Gerenciamento do Servidor"
+    "server_management": "Gerenciamento do Servidor",
+    "user_management": "Gerenciamento de Usuários"
   },
   "auth": {
     "sign_in": "Entrar",

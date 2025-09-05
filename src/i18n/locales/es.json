@@ -81,17 +81,24 @@
   },
   "navigation": {
     "home": "Inicio",
+    "apply": "Aplicar",
     "rules": "Reglas",
     "laws": "Leyes",
     "packages": "Paquetes",
-    "partners": "Socios",
     "team": "Nuestro Equipo",
+    "partners": "Socios",
     "supporters": "Patrocinadores",
-    "apply": "Aplicar",
     "live": "Transmisiones en Vivo",
+    "characters": "Personajes",
+    "events": "Eventos",
+    "voting": "Votación Comunitaria",
+    "achievements": "Logros",
+    "analytics": "Analíticas",
+    "creative_tools": "Herramientas Creativas",
     "profile": "Perfil",
     "staff_panel": "Panel de Personal",
-    "server_management": "Gestión del Servidor"
+    "server_management": "Gestión del Servidor",
+    "user_management": "Gestión de Usuarios"
   },
   "auth": {
     "sign_in": "Iniciar Sesión",

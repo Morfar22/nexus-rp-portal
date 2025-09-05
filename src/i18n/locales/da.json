@@ -97,7 +97,8 @@
     "creative_tools": "Kreative Værktøjer",
     "profile": "Profil",
     "staff_panel": "Personale Panel",
-    "server_management": "Server Administration"
+    "server_management": "Server Administration",
+    "user_management": "Brugeradministration"
   },
   "auth": {
     "sign_in": "Log ind",
