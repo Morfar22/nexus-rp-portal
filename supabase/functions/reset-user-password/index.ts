@@ -94,25 +94,11 @@ const handler = async (req: Request): Promise<Response> => {
     const resetLink = `${redirectDomain}/auth?reset_token=${resetToken}`;
     console.log("Password reset link generated for:", targetEmail);
 
-    // Initialize Resend per-request and support DB fallback for key
-    let RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      try {
-        const { data: keyRow } = await supabaseAdmin
-          .from('server_settings')
-          .select('setting_value')
-          .eq('setting_key', 'resend_api_key')
-          .maybeSingle();
-        const val: any = keyRow?.setting_value;
-        if (typeof val === 'string') RESEND_API_KEY = val;
-        else if (val && typeof val.key === 'string') RESEND_API_KEY = val.key;
-      } catch (e) {
-        console.warn('Failed to load RESEND key from server_settings:', e);
-      }
-    }
+    // Get RESEND API key from Supabase secrets
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       return new Response(
-        JSON.stringify({ error: 'Missing RESEND_API_KEY', success: false }),
+        JSON.stringify({ error: 'RESEND_API_KEY not configured', success: false }),
         { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
