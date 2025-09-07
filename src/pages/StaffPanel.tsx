@@ -834,6 +834,8 @@ const StaffPanel = () => {
 
   const handleSettingUpdate = async (settingType: string, value: any) => {
     try {
+      console.log('Saving setting:', settingType, 'with value:', JSON.stringify(value, null, 2));
+      
       const { error } = await supabase
         .from('server_settings')
         .update({

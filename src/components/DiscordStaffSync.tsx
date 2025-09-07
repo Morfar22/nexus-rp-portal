@@ -175,7 +175,7 @@ const DiscordStaffSync = ({
                 <Label className="text-foreground">Admin Discord Role ID</Label>
                 <Input
                   placeholder="Discord role ID for admins"
-                  value={serverSettings.discord_settings?.staff_role_mappings?.admin || ''}
+                  value={serverSettings.discord_settings?.staff_role_mappings?.admin || serverSettings.discord_settings?.role_mappings?.admin || ''}
                   onChange={(e) => {
                     const newSettings = {
                       ...serverSettings.discord_settings,
@@ -189,7 +189,16 @@ const DiscordStaffSync = ({
                       discord_settings: newSettings
                     });
                   }}
-                  onBlur={() => handleSettingUpdate('discord_settings', serverSettings.discord_settings)}
+                  onBlur={(e) => {
+                    const newSettings = {
+                      ...serverSettings.discord_settings,
+                      staff_role_mappings: {
+                        ...serverSettings.discord_settings?.staff_role_mappings,
+                        admin: e.target.value
+                      }
+                    };
+                    handleSettingUpdate('discord_settings', newSettings);
+                  }}
                   className="bg-gaming-card border-gaming-border"
                 />
               </div>
@@ -198,7 +207,7 @@ const DiscordStaffSync = ({
                 <Label className="text-foreground">Moderator Discord Role ID</Label>
                 <Input
                   placeholder="Discord role ID for moderators"
-                  value={serverSettings.discord_settings?.staff_role_mappings?.moderator || ''}
+                  value={serverSettings.discord_settings?.staff_role_mappings?.moderator || serverSettings.discord_settings?.role_mappings?.moderator || ''}
                   onChange={(e) => {
                     const newSettings = {
                       ...serverSettings.discord_settings,
@@ -212,7 +221,16 @@ const DiscordStaffSync = ({
                       discord_settings: newSettings
                     });
                   }}
-                  onBlur={() => handleSettingUpdate('discord_settings', serverSettings.discord_settings)}
+                  onBlur={(e) => {
+                    const newSettings = {
+                      ...serverSettings.discord_settings,
+                      staff_role_mappings: {
+                        ...serverSettings.discord_settings?.staff_role_mappings,
+                        moderator: e.target.value
+                      }
+                    };
+                    handleSettingUpdate('discord_settings', newSettings);
+                  }}
                   className="bg-gaming-card border-gaming-border"
                 />
               </div>
@@ -235,7 +253,16 @@ const DiscordStaffSync = ({
                       discord_settings: newSettings
                     });
                   }}
-                  onBlur={() => handleSettingUpdate('discord_settings', serverSettings.discord_settings)}
+                  onBlur={(e) => {
+                    const newSettings = {
+                      ...serverSettings.discord_settings,
+                      staff_role_mappings: {
+                        ...serverSettings.discord_settings?.staff_role_mappings,
+                        staff: e.target.value
+                      }
+                    };
+                    handleSettingUpdate('discord_settings', newSettings);
+                  }}
                   className="bg-gaming-card border-gaming-border"
                 />
               </div>
@@ -258,7 +285,16 @@ const DiscordStaffSync = ({
                       discord_settings: newSettings
                     });
                   }}
-                  onBlur={() => handleSettingUpdate('discord_settings', serverSettings.discord_settings)}
+                  onBlur={(e) => {
+                    const newSettings = {
+                      ...serverSettings.discord_settings,
+                      staff_role_mappings: {
+                        ...serverSettings.discord_settings?.staff_role_mappings,
+                        developer: e.target.value
+                      }
+                    };
+                    handleSettingUpdate('discord_settings', newSettings);
+                  }}
                   className="bg-gaming-card border-gaming-border"
                 />
               </div>

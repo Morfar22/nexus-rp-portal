@@ -140,16 +140,58 @@ async function syncStaffMembers(guildId: string) {
     .eq('setting_key', 'discord_settings')
     .single();
 
-  if (!settings?.setting_value?.staff_role_mappings) {
+  console.log('Discord settings retrieved:', JSON.stringify(settings, null, 2));
+
+  // Check both staff_role_mappings and role_mappings for backward compatibility
+  let staffRoleMappings = settings.setting_value.staff_role_mappings;
+  
+  // If no dedicated staff role mappings, check if we can use role_mappings
+  if (!staffRoleMappings) {
+    console.log('No staff_role_mappings found, checking role_mappings...');
+    const roleMappings = settings.setting_value.role_mappings;
+    if (roleMappings) {
+      // Map Discord role IDs directly to staff role names that exist in database
+      staffRoleMappings = {};
+      
+      // Map admin Discord role to highest level roles
+      if (roleMappings.admin) {
+        staffRoleMappings['Admin'] = roleMappings.admin;
+        staffRoleMappings['Head Admin'] = roleMappings.admin;
+        staffRoleMappings['Projekt Manager'] = roleMappings.admin;
+      }
+      
+      // Map moderator Discord role to staff support roles
+      if (roleMappings.moderator) {
+        staffRoleMappings['Community Manager'] = roleMappings.moderator;
+        staffRoleMappings['Supporter'] = roleMappings.moderator;
+        staffRoleMappings['Prøve Supporter'] = roleMappings.moderator;
+        staffRoleMappings['Head Udvikler'] = roleMappings.moderator;
+        staffRoleMappings['Hjælpe udvikler'] = roleMappings.moderator;
+        staffRoleMappings['Projekt Leder'] = roleMappings.moderator;
+        staffRoleMappings['Designer'] = roleMappings.moderator;
+        staffRoleMappings['Allowlist modtager'] = roleMappings.moderator;
+      }
+      
+      // Map user Discord role to lower level roles  
+      if (roleMappings.user) {
+        staffRoleMappings['Prøve Supporter'] = roleMappings.user;
+        staffRoleMappings['Allowlist modtager'] = roleMappings.user;
+      }
+      
+      console.log('Using general role_mappings as staff mappings:', JSON.stringify(staffRoleMappings, null, 2));
+    }
+  }
+  
+  if (!staffRoleMappings) {
     console.log('Discord staff role mappings not configured yet');
     return {
       success: false,
-      error: 'Discord staff role mappings not configured. Please configure role mappings in the Discord Bot Settings first.',
+      error: 'Discord role mappings not configured. Please configure role mappings in the Discord Bot Settings first.',
       requiresConfiguration: true
     };
   }
 
-  const staffRoleMappings = settings.setting_value.staff_role_mappings;
+  console.log('Staff role mappings found:', JSON.stringify(staffRoleMappings, null, 2));
   
   // Check if any role mappings are actually set
   const hasValidMappings = Object.values(staffRoleMappings).some((roleId: any) => 
@@ -190,72 +232,72 @@ async function syncStaffMembers(guildId: string) {
 
   for (const discordMember of staffMembers) {
     // Find which staff role this member should have
-    const memberStaffRoleId = discordMember.roles.find(roleId => 
+    const memberDiscordRoleIds = discordMember.roles.filter(roleId => 
       Object.values(staffRoleMappings).includes(roleId)
     );
     
-    // Find corresponding database staff role
-    const staffRoleMapping = Object.entries(staffRoleMappings).find(
-      ([_, discordRoleId]) => discordRoleId === memberStaffRoleId
-    );
+    console.log(`Processing member ${discordMember.user.username} with staff roles: ${memberDiscordRoleIds.join(', ')}`);
     
-    if (!staffRoleMapping) continue;
-    
-    const staffRoleName = staffRoleMapping[0];
-    const dbStaffRole = staffRoles.find(role => 
-      role.name.toLowerCase() === staffRoleName.toLowerCase() ||
-      role.display_name.toLowerCase() === staffRoleName.toLowerCase()
-    );
+    // Process each staff role this member has
+    for (const memberStaffRoleId of memberDiscordRoleIds) {
+      // Find all staff role mappings for this Discord role
+      const matchingMappings = Object.entries(staffRoleMappings).filter(
+        ([_, discordRoleId]) => discordRoleId === memberStaffRoleId
+      );
+      
+      // Try each mapping until we find a matching database role
+      for (const [staffRoleName, _] of matchingMappings) {
+        const dbStaffRole = staffRoles.find(role => 
+          role.name === staffRoleName ||
+          role.display_name === staffRoleName ||
+          role.name.toLowerCase() === staffRoleName.toLowerCase() ||
+          role.display_name.toLowerCase() === staffRoleName.toLowerCase()
+        );
 
-    if (!dbStaffRole) {
-      console.log(`No matching staff role found for Discord role: ${staffRoleName}`);
-      continue;
-    }
+        if (!dbStaffRole) {
+          console.log(`No matching staff role found for: ${staffRoleName}`);
+          continue;
+        }
 
-    // Check if team member already exists
-    const { data: existingMember } = await supabase
-      .from('team_members')
-      .select('*')
-      .eq('discord_id', discordMember.user.id)
-      .single();
+        // Check if team member already exists with this role
+        const { data: existingMember } = await supabase
+          .from('team_members')
+          .select('*')
+          .eq('discord_id', discordMember.user.id)
+          .eq('staff_role_id', dbStaffRole.id)
+          .single();
 
-    const memberData = {
-      name: discordMember.nick || discordMember.user.username,
-      discord_username: `${discordMember.user.username}#${discordMember.user.discriminator}`,
-      staff_role_id: dbStaffRole.id,
-      discord_id: discordMember.user.id,
-      auto_synced: true,
-      last_discord_sync: new Date().toISOString(),
-      avatar_url: discordMember.user.avatar 
-        ? `https://cdn.discordapp.com/avatars/${discordMember.user.id}/${discordMember.user.avatar}.png`
-        : null,
-      is_active: true
-    };
+        if (existingMember) {
+          console.log(`Member ${discordMember.user.username} already exists with role ${staffRoleName}`);
+          continue;
+        }
 
-    if (existingMember) {
-      // Update existing member
-      const { error } = await supabase
-        .from('team_members')
-        .update(memberData)
-        .eq('id', existingMember.id);
+        const memberData = {
+          name: discordMember.nick || discordMember.user.username,
+          staff_role_id: dbStaffRole.id,
+          discord_id: discordMember.user.id,
+          auto_synced: true,
+          last_discord_sync: new Date().toISOString(),
+          image_url: discordMember.user.avatar 
+            ? `https://cdn.discordapp.com/avatars/${discordMember.user.id}/${discordMember.user.avatar}.png`
+            : null,
+          is_active: true
+        };
 
-      if (error) {
-        console.error(`Failed to update team member ${discordMember.user.username}:`, error);
-      } else {
-        syncedCount++;
-        console.log(`Updated team member: ${discordMember.user.username}`);
-      }
-    } else {
-      // Create new team member
-      const { error } = await supabase
-        .from('team_members')
-        .insert(memberData);
+        // Create new team member
+        const { error } = await supabase
+          .from('team_members')
+          .insert(memberData);
 
-      if (error) {
-        console.error(`Failed to create team member ${discordMember.user.username}:`, error);
-      } else {
-        syncedCount++;
-        console.log(`Created team member: ${discordMember.user.username}`);
+        if (error) {
+          console.error(`Failed to create team member ${discordMember.user.username} with role ${staffRoleName}:`, error);
+        } else {
+          syncedCount++;
+          console.log(`Created team member: ${discordMember.user.username} as ${staffRoleName}`);
+        }
+        
+        // Break after first successful role assignment
+        break;
       }
     }
   }
