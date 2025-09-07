@@ -48,9 +48,15 @@ const handler = async (req: Request): Promise<Response> => {
     if (!targetEmail || !targetEmail.includes('@')) {
       if (body.userId) {
         try {
-          const { data: userRes, error: adminErr } = await supabaseAdmin.auth.admin.getUserById(body.userId);
-          if (adminErr) console.warn('admin.getUserById error:', adminErr);
-          targetEmail = userRes?.user?.email || '';
+          // Get user from custom_users table instead of auth
+          const { data: userRes, error: userErr } = await supabaseAdmin
+            .from('custom_users')
+            .select('email')
+            .eq('id', body.userId)
+            .maybeSingle();
+          
+          if (userErr) console.warn('custom_users query error:', userErr);
+          targetEmail = userRes?.email || '';
         } catch (e) {
           console.warn('Lookup by userId failed:', e);
         }
@@ -64,19 +70,28 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate password reset link
-    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: targetEmail,
-      options: {
-        redirectTo: `${redirectDomain}/auth`
-      }
-    });
+    // Generate custom password reset token for custom auth system
+    const resetToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+    
+    // Store reset token in custom_users table
+    const { error: updateError } = await supabaseAdmin
+      .from('custom_users')
+      .update({ 
+        reset_token: resetToken,
+        reset_token_expires: expiresAt.toISOString()
+      })
+      .eq('email', targetEmail);
 
-    if (error) {
-      console.log("Supabase error:", error);
-      throw error;
+    if (updateError) {
+      console.log("Error storing reset token:", updateError);
+      return new Response(
+        JSON.stringify({ error: "User not found in the system" }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
+
+    const resetLink = `${redirectDomain}/auth?reset_token=${resetToken}`;
     console.log("Password reset link generated for:", targetEmail);
 
     // Initialize Resend per-request and support DB fallback for key
@@ -114,14 +129,14 @@ const handler = async (req: Request): Promise<Response> => {
           <p>You have requested to reset your password for your Gaming Community account.</p>
           <p>Click the button below to reset your password:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${data.properties.action_link}" 
+            <a href="${resetLink}" 
                style="background-color: #ff6b6b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
               Reset Password
             </a>
           </div>
           <p>Or copy and paste this link into your browser:</p>
           <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 5px;">
-            ${data.properties.action_link}
+            ${resetLink}
           </p>
           <p style="color: #666; font-size: 14px; margin-top: 30px;">
             If you didn't request this password reset, you can safely ignore this email.
