@@ -687,6 +687,8 @@ export type Database = {
           id: string
           last_login: string | null
           password_hash: string
+          reset_token: string | null
+          reset_token_expires: string | null
           role: string
           updated_at: string
           username: string | null
@@ -703,6 +705,8 @@ export type Database = {
           id?: string
           last_login?: string | null
           password_hash: string
+          reset_token?: string | null
+          reset_token_expires?: string | null
           role?: string
           updated_at?: string
           username?: string | null
@@ -719,6 +723,8 @@ export type Database = {
           id?: string
           last_login?: string | null
           password_hash?: string
+          reset_token?: string | null
+          reset_token_expires?: string | null
           role?: string
           updated_at?: string
           username?: string | null
@@ -1617,6 +1623,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           discord_id: string | null
+          discord_username: string | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -1634,6 +1641,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discord_id?: string | null
+          discord_username?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -1651,6 +1659,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discord_id?: string | null
+          discord_username?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
