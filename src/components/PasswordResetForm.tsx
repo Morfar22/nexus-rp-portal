@@ -28,7 +28,7 @@ const PasswordResetForm = ({ onBack, serverName }: PasswordResetFormProps) => {
     try {
       // Try custom auth system first
       const { data, error: customError } = await supabase.functions.invoke('reset-user-password', {
-        body: { userEmail: resetEmail }
+        body: { email: resetEmail }
       });
 
       if (customError) {
