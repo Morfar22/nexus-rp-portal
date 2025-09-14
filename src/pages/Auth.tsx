@@ -40,7 +40,17 @@ const Auth = () => {
     const type = hashParams.get('type');
     const resetToken = searchParams.get('reset_token');
     
+    console.log('URL Debug:', {
+      fullUrl: window.location.href,
+      hash: window.location.hash,
+      search: window.location.search,
+      type,
+      resetToken,
+      isPasswordReset
+    });
+    
     if (type === 'recovery' || resetToken) {
+      console.log('Setting isPasswordReset to true');
       setIsPasswordReset(true);
       return; // Don't redirect if it's a password reset
     }
