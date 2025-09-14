@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ const Auth = () => {
   const [serverName, setServerName] = useState("Adventure rp");
   const captchaRef = useRef<HCaptcha>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,7 +66,7 @@ const Auth = () => {
       };
       checkUser();
     }
-  }, [navigate, showBannedScreen]);
+  }, [navigate, showBannedScreen, location.search, location.hash]);
 
   useEffect(() => {
     const loadServerName = async () => {
