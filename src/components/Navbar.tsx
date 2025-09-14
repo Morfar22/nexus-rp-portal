@@ -249,6 +249,8 @@ const Navbar = () => {
 
   // Update navbar config items with translations when language changes
   useEffect(() => {
+    if (!configLoaded) return; // Prevent updates before config is loaded
+    
     const getTranslationKey = (itemId: string) => {
       switch (itemId) {
         case 'staff': return 'navigation.staff_panel';
@@ -271,7 +273,7 @@ const Navbar = () => {
         label: t(getTranslationKey(item.id)) || item.label
       }))
     }));
-  }, [t]);
+  }, [t, configLoaded]); // Added configLoaded dependency
 
   const NavLinks = ({ forceVertical = false }: { forceVertical?: boolean } = {}) => {
     const location = useLocation();
@@ -284,7 +286,7 @@ const Navbar = () => {
     // Use the pre-calculated visible items
     const items = visibleItems;
 
-    console.log('Visible navigation items:', items.map(item => item.id));
+    // Removed excessive logging for performance
 
     return (
       <>

@@ -175,9 +175,10 @@ const LiveChatWidget = () => {
 
       const settings = data?.setting_value as any;
       setChatEnabled(settings?.enabled || false);
-    } catch (error) {
-      console.error('Error checking chat settings:', error);
-    }
+      } catch (error) {
+        // Silently handle missing chat settings - this is not critical
+        console.debug('Chat settings not configured:', error);
+      }
   };
 
   const loadExistingMessages = async () => {

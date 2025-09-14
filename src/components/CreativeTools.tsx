@@ -187,10 +187,6 @@ Har du spørgsmål? Kontakt staff via vores Discord eller in-game admin system.`
 
     setIsGenerating(true);
     try {
-      // Use Lovable's image generation
-      const dimensions = imageSize.split('x').map(Number);
-      const [width, height] = dimensions;
-      
       const stylePrompt = {
         realistic: 'photorealistic, high detail, professional',
         artistic: 'artistic, painterly, creative',
@@ -200,26 +196,91 @@ Har du spørgsmål? Kontakt staff via vores Discord eller in-game admin system.`
 
       const fullPrompt = `${imagePrompt}, ${stylePrompt}, high quality`;
       
-      // Use OpenAI image generation through Supabase
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: {
-          prompt: fullPrompt,
-          size: imageSize,
-          style: imageStyle
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.image) {
-        setGeneratedImageUrl(data.image);
-        
-        toast({
-          title: t('common.success'),
-          description: t('creative.success_image_generated')
+      // Try to use edge function, fallback to placeholder if unavailable
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-image', {
+          body: {
+            prompt: fullPrompt,
+            size: imageSize,
+            style: imageStyle
+          }
         });
-      } else {
-        throw new Error('No image data received');
+
+        if (error) throw error;
+
+        if (data?.image) {
+          setGeneratedImageUrl(data.image);
+          toast({
+            title: t('common.success'),
+            description: t('creative.success_image_generated')
+          });
+          return;
+        }
+      } catch (edgeFunctionError) {
+        console.log('Edge function unavailable, using placeholder');
+      }
+
+      // Fallback: Generate a placeholder image using canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const [width, height] = imageSize.split('x').map(Number);
+      
+      canvas.width = width;
+      canvas.height = height;
+
+      if (ctx) {
+        // Create gradient background based on style
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        
+        switch (imageStyle) {
+          case 'cyberpunk':
+            gradient.addColorStop(0, '#ff006e');
+            gradient.addColorStop(0.5, '#8338ec');
+            gradient.addColorStop(1, '#3a86ff');
+            break;
+          case 'artistic':
+            gradient.addColorStop(0, '#ff9a00');
+            gradient.addColorStop(1, '#ff0080');
+            break;
+          case 'cartoon':
+            gradient.addColorStop(0, '#00f5ff');
+            gradient.addColorStop(1, '#ffa500');
+            break;
+          default:
+            gradient.addColorStop(0, '#4a90e2');
+            gradient.addColorStop(1, '#7b68ee');
+        }
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // Add text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `${Math.floor(width/20)}px Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Add shadow
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        
+        // Wrap text if too long
+        const maxWidth = width - 40;
+        const lines = wrapText(ctx, imagePrompt, maxWidth);
+        const lineHeight = Math.floor(width/15);
+        const startY = height/2 - (lines.length * lineHeight) / 2;
+        
+        lines.forEach((line, index) => {
+          ctx.fillText(line, width/2, startY + index * lineHeight);
+        });
+
+        setGeneratedImageUrl(canvas.toDataURL());
+        toast({
+          title: t('common.info'),
+          description: 'AI service ikke tilgængelig - viser placeholder billede',
+        });
       }
     } catch (error) {
       console.error('Error generating image:', error);
@@ -231,6 +292,25 @@ Har du spørgsmål? Kontakt staff via vores Discord eller in-game admin system.`
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + ' ' + word).width;
+      if (width < maxWidth) {
+        currentLine += ' ' + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+    return lines;
   };
 
   const createBanner = () => {
