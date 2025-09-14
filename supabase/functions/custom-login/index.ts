@@ -41,10 +41,33 @@ async function hashPassword(password: string): Promise<string> {
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
   try {
-    // Check if it's a Web Crypto API hash (base64 encoded)
-    // bcrypt hashes start with $2a$, $2b$, $2x$, or $2y$
-    if (!hash.startsWith('$2')) {
-      // Web Crypto API verification
+    console.log('Hash format analysis:', {
+      length: hash.length,
+      startsWithDollar: hash.startsWith('$2'),
+      isHexOnly: /^[a-f0-9]+$/i.test(hash)
+    });
+
+    // Check if it's a SHA-256 hash (64 hex characters) - existing users
+    if (hash.length === 64 && /^[a-f0-9]+$/i.test(hash)) {
+      console.log('Verifying using SHA-256 method (existing user)');
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      const match = hashHex === hash;
+      console.log('SHA-256 verification result:', match);
+      return match;
+    }
+    // Check if it's a bcrypt hash
+    else if (hash.startsWith('$2')) {
+      console.log('Verifying using bcrypt method');
+      const bcrypt = await import("https://deno.land/x/bcrypt@v0.2.4/mod.ts");
+      return await bcrypt.compare(password, hash);
+    }
+    // Otherwise assume it's Web Crypto API format
+    else {
+      console.log('Verifying using Web Crypto API method (new user)');
       const encoder = new TextEncoder();
       const combined = new Uint8Array(atob(hash).split('').map(c => c.charCodeAt(0)));
       
@@ -88,10 +111,6 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
       }
       
       return true;
-    } else {
-      // Fallback to bcrypt for existing users
-      const bcrypt = await import("https://deno.land/x/bcrypt@v0.2.4/mod.ts");
-      return await bcrypt.compare(password, hash);
     }
   } catch (error) {
     console.error('Password verification error:', error);

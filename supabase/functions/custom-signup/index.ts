@@ -2,42 +2,14 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 
-// Web Crypto API functions for password hashing
+// SHA-256 password hashing function for consistency with existing users
 async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(32));
-  
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(password),
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits", "deriveKey"]
-  );
-  
-  const key = await crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 100000,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"]
-  );
-  
-  const exportedKey = await crypto.subtle.exportKey("raw", key);
-  const hashBuffer = new Uint8Array(exportedKey);
-  
-  // Combine salt and hash
-  const combined = new Uint8Array(salt.length + hashBuffer.length);
-  combined.set(salt);
-  combined.set(hashBuffer, salt.length);
-  
-  // Return base64 encoded string
-  return btoa(String.fromCharCode(...combined));
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
 }
 
 const corsHeaders = {
@@ -78,8 +50,10 @@ serve(async (req) => {
       );
     }
 
-    // Hash password using Web Crypto API
+    // Hash password using SHA-256 for consistency with existing users
+    console.log('Hashing password using SHA-256');
     const hashHex = await hashPassword(password);
+    console.log('Password hashed successfully');
 
     // Create user
     const { data: user, error: userError } = await supabase
