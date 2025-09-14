@@ -43,14 +43,35 @@ const UserProfileManager = () => {
       if (!user) return;
 
       try {
-        // Use the user data from custom auth directly
+        // Fetch latest user data from custom_users table to get Discord info
+        const { data: profileData } = await supabase
+          .from('custom_users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profileData) {
+          setUserProfile(profileData);
+          form.reset({
+            username: profileData.username || "",
+            full_name: profileData.full_name || "",
+          });
+        } else {
+          // Fallback to user data from auth if no profile found
+          setUserProfile(user);
+          form.reset({
+            username: user.username || "",
+            full_name: user.full_name || "",
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        // Fallback to user data from auth
         setUserProfile(user);
         form.reset({
           username: user.username || "",
           full_name: user.full_name || "",
         });
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
       }
     };
 
@@ -255,8 +276,16 @@ const UserProfileManager = () => {
       if (error) throw error;
 
       if (data.success) {
-        // Refresh profile data - for Discord we can just use the current user data
-        setUserProfile(user);
+        // Refresh user profile to get updated data after disconnect
+        const { data: updatedProfile } = await supabase
+          .from('custom_users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (updatedProfile) {
+          setUserProfile(updatedProfile);
+        }
         
         toast({
           title: "Success",
@@ -288,18 +317,23 @@ const UserProfileManager = () => {
           const { data, error } = await supabase.functions.invoke('discord-oauth', {
             body: {
               action: 'exchange_code',
-              data: { code, redirectUri }
+              data: { code, redirectUri, userId: user.id }
             }
           });
 
           if (error) throw error;
 
           if (data.success) {
-            const discordData = data.data;
-            
-            // Note: Discord integration would need custom_users table to have Discord fields
-            // For now, just show success without actual Discord integration
-            setUserProfile(user);
+            // Refresh user profile to get updated Discord data
+            const { data: updatedProfile } = await supabase
+              .from('custom_users')
+              .select('*')
+              .eq('id', user.id)
+              .single();
+
+            if (updatedProfile) {
+              setUserProfile(updatedProfile);
+            }
             
             toast({
               title: "Success",

@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
         result = await getDiscordAuthUrl(data.redirectUri);
         break;
       case 'exchange_code':
-        logStep("Processing exchange_code action", { hasCode: !!data.code, redirectUri: data.redirectUri });
-        result = await exchangeCodeForTokens(data.code, data.redirectUri);
+        logStep("Processing exchange_code action", { hasCode: !!data.code, redirectUri: data.redirectUri, userId: data.userId });
+        result = await exchangeCodeForTokens(data.code, data.redirectUri, data.userId);
         break;
       case 'refresh_token':
         logStep("Processing refresh_token action", { hasRefreshToken: !!data.refreshToken });
@@ -102,7 +102,7 @@ async function getDiscordAuthUrl(redirectUri: string) {
   return { authUrl };
 }
 
-async function exchangeCodeForTokens(code: string, redirectUri: string) {
+async function exchangeCodeForTokens(code: string, redirectUri: string, userId?: string) {
   if (!discordClientId || !discordClientSecret) {
     throw new Error('Discord OAuth credentials not configured');
   }
@@ -140,6 +140,25 @@ async function exchangeCodeForTokens(code: string, redirectUri: string) {
   }
 
   const discordUser = await userResponse.json();
+
+  // If userId is provided, update the custom_users table with Discord info
+  if (userId) {
+    const { error } = await supabase
+      .from('custom_users')
+      .update({
+        discord_id: discordUser.id,
+        discord_username: discordUser.username,
+        discord_discriminator: discordUser.discriminator,
+        discord_access_token: tokens.access_token,
+        discord_refresh_token: tokens.refresh_token,
+        discord_connected_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    if (error) {
+      throw new Error(`Failed to save Discord connection: ${error.message}`);
+    }
+  }
 
   return {
     accessToken: tokens.access_token,
@@ -188,7 +207,7 @@ async function refreshDiscordToken(refreshToken: string) {
 
 async function disconnectDiscord(userId: string) {
   const { error } = await supabase
-    .from('profiles')
+    .from('custom_users')
     .update({
       discord_id: null,
       discord_username: null,

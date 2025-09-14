@@ -681,6 +681,12 @@ export type Database = {
           banned_at: string | null
           banned_by: string | null
           created_at: string
+          discord_access_token: string | null
+          discord_connected_at: string | null
+          discord_discriminator: string | null
+          discord_id: string | null
+          discord_refresh_token: string | null
+          discord_username: string | null
           email: string
           email_verified: boolean
           full_name: string | null
@@ -699,6 +705,12 @@ export type Database = {
           banned_at?: string | null
           banned_by?: string | null
           created_at?: string
+          discord_access_token?: string | null
+          discord_connected_at?: string | null
+          discord_discriminator?: string | null
+          discord_id?: string | null
+          discord_refresh_token?: string | null
+          discord_username?: string | null
           email: string
           email_verified?: boolean
           full_name?: string | null
@@ -717,6 +729,12 @@ export type Database = {
           banned_at?: string | null
           banned_by?: string | null
           created_at?: string
+          discord_access_token?: string | null
+          discord_connected_at?: string | null
+          discord_discriminator?: string | null
+          discord_id?: string | null
+          discord_refresh_token?: string | null
+          discord_username?: string | null
           email?: string
           email_verified?: boolean
           full_name?: string | null
