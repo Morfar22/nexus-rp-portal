@@ -128,7 +128,10 @@ serve(async (req) => {
       .eq('email', email.toLowerCase())
       .maybeSingle();
 
+    console.log('User lookup result:', { user: user ? { id: user.id, email: user.email, banned: user.banned, email_verified: user.email_verified } : null, error: userError });
+
     if (userError || !user) {
+      console.log('User not found or error:', userError);
       return new Response(
         JSON.stringify({ error: "Invalid email or password" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -152,9 +155,13 @@ serve(async (req) => {
     }
 
     // Verify password using Web Crypto API
+    console.log('Verifying password for user:', user.email);
+    console.log('Password hash format:', user.password_hash ? user.password_hash.substring(0, 10) + '...' : 'null');
     const isValidPassword = await verifyPassword(password, user.password_hash);
+    console.log('Password verification result:', isValidPassword);
 
     if (!isValidPassword) {
+      console.log('Password verification failed for user:', user.email);
       return new Response(
         JSON.stringify({ error: "Invalid email or password" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
