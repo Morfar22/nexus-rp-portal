@@ -1964,6 +1964,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      check_user_is_admin: {
+        Args: { check_user_id?: string }
+        Returns: boolean
+      }
+      check_user_is_staff_role: {
+        Args: { check_user_id?: string }
+        Returns: boolean
+      }
       check_user_permission: {
         Args: { required_role?: string; user_id: string }
         Returns: boolean
