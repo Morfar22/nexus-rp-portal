@@ -21,7 +21,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Password reset function called");
 
     // Parse payload and resolve email if missing
-    let body: { userEmail?: string; userId?: string };
+    let body: { email?: string; userEmail?: string; userId?: string };
     try {
       body = await req.json();
       console.log("Incoming request body:", body);
@@ -44,7 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
     const redirectDomain = originHeader || 'adventurerp.dk';
     console.log("Using redirect domain:", redirectDomain);
 
-    let targetEmail = (body.userEmail || '').trim();
+    let targetEmail = (body.email || body.userEmail || '').trim();
     if (!targetEmail || !targetEmail.includes('@')) {
       if (body.userId) {
         try {
