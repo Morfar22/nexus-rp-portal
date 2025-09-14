@@ -38,6 +38,7 @@ const LazyVoting = lazy(() => import("./pages/Voting"));
 const LazyAchievements = lazy(() => import("./pages/Achievements"));
 const LazyAnalytics = lazy(() => import("./pages/Analytics"));
 const LazyCreativeTools = lazy(() => import("./pages/CreativeTools"));
+const LazyResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Optimized loading component for better perceived performance and CLS prevention
 const PageLoader = () => (
@@ -91,6 +92,12 @@ const AppContent = () => {
               <Route path="/auth" element={
                 <Suspense fallback={<PageLoader />}>
                   <LazyCustomAuth />
+                </Suspense>
+              } />
+              
+              <Route path="/reset-password" element={
+                <Suspense fallback={<PageLoader />}>
+                  <LazyResetPassword />
                 </Suspense>
               } />
               
