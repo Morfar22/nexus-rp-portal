@@ -1952,8 +1952,8 @@ export type Database = {
       }
     }
     Functions: {
-      analytics_query: {
-        Args: { query: string } | { query_params?: Json }
+      analytics_query_deprecated: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       calculate_supporter_tier: {
