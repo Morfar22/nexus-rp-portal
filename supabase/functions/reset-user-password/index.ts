@@ -45,25 +45,10 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Using redirect domain:", redirectDomain);
 
     let targetEmail = (body.email || body.userEmail || '').trim();
+    console.log("Target email after processing:", targetEmail, "Length:", targetEmail.length, "Has @:", targetEmail.includes('@'));
+    
     if (!targetEmail || !targetEmail.includes('@')) {
-      if (body.userId) {
-        try {
-          // Get user from custom_users table instead of auth
-          const { data: userRes, error: userErr } = await supabaseAdmin
-            .from('custom_users')
-            .select('email')
-            .eq('id', body.userId)
-            .maybeSingle();
-          
-          if (userErr) console.warn('custom_users query error:', userErr);
-          targetEmail = userRes?.email || '';
-        } catch (e) {
-          console.warn('Lookup by userId failed:', e);
-        }
-      }
-    }
-
-    if (!targetEmail || !targetEmail.includes('@')) {
+      console.log("Email validation failed:", { targetEmail, length: targetEmail.length, hasAt: targetEmail.includes('@') });
       return new Response(
         JSON.stringify({ error: "A valid email address is required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
