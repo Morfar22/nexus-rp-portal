@@ -19,10 +19,10 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Reset password function called");
 
     // Parse payload
-    let body: { email?: string; newPassword?: string };
+    let body: { email?: string; newPassword?: string; token?: string };
     try {
       body = await req.json();
-      console.log("Incoming request body:", { email: body.email, hasPassword: !!body.newPassword });
+      console.log("Incoming request body:", { email: body.email, hasPassword: !!body.newPassword, hasToken: !!body.token });
     } catch {
       console.log("Failed to parse request body");
       return new Response(
@@ -31,11 +31,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, newPassword } = body;
+    const { email, newPassword, token } = body;
 
-    if (!email || !newPassword) {
+    if (!email || !newPassword || !token) {
       return new Response(
-        JSON.stringify({ error: "Email and new password are required" }),
+        JSON.stringify({ error: "Email, token, and new password are required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -53,10 +53,10 @@ const handler = async (req: Request): Promise<Response> => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Check if user exists in custom_users table
+    // Check if user exists and validate reset token
     const { data: customUser, error: findUserError } = await supabaseAdmin
       .from('custom_users')
-      .select('id, email')
+      .select('id, email, reset_token, reset_token_expires')
       .eq('email', email)
       .single();
 
@@ -68,18 +68,38 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("Found custom user:", customUser.email);
+    // Validate reset token
+    if (!customUser.reset_token || customUser.reset_token !== token) {
+      console.log("Invalid reset token for user:", customUser.email);
+      return new Response(
+        JSON.stringify({ error: "Invalid or missing reset token" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Check if token has expired
+    if (!customUser.reset_token_expires || new Date() > new Date(customUser.reset_token_expires)) {
+      console.log("Expired reset token for user:", customUser.email);
+      return new Response(
+        JSON.stringify({ error: "Reset token has expired" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log("Valid reset token for user:", customUser.email);
 
     // Hash the new password
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
     console.log("Password hashed successfully");
 
-    // Update the user's password in custom_users table
+    // Update the user's password and clear reset token
     const { error: updateError } = await supabaseAdmin
       .from('custom_users')
       .update({ 
         password_hash: hashedPassword,
+        reset_token: null,
+        reset_token_expires: null,
         updated_at: new Date().toISOString()
       })
       .eq('id', customUser.id);

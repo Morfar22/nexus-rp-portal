@@ -76,7 +76,8 @@ const ResetPassword = () => {
         const { data, error: customError } = await supabase.functions.invoke('reset-password', {
           body: { 
             email: email,
-            newPassword: newPassword
+            newPassword: newPassword,
+            token: resetToken
           }
         });
 
