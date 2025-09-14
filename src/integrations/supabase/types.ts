@@ -2003,6 +2003,12 @@ export type Database = {
           name: string
         }[]
       }
+      get_role_permissions_data: {
+        Args: { role_uuid: string }
+        Returns: {
+          permission_name: string
+        }[]
+      }
       get_staff_roles_data: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2016,6 +2022,17 @@ export type Database = {
           is_active: boolean
           name: string
           updated_at: string
+        }[]
+      }
+      get_user_data: {
+        Args: { user_uuid: string }
+        Returns: {
+          banned: boolean
+          created_at: string
+          email: string
+          id: string
+          role: string
+          username: string
         }[]
       }
       get_user_role: {
@@ -2089,6 +2106,15 @@ export type Database = {
           resource_type?: string
         }
         Returns: string
+      }
+      search_users_data: {
+        Args: { search_query: string }
+        Returns: {
+          email: string
+          id: string
+          role: string
+          username: string
+        }[]
       }
       upsert_push_subscription: {
         Args: { p_subscription: Json; p_user_id: string }

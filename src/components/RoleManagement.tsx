@@ -139,11 +139,11 @@ export function RoleManagement() {
 
       const enrichedData = await Promise.all(
         (data || []).map(async (assignment) => {
+          // Use the security definer function to get user data safely
           const { data: userData, error: userError } = await supabase
-            .from('custom_users')
-            .select('username, email')
-            .eq('id', assignment.user_id)
-            .maybeSingle();
+            .rpc('get_user_data', { user_uuid: assignment.user_id });
+
+          const userDetails = userData && userData.length > 0 ? userData[0] : null;
 
           return {
             ...assignment,
@@ -152,7 +152,10 @@ export function RoleManagement() {
               color: assignment.color,
               hierarchy_level: assignment.hierarchy_level
             },
-            profiles: userData || { username: 'Ukendt Bruger', email: 'Ukendt' }
+            profiles: userDetails ? { 
+              username: userDetails.username || 'Ukendt Bruger', 
+              email: userDetails.email || 'Ukendt' 
+            } : { username: 'Ukendt Bruger', email: 'Ukendt' }
           };
         })
       );
@@ -165,21 +168,20 @@ export function RoleManagement() {
   };
 
   const fetchRolePermissions = async (roleId: string) => {
-    const { data, error } = await supabase
-      .from('role_permissions')
-      .select(`
-        permissions!inner(
-          name
-        )
-      `)
-      .eq('role_id', roleId);
+    try {
+      const { data, error } = await supabase
+        .rpc('get_role_permissions_data', { role_uuid: roleId });
 
-    if (error) {
+      if (error) {
+        console.error('Error fetching role permissions:', error);
+        return [];
+      }
+      
+      return data?.map(item => item.permission_name) || [];
+    } catch (error) {
       console.error('Error fetching role permissions:', error);
       return [];
     }
-    
-    return data?.map(p => (p.permissions as any).name) || [];
   };
 
   const handleSelectRole = async (role: StaffRole) => {
@@ -305,18 +307,20 @@ export function RoleManagement() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from('custom_users')
-      .select('id, username, email')
-      .ilike('email', `%${query}%`)
-      .limit(10);
+    try {
+      const { data, error } = await supabase
+        .rpc('search_users_data', { search_query: query });
 
-    if (error) {
+      if (error) {
+        console.error('Error searching users:', error);
+        return;
+      }
+
+      setSearchResults(data || []);
+    } catch (error) {
       console.error('Error searching users:', error);
-      return;
+      setSearchResults([]);
     }
-
-    setSearchResults(data || []);
   };
 
   const assignRole = async (userId: string, roleId: string) => {
