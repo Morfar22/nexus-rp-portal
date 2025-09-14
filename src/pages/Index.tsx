@@ -212,6 +212,42 @@ const Index = () => {
       } else {
         // Fallback to default features only if no data exists
         setHomepageFeatures([
+          {
+            title: "Professionelt Staff Team",
+            description: "Erfarne moderatorer og administratorer sørger for en fair og sjov oplevelse",
+            icon: "Shield",
+            color: "text-neon-teal"
+          },
+          {
+            title: "Custom Indhold",
+            description: "Unikke scripts, køretøjer og lokationer skabt specielt til vores server",
+            icon: "Zap",
+            color: "text-neon-gold"
+          },
+          {
+            title: "Aktiv Community",
+            description: "Levende Discord fællesskab med events og aktiviteter hver dag",
+            icon: "Users",
+            color: "text-neon-purple"
+          },
+          {
+            title: "Stabil Performance",
+            description: "Optimerede servere med minimal lag og maksimal oppetid",
+            icon: "Clock",
+            color: "text-neon-blue"
+          },
+          {
+            title: "Regular Updates",
+            description: "Ugentlige opdateringer med nyt indhold og fejlrettelser",
+            icon: "Gamepad2",
+            color: "text-golden-light"
+          },
+          {
+            title: "Realistic Economy",
+            description: "Balanceret økonomi system med jobs, forretninger og investeringer",
+            icon: "Award",
+            color: "text-teal-primary"
+          }
         ]);
       }
 
