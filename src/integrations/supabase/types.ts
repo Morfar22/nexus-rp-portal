@@ -2025,13 +2025,20 @@ export type Database = {
         }[]
       }
       get_user_data: {
-        Args: { user_uuid: string }
+        Args: { user_uuid?: string }
         Returns: {
+          avatar_url: string
           banned: boolean
+          banned_at: string
+          banned_by: string
           created_at: string
           email: string
+          email_verified: boolean
+          full_name: string
           id: string
+          last_login: string
           role: string
+          updated_at: string
           username: string
         }[]
       }

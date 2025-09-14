@@ -128,7 +128,7 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
       const { data: currentUser } = await supabase
         .rpc('get_user_data', { user_uuid: userId });
 
-      if (currentUser && ['admin', 'staff', 'moderator'].includes(currentUser.role)) {
+      if (currentUser && currentUser.length > 0 && ['admin', 'staff', 'moderator'].includes(currentUser[0].role)) {
         toast({
           title: "Error",
           description: "User already has a staff role",
