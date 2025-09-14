@@ -2,6 +2,44 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 
+// Web Crypto API functions for password hashing
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(32));
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits", "deriveKey"]
+  );
+  
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  
+  const exportedKey = await crypto.subtle.exportKey("raw", key);
+  const hashBuffer = new Uint8Array(exportedKey);
+  
+  // Combine salt and hash
+  const combined = new Uint8Array(salt.length + hashBuffer.length);
+  combined.set(salt);
+  combined.set(hashBuffer, salt.length);
+  
+  // Return base64 encoded string
+  return btoa(String.fromCharCode(...combined));
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -40,12 +78,8 @@ serve(async (req) => {
       );
     }
 
-    // Import bcrypt for secure password hashing
-    const bcrypt = await import("https://deno.land/x/bcrypt@v0.4.1/mod.ts");
-    
-    // Hash password using bcrypt with salt rounds of 12 for security
-    const saltRounds = 12;
-    const hashHex = await bcrypt.hash(password, saltRounds);
+    // Hash password using Web Crypto API
+    const hashHex = await hashPassword(password);
 
     // Create user
     const { data: user, error: userError } = await supabase

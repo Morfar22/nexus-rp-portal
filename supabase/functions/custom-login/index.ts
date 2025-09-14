@@ -1,6 +1,103 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { compare, hash } from "https://deno.land/x/bcrypt@v0.2.4/mod.ts";
+
+// Web Crypto API functions for password hashing
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(32));
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits", "deriveKey"]
+  );
+  
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  
+  const exportedKey = await crypto.subtle.exportKey("raw", key);
+  const hashBuffer = new Uint8Array(exportedKey);
+  
+  // Combine salt and hash
+  const combined = new Uint8Array(salt.length + hashBuffer.length);
+  combined.set(salt);
+  combined.set(hashBuffer, salt.length);
+  
+  // Return base64 encoded string
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  try {
+    // Check if it's a Web Crypto API hash (base64 encoded)
+    // bcrypt hashes start with $2a$, $2b$, $2x$, or $2y$
+    if (!hash.startsWith('$2')) {
+      // Web Crypto API verification
+      const encoder = new TextEncoder();
+      const combined = new Uint8Array(atob(hash).split('').map(c => c.charCodeAt(0)));
+      
+      // Extract salt (first 32 bytes) and stored hash (remaining bytes)
+      const salt = combined.slice(0, 32);
+      const storedHash = combined.slice(32);
+      
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(password),
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits", "deriveKey"]
+      );
+      
+      const key = await crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: salt,
+          iterations: 100000,
+          hash: "SHA-256",
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+      );
+      
+      const derivedKey = await crypto.subtle.exportKey("raw", key);
+      const derivedHash = new Uint8Array(derivedKey);
+      
+      // Compare hashes
+      if (derivedHash.length !== storedHash.length) {
+        return false;
+      }
+      
+      for (let i = 0; i < derivedHash.length; i++) {
+        if (derivedHash[i] !== storedHash[i]) {
+          return false;
+        }
+      }
+      
+      return true;
+    } else {
+      // Fallback to bcrypt for existing users
+      const bcrypt = await import("https://deno.land/x/bcrypt@v0.2.4/mod.ts");
+      return await bcrypt.compare(password, hash);
+    }
+  } catch (error) {
+    console.error('Password verification error:', error);
+    return false;
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,8 +151,8 @@ serve(async (req) => {
       );
     }
 
-    // Verify password using bcrypt
-    const isValidPassword = await compare(password, user.password_hash);
+    // Verify password using Web Crypto API
+    const isValidPassword = await verifyPassword(password, user.password_hash);
 
     if (!isValidPassword) {
       return new Response(
