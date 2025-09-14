@@ -124,9 +124,14 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('🔐 Custom login function called:', new Date().toISOString());
+  
   if (req.method === "OPTIONS") {
+    console.log('⚡ Handling OPTIONS request');
     return new Response(null, { headers: corsHeaders });
   }
+
+  console.log('🚀 Processing login request');
 
   try {
     const { email, password } = await req.json();
