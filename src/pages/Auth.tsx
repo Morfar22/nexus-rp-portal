@@ -36,9 +36,11 @@ const Auth = () => {
   useEffect(() => {
     // Check for password reset flow
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const searchParams = new URLSearchParams(window.location.search);
     const type = hashParams.get('type');
+    const resetToken = searchParams.get('reset_token');
     
-    if (type === 'recovery') {
+    if (type === 'recovery' || resetToken) {
       setIsPasswordReset(true);
       return; // Don't redirect if it's a password reset
     }
@@ -263,13 +265,39 @@ const Auth = () => {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
+      // Check if this is a custom reset token flow
+      const searchParams = new URLSearchParams(window.location.search);
+      const resetToken = searchParams.get('reset_token');
+      const resetEmail = searchParams.get('email');
 
-      if (error) {
-        setError(error.message);
-        return;
+      if (resetToken) {
+        // Use custom reset password function
+        const { data, error } = await supabase.functions.invoke('reset-password', {
+          body: { 
+            email: resetEmail || email,
+            newPassword: newPassword,
+            token: resetToken 
+          }
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data?.error) {
+          setError(data.error);
+          return;
+        }
+      } else {
+        // Use standard Supabase flow
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+
+        if (error) {
+          setError(error.message);
+          return;
+        }
       }
 
       toast({
