@@ -5,8 +5,8 @@ const Footer = () => (
     <div className="container mx-auto px-4">
       <SocialMediaLinks variant="footer" />
       <div className="mt-6 space-y-2">
-        <p>© 2025 Mmorfar. All rights reserved.</p>
-        <p className="text-sm">Contact: admin@mmorfar.dk</p>
+        <p>© 2025 Adventure RP. All rights reserved.</p>
+        <p className="text-sm">Contact: admin@adventurerp.dk</p>
       </div>
     </div>
   </footer>
