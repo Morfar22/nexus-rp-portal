@@ -142,18 +142,27 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
     }
   };
 
-  // Check for URL parameters (email verification)
+  // Also ensure loading is properly set to false on auth page
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('verified') === 'true') {
       // Clear the URL parameter
       window.history.replaceState({}, document.title, window.location.pathname);
     }
+    
+    // If on auth page and no token, immediately set loading to false
+    if (window.location.pathname === '/auth' && !localStorage.getItem('custom_session_token')) {
+      setLoading(false);
+    }
   }, []);
 
   // Initialize and validate session
   useEffect(() => {
-    refreshSession();
+    const initSession = async () => {
+      setLoading(true);
+      await refreshSession();
+    };
+    initSession();
   }, []);
 
   // Periodic session validation
