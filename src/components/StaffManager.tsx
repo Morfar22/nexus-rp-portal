@@ -44,17 +44,18 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
     try {
       setIsLoading(true);
       
-      // Fetch staff from custom_users table where role is admin, staff, or moderator
-      const { data: staffUsers, error } = await supabase
-        .from('custom_users')
-        .select('*')
-        .in('role', ['admin', 'staff', 'moderator'])
-        .eq('banned', false);
+      // Get all users first using security definer function, then filter for staff
+      const { data: allUserData, error } = await supabase
+        .rpc('get_user_data', { user_uuid: null });
 
       if (error) throw error;
 
-      // Map to staff format with role information
-      const mappedStaff = staffUsers?.map(user => {
+      // Filter for staff users and map to staff format
+      const staffUsers = allUserData?.filter((user: any) => 
+        ['admin', 'staff', 'moderator'].includes(user.role) && !user.banned
+      ) || [];
+      
+      const mappedStaff = staffUsers.map((user: any) => {
         const roleInfo = {
           admin: { display_name: 'Administrator', color: '#7c3aed', hierarchy_level: 100 },
           staff: { display_name: 'Staff', color: '#2563eb', hierarchy_level: 70 },
@@ -107,10 +108,7 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
     
     try {
       const { data, error } = await supabase
-        .from('custom_users')
-        .select('*')
-        .ilike('email', `%${searchEmail}%`)
-        .limit(10);
+        .rpc('search_users_data', { search_query: searchEmail });
 
       if (error) throw error;
       setAllUsers(data || []);
@@ -126,12 +124,9 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
 
   const promoteUser = async (userId: string, roleId: string) => {
     try {
-      // Check current user role
+      // Check current user role using security definer function
       const { data: currentUser } = await supabase
-        .from('custom_users')
-        .select('role')
-        .eq('id', userId)
-        .single();
+        .rpc('get_user_data', { user_uuid: userId });
 
       if (currentUser && ['admin', 'staff', 'moderator'].includes(currentUser.role)) {
         toast({

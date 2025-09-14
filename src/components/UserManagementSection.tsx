@@ -37,11 +37,9 @@ const UserManagementSection = () => {
     try {
       setIsLoading(true);
       
-      // Fetch users from custom_users table instead of profiles
+      // Use security definer function to get user data
       const { data, error } = await supabase
-        .from('custom_users')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .rpc('get_user_data', { user_uuid: null });
 
       if (error) throw error;
 
