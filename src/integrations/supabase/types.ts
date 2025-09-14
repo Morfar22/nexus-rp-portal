@@ -1903,7 +1903,53 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      team_members_public: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          id: string | null
+          image_url: string | null
+          is_active: boolean | null
+          location: string | null
+          name: string | null
+          order_index: number | null
+          role: string | null
+          staff_role_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          name?: string | null
+          order_index?: number | null
+          role?: string | null
+          staff_role_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          name?: string | null
+          order_index?: number | null
+          role?: string | null
+          staff_role_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_team_members_staff_role"
+            columns: ["staff_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       analytics_query: {
