@@ -103,9 +103,7 @@ export function RoleManagement() {
 
   const fetchRoles = async () => {
     const { data, error } = await supabase
-      .from('staff_roles')
-      .select('*')
-      .order('hierarchy_level', { ascending: true });
+      .rpc('get_staff_roles_data');
 
     if (error) {
       console.error('Error fetching roles:', error);
@@ -122,9 +120,7 @@ export function RoleManagement() {
 
   const fetchPermissions = async () => {
     const { data, error } = await supabase
-      .from('permissions')
-      .select('*')
-      .order('category, display_name');
+      .rpc('get_permissions_data');
 
     if (error) {
       console.error('Error fetching permissions:', error);
@@ -137,18 +133,7 @@ export function RoleManagement() {
   const fetchUserAssignments = async () => {
     try {
       const { data, error } = await supabase
-        .from('user_role_assignments')
-        .select(`
-          *,
-          staff_roles!inner (
-            id,
-            display_name,
-            color,
-            hierarchy_level
-          )
-        `)
-        .eq('is_active', true)
-        .order('assigned_at', { ascending: false });
+        .rpc('get_user_role_assignments_data');
 
       if (error) throw error;
 
@@ -162,6 +147,11 @@ export function RoleManagement() {
 
           return {
             ...assignment,
+            staff_roles: {
+              display_name: assignment.display_name,
+              color: assignment.color,
+              hierarchy_level: assignment.hierarchy_level
+            },
             profiles: userData || { username: 'Ukendt Bruger', email: 'Ukendt' }
           };
         })

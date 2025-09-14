@@ -1964,6 +1964,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      check_role_for_user: {
+        Args: { required_role: string; user_uuid: string }
+        Returns: boolean
+      }
       check_user_is_admin: {
         Args: { check_user_id?: string }
         Returns: boolean
@@ -1988,9 +1992,50 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_permissions_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          display_name: string
+          id: string
+          name: string
+        }[]
+      }
+      get_staff_roles_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          color: string
+          created_at: string
+          created_by: string
+          description: string
+          display_name: string
+          hierarchy_level: number
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }[]
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: string
+      }
+      get_user_role_assignments_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          assigned_at: string
+          assigned_by: string
+          color: string
+          display_name: string
+          expires_at: string
+          hierarchy_level: number
+          id: string
+          is_active: boolean
+          role_id: string
+          user_id: string
+        }[]
       }
       get_user_supporter_status: {
         Args: { check_user_id: string }
