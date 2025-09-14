@@ -83,269 +83,197 @@ const CreativeTools = () => {
   };
 
   const generateCreativeContent = (type: string, prompt: string): string => {
-    const promptLower = prompt.toLowerCase();
-    
-    const templates = {
-      story: `# 📖 **${prompt} - En Adventure RP Historie**
+    // Interpret the prompt and generate appropriate content
+    const interpretPrompt = (prompt: string, type: string): any => {
+      const lowerPrompt = prompt.toLowerCase();
+      
+      // Character description detection
+      if (lowerPrompt.includes('beskriv karakter') || lowerPrompt.includes('describe character') || 
+          (lowerPrompt.includes('karakter') && (lowerPrompt.includes('beskriv') || lowerPrompt.includes('hvem er')))) {
+        const characterName = prompt.replace(/beskriv karakteren?/gi, '').replace(/describe the character/gi, '').trim();
+        return {
+          isCharacter: true,
+          name: characterName || 'Unknown Character',
+          type: 'character'
+        };
+      }
 
-## **Indledning**
-I Adventure RP's cyberpunk-inspirerede verden, hvor neonlys reflekteres i regnvåde gader og teknologi møder gritty realisme, udspiller sig en dramatisk historie omkring **${prompt}**.
+      // Event/situation detection
+      if (lowerPrompt.includes('event') || lowerPrompt.includes('situation') || lowerPrompt.includes('hvad sker')) {
+        return { isEvent: true, topic: prompt };
+      }
 
-## **Karakterer og Setting** 
-Vores historie finder sted i Neo-Copenhagen, hvor **${prompt}** bliver det centrale element i en større sammenhæng. Karaktererne navigerer gennem:
+      // Location description
+      if (lowerPrompt.includes('sted') || lowerPrompt.includes('location') || lowerPrompt.includes('område')) {
+        return { isLocation: true, place: prompt };
+      }
 
-• **Downtown District**: Byens pulserende hjerte med corporate towers og underground scener
-• **Industrial Zone**: Hvor de store deals går ned og farerne lurer
-• **Residential Areas**: Hvor almindelige borgere forsøger at leve deres liv
-• **The Underground**: Hemmelige netværk og skjulte agendaer
+      return { isGeneral: true, topic: prompt };
+    };
 
-## **Konflikt og Drama**
-Når **${prompt}** kommer i spil, opstår der et komplekst net af alliancer og rivaliseringer. Karaktererne må træffe svære valg:
+    const analysis = interpretPrompt(prompt, type);
 
-**Protagonisten:** En kompleks figur der står over for moralske dilemmaer
-**Antagonisterne:** Kræfter der arbejder imod protagonistens mål  
-**Støttende karakterer:** Allierede som hver har deres egne motiver
+    if (type === 'story') {
+      if (analysis.isCharacter) {
+        return `# 📖 **${analysis.name} - En Adventure RP Karakter Historie**
 
-## **Klimaks og Opløsning**
-Historien når sit klimaks når sandheden om **${prompt}** bliver afsløret, og konsekvenserne ryster hele samfundet. 
+## **🎭 Karakterprofil: ${analysis.name}**
 
-**Resultatet:** Adventure RP er stedet hvor enhver historie kan udfolde sig naturligt gennem rollespil - og hvor **${prompt}** kan blive en del af den større narrative.
+**Navn:** ${analysis.name}  
+**Alder:** 28-35 år  
+**Baggrund:** Vokset op i Neo-Copenhagens hårde gader  
+
+### **🌟 Personlighed**
+${analysis.name} er en kompleks karakter med dyb baghistorie. Kendt for sin skarpe intelligens og pragmatiske tilgang til livet. Har lært at navigere i både den legale og illegale verden gennem år på gaderne.
+
+**Karaktertræk:**
+- **Styrker:** Strategisk tænker, loyal over for venner, overlever-instinkt
+- **Svagheder:** Kan være for forsigtig, har svært ved at stole på nye mennesker
+- **Motiver:** Søger stabilitet og respekt i det kaotiske samfund
+
+### **📚 Baghistorie**
+${analysis.name} kom til Adventure RP som en person der søgte en ny start. Med en mystisk fortid og færdigheder der antyder en kompleks historie, har ${analysis.name} langsomt bygget et netværk og rygte på serveren.
+
+**Centrale oplevelser:**
+- Første møde med de lokale bander i Downtown District
+- Opbygning af tillidsforhold til andre spillere
+- Kritiske beslutninger der formede karakterens udvikling
+
+### **🎯 Nuværende Situation**
+I dag er ${analysis.name} en respekteret figur på Adventure RP, kendt for sin evne til at navigere komplekse sociale situationer og finde løsninger hvor andre ser problemer.
+
+**Relationer:**
+- Allierede: Bygget stærke bånd til nøglepersoner
+- Rivaler: Naturlige konflikter med andre dominerende karakterer  
+- Mentorer: Både lærer fra og vejleder andre spillere
 
 ---
-*💡 Brug denne historie som inspiration til dit roleplay på Adventure RP*`,
+*🎮 ${analysis.name} er et perfekt eksempel på hvordan dyb karakterudvikling blomstrer på Adventure RP!*`;
+      }
+      
+      return `# 📖 **${prompt} - En Adventure RP Historie**
 
-      description: `# 🎮 **${prompt} - Adventure RP Feature**
+## **🌆 Setting: Neo-Copenhagen**
+I Adventure RP's cyberpunk-inspirerede verden udspiller sig en dramatisk historie omkring ${prompt.toLowerCase()}.
 
-## **Hvad er ${prompt}?**
-**${prompt}** er en central del af Adventure RP-oplevelsen, designet til at give spillere en realistisk og engagerende roleplay-mulighed.
+### **Kapitel 1: Begyndelsen**
+Det hele startede en regnfuld aften i Downtown District. Neonlys reflekterede i våde gader mens karaktererne forberedte sig på begivenheder der ville ændre alt.
 
-## **🌟 Key Features**
-### **Realistic Implementation**
-• Autentiske gameplay-mekanikker baseret på rigtig verden
-• Balanceret økonomi der belønner smart spil  
-• Dynamiske interaktioner mellem spillere
+**Protagonisten** står over for et valg der vil definere deres fremtid på serveren.
 
-### **Community Integration**
-• **Staff Oversight**: Professionelt personale sikrer fair gameplay
-• **Player Economy**: Påvirk serverens økonomi gennem dine handlinger
-• **Character Development**: Udvikl din karakter over tid
+### **Kapitel 2: Konflikten**
+${prompt} bringer kompleksitet til historien. Alliancer testes, loyalitet udfordres, og sandheden bliver sværere at skelne fra løgn.
 
-### **Technical Excellence**
-• **Custom Scripts**: Specialudviklede systemer til **${prompt}**
-• **Performance Optimized**: Smooth gameplay uden lag
-• **Regular Updates**: Kontinuerlige forbedringer baseret på feedback
+**Climax:** Det afgørende øjeblik hvor alt hænger i en tynd tråd.
 
-## **🎯 Hvordan kommer jeg i gang?**
-1. **Læs reglerne** - Forstå hvordan **${prompt}** fungerer på serveren
-2. **Opret din karakter** - Design en baghistorie der passer til **${prompt}**
-3. **Find mentorer** - Vores erfarne spillere hjælper gerne nye
-4. **Start småt** - Byg din reputation og netværk gradvist
+### **Kapitel 3: Konsekvenserne**  
+Intet valg er uden konsekvenser i Adventure RP. Karakterernes handlinger sender chokbølger gennem hele serveren.
 
-## **💫 Adventure RP Fordele**
-✅ **Professionelt Staff Team** - 24/7 support og moderation  
-✅ **Aktiv Community** - Over 200 daglige spillere  
-✅ **Custom Content** - Unikke features du ikke finder andre steder  
-✅ **Stabil Performance** - Minimal downtime og optimeret for gameplay  
+**Resolution:** En ny balance etableres, men til hvilken pris?
 
 ---
-*🚀 Klar til at opleve ${prompt} på Adventure RP? Ansøg om whitelist i dag!*`,
+*💡 Lad denne historie inspirere dit næste roleplay på Adventure RP!*`;
+    }
 
-      announcement: `# 📢 **VIGTIG MEDDELELSE: ${prompt}**
+    if (type === 'description') {
+      if (analysis.isCharacter) {
+        return `# 🎮 **${analysis.name} - Adventure RP Karakter**
+
+## **👤 Karakteroversigt**  
+**${analysis.name}** er en fascinerende karakter på Adventure RP serveren, kendt for sin unikke tilgang til roleplay og stærke presence i community'et.
+
+### **🌟 Karakterspecifikationer**
+**Fulde Navn:** ${analysis.name}  
+**Kaldenavn:** [Baseret på karakterens personlighed]  
+**Profession:** [Varierer afhængigt af RP-valg]  
+**Bosted:** Downtown District, Neo-Copenhagen  
+
+### **💼 Færdigheder & Specialer**
+- **Sociale Færdigheder:** Ekspert i at læse andre karakterer
+- **Praktiske Evner:** Tilpasset serverens gameplay-systemer
+- **Unikke Talenter:** [Udviklet gennem roleplay-oplevelser]
+
+### **🎭 Roleplay-stil**
+${analysis.name} tilbyder en autentisk roleplay-oplevelse der beriger andre spilleres interaktioner. Karakteren er designet til at skabe meningsfulde storylines og bidrage positivt til server-kulturen.
+
+**Interaktionsstil:**
+- Realistisk og troværdig tilgang
+- Respekterer andre spilleres boundaries  
+- Bidrager til fælles narrativer
+
+### **📈 Udvikling på Serveren**
+**Startpunkt:** Ny på serveren med grundlæggende setup
+**Nuværende Status:** Etableret karakter med netværk og reputation
+**Fremtidige Mål:** Fortsatte storylines og karakterudvikling
+
+---
+*🚀 ${analysis.name} repræsenterer det bedste ved Adventure RP's community - autentisk roleplay og meningsfulde interaktioner!*`;
+      }
+      
+      return `# 🎮 **${prompt} - Adventure RP Feature**
+
+Dette er en central del af Adventure RP-oplevelsen, designet til at give spillere den bedst mulige roleplay-oplevelse i vores cyberpunk-inspirerede verden.
+
+**Hvad tilbyder vi:**
+- Autentisk gameplay-mekanikker
+- Professionel staff support 24/7  
+- Aktiv community på +200 spillere
+- Custom scripts og unikke features
+
+*🌟 Oplev ${prompt.toLowerCase()} på en helt ny måde på Adventure RP!*`;
+    }
+
+    if (type === 'announcement') {
+      return `# 📢 **VIGTIG MEDDELELSE: ${prompt}**
 
 ## **Kære Adventure RP Community**
 
-Vi har vigtig information vedrørende **${prompt}** der påvirker alle spillere på serveren.
+Vi vil gerne informere jer om vigtige nyheder vedrørende ${prompt.toLowerCase()}.
 
-## **🔥 Hvad sker der?**
-**${prompt}** introducerer nye muligheder og ændringer til vores server-oplevelse:
+### **📋 Detaljer**
+Dette er relevant information som alle spillere bør være opmærksomme på for at sikre den bedste oplevelse på serveren.
 
-### **Umiddelbare Ændringer**
-• **Nye Features**: Enhanced gameplay-muligheder 
-• **System Updates**: Forbedrede performance og stabilitet
-• **Community Events**: Kommende events relateret til **${prompt}**
-
-### **Hvad betyder det for dig?**
-🎯 **Positive Konsekvenser:**
-- Forbedret roleplay-dybde og immersion
-- Nye muligheder for karakterudvikling  
-- Enhanced social interaktioner
-
-⚠️ **Vigtige Punkter at Huske:**
-- Læs opdaterede regler og guidelines
-- Tilpas din roleplay-stil efter behov
-- Spørg staff hvis du er i tvivl
-
-## **📅 Tidsplan og Implementation**
-**Fase 1** (Nu): Information og forberedelse  
-**Fase 2** (Næste uge): Gradvis udrulning af features  
-**Fase 3** (Løbende): Community feedback og justeringer  
-
-## **🤝 Har du spørgsmål?**
-Vores dedikerede staff team er klar til at hjælpe:
-
-• **Discord Support**: Opret en ticket i #support-tickets
-• **In-Game Help**: Kontakt administratorer via /report system  
-• **Community Forum**: Diskuter med andre spillere
+### **⚡ Handling Påkrævet**
+Sørg for at læse denne meddelelse grundigt og følg eventuelle instruktioner fra staff-teamet.
 
 ---
-**Tak for jeres kontinuerlige support til Adventure RP! Sammen bygger vi den fedste RP-community! 🎉**
+**Tak for jeres fortsatte support til Adventure RP!**  
+*- Adventure RP Leadership Team*`;
+    }
 
-*- Adventure RP Leadership Team*`,
+    if (type === 'rules') {
+      return `# 📋 **REGEL FORKLARING: ${prompt}**
 
-      rules: `# 📋 **REGEL GUIDE: ${prompt}**
+## **🎯 Formål**
+Denne regel eksisterer for at sikre fair og sjov gameplay for alle spillere på Adventure RP.
 
-## **🎯 Regel Forklaring**
-**${prompt}** er en vigtig del af Adventure RP's regelsæt, designet til at sikre fair og sjov gameplay for alle.
+### **📖 Hvad det betyder**
+${prompt} refererer til specifik adfærd som enten er påkrævet eller forbudt på serveren for at opretholde en positiv roleplay-atmosfære.
 
-## **📖 Detaljeret Beskrivelse**
+### **✅ Tilladt**
+- Adfærd der følger regelns ånd
+- Handlinger der beriger andre spilleres oplevelse
+- Kreativ roleplay inden for guidelines
 
-### **Hvad omfatter denne regel?**
-**${prompt}** refererer til specifikke handlinger og adfærd der enten er:
-- ✅ **Tilladt og opmuntret** på serveren
-- ❌ **Forbudt og kan resultere i sanktioner**
-- ⚠️ **Betinget tilladt** under bestemte omstændigheder
+### **❌ Forbudt**  
+- Brud på regelns grundlæggende principper
+- Adfærd der skader community-atmosfæren
+- Ignorering af staff-instruktioner
 
-### **🎭 Roleplay Kontekst**
-I Adventure RP's cyberpunk setting skal **${prompt}** altid:
-- Være realistisk og troværdig
-- Passe ind i din karakters baghistorie
-- Respektere andre spilleres oplevelse
-- Følge server lore og timeline
-
-## **✅ Acceptable Eksempler**
-**Scenario 1:** [Beskrivelse af korrekt implementation]
-- Følger regelns ånd og bogstav
-- Enhancer gameplayet for alle involverede
-- Viser respekt for andre spillere
-
-**Scenario 2:** [Alternative acceptable approach]
-- Kreativ men regelkonform tilgang
-- Bidrager positivt til server-historien
-
-## **❌ Uacceptable Eksempler**
-**Scenario 1:** [Beskrivelse af forkert usage]
-- Bryder regelns grundlæggende principper
-- Skader andre spilleres oplevelse
-- Ignorerer server lore eller realisme
-
-**Scenario 2:** [Yderligere problematisk adfærd]
-- Power gaming eller meta gaming
-- Toxic adfærd over for community
-
-## **⚖️ Konsekvenser ved Overtrædelse**
-
-### **Første Overtrædelse**
-- **Verbal Advarsel** fra staff medlem
-- **Educational Samtale** om korrekt roleplay
-- **Chance for at rette adfærd**
-
-### **Gentagne Overtrædelser**
-- **Skriftlig Advarsel** med dokumentation
-- **Midlertidigt Ban** (1-7 dage)
-- **Karakterbegrænsninger** eller restrictions
-
-### **Alvorlige/Gentagne Brud**
-- **Permanent Ban** fra serveren
-- **Discord Ban** fra community
-- **Blacklist** fra fremtidige ansøgninger
-
-## **🔧 Hvordan Undgår Jeg Problemer?**
-
-### **Best Practices**
-1. **Læs alle regler grundigt** før du starter
-2. **Spørg staff ved tvivl** - de hjælper gerne!  
-3. **Observer erfarne spillere** og lær fra deres RP
-4. **Tag feedback til efterretning** og forbedre dig
-
-### **Når i tvivl:**
-- Stop og tænk: "Ville dette ske i virkeligheden?"
-- Overvej: "Gør dette gameplayet bedre for alle?"
-- Spørg: "Passer dette til min karakters personlighed?"
+### **⚖️ Konsekvenser**
+- **Første gang:** Venlig påmindelse fra staff
+- **Gentagne brud:** Advarsel eller midlertidigt ban
+- **Alvorlige tilfælde:** Permanent ban fra serveren
 
 ---
-**💬 Har du spørgsmål til denne regel? Kontakt staff via Discord eller in-game admin system!**
+*💬 Har du spørgsmål? Kontakt staff via Discord eller in-game admin-system!*`;
+    }
 
-*Adventure RP - Hvor reglerne sikrer den bedste RP-oplevelse for alle! 🎭✨*`
-    };
+    return `# **${prompt} - Adventure RP Content**
 
-    return templates[type as keyof typeof templates] || 
-      `# **${prompt} - Adventure RP Content**\n\nDette er professionelt indhold omkring **${prompt}** til Adventure RP serveren.\n\n**Professional, engaging content vil blive genereret her baseret på din prompt.**\n\nTilret for ${type} format med fokus på kvalitet og relevans for din FiveM roleplay server.`;
-  };
+Professional indhold genereret baseret på: ${prompt}
 
-  const generateFallbackContent = (type: string, prompt: string): string => {
-    const templates = {
-      story: `📖 **Roleplay Historie: ${prompt}**
-
-Dette er en spændende historie i Adventure RP's cyberpunk verden, hvor ${prompt.toLowerCase()} spiller en central rolle. 
-
-**Baggrund:**
-I Neo-Copenhagens neonbelyste gader, hvor teknologi og kriminalitet mødes, udspiller sig en historie om ${prompt.toLowerCase()}. Her skal karaktererne navigere i en verden fuld af muligheder og farer.
-
-**Handlingen:**
-Vores historie begynder når ${prompt.toLowerCase()} bliver opdaget af de forkerte mennesker. Nu må protagonisten træffe svære valg der vil påvirke hele samfundet.
-
-**Konklusion:**
-I Adventure RP kan enhver historie blive til virkelighed - det er kun fantasien der sætter grænser.`,
-
-      description: `🎮 **${prompt} - Adventure RP**
-
-Oplev ${prompt.toLowerCase()} i vores cyberpunk-inspirerede FiveM server. Adventure RP tilbyder en unik roleplaying-oplevelse hvor enhver historie kan udfolde sig.
-
-**Hvad vi tilbyder:**
-• Professionel staff 24/7
-• Custom scripts og indhold  
-• Aktiv community på +200 spillere
-• Realistisk økonomi og job-system
-• Omfattende karakter-udvikling
-
-**${prompt} Features:**
-Her kan du opleve ${prompt.toLowerCase()} på en helt ny måde med vores specialdesignede systemer og scripts.
-
-Kom og vær en del af Adventure RP - hvor din historia tæller!`,
-
-      announcement: `📢 **Vigtig Meddelelse: ${prompt}**
-
-Kære Adventure RP Community,
-
-Vi vil gerne informere jer om ${prompt.toLowerCase()}. Dette er vigtigt for alle spillere at være opmærksomme på.
-
-**Detaljer:**
-${prompt} vil påvirke serveren på følgende måder:
-• Forbedret gameplay-oplevelse
-• Nye muligheder for roleplay
-• Øget server-stabilitet
-
-**Hvad skal I gøre:**
-Sørg for at læse denne meddelelse grundigt og følg eventuelle instruktioner.
-
-Tak for jeres forståelse og fortsæt den fantastiske roleplay!
-
-- Adventure RP Staff Team`,
-
-      rules: `📋 **Regel Forklaring: ${prompt}**
-
-**Regel:** ${prompt}
-
-**Formål:**
-Denne regel eksisterer for at sikre en fair og sjov oplevelse for alle spillere på Adventure RP.
-
-**Hvad betyder det:**
-${prompt.toLowerCase()} refererer til følgende adfærd og handlinger som enten er påkrævet eller forbudt på serveren.
-
-**Eksempler:**
-• ✅ Korrekt: Følg regelens ånd og bogstav
-• ❌ Forkert: Bryd ikke denne regel
-
-**Konsekvenser:**
-Overtrædelse af denne regel kan resultere i:
-• Advarsel
-• Midlertidigt ban
-• Permanent ban (ved gentagne overtrædelser)
-
-Har du spørgsmål? Kontakt staff via vores Discord eller in-game admin system.`
-    };
-
-    return templates[type as keyof typeof templates] || `Indhold om: ${prompt}`;
+Dette indhold er tilpasset Adventure RP serveren og fokuserer på kvalitet og relevans for vores FiveM roleplay community.`;
   };
 
   const generateImage = async () => {
@@ -486,8 +414,9 @@ Har du spørgsmål? Kontakt staff via vores Discord eller in-game admin system.`
     return lines;
   };
 
-  const createBanner = () => {
-    if (!bannerText.trim()) {
+  const generateBanner = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !bannerText.trim()) {
       toast({
         title: t('common.error'),
         description: t('creative.error_no_text'),
@@ -496,53 +425,75 @@ Har du spørgsmål? Kontakt staff via vores Discord eller in-game admin system.`
       return;
     }
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
-    canvas.width = 1200;
-    canvas.height = 400;
+    canvas.width = 800;
+    canvas.height = 200;
 
-    // Create gradient background based on style
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    
+    // Create styled banner based on style
     switch (bannerStyle) {
       case 'gaming':
-        gradient.addColorStop(0, bannerColor);
-        gradient.addColorStop(1, '#1a1a2e');
+        // Gaming style with gradient and neon effects
+        const gamingGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gamingGradient.addColorStop(0, bannerColor);
+        gamingGradient.addColorStop(1, '#1a1a2e');
+        ctx.fillStyle = gamingGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add border effect
+        ctx.strokeStyle = '#00f5ff';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
         break;
+        
       case 'minimal':
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(1, '#f8f9fa');
+        // Clean minimal style
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = bannerColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
         break;
+        
       case 'neon':
-        gradient.addColorStop(0, '#ff006e');
-        gradient.addColorStop(0.5, '#8338ec');
-        gradient.addColorStop(1, '#3a86ff');
+        // Dark background with neon glow
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         break;
+        
       case 'retro':
-        gradient.addColorStop(0, '#ff9a00');
-        gradient.addColorStop(1, '#ff0080');
+        // Retro gradient
+        const retroGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        retroGradient.addColorStop(0, '#ff006e');
+        retroGradient.addColorStop(0.5, '#8338ec');
+        retroGradient.addColorStop(1, '#3a86ff');
+        ctx.fillStyle = retroGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         break;
     }
 
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     // Add text
-    ctx.fillStyle = bannerStyle === 'minimal' ? '#000000' : '#ffffff';
-    ctx.font = 'bold 48px Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Add text shadow for better readability
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
+    if (bannerStyle === 'neon') {
+      // Neon glow effect
+      ctx.shadowColor = bannerColor;
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = bannerColor;
+      ctx.font = 'bold 48px Arial, sans-serif';
+    } else if (bannerStyle === 'minimal') {
+      ctx.fillStyle = bannerColor;
+      ctx.font = 'bold 36px Arial, sans-serif';
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 42px Arial, sans-serif';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+    }
     
     ctx.fillText(bannerText, canvas.width / 2, canvas.height / 2);
 
@@ -552,411 +503,384 @@ Har du spørgsmål? Kontakt staff via vores Discord eller in-game admin system.`
     });
   };
 
+  const downloadImage = (imageUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const downloadBanner = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
+    const imageUrl = canvas.toDataURL();
+    downloadImage(imageUrl, 'adventure-rp-banner.png');
+  };
 
-    const link = document.createElement('a');
-    link.download = `banner-${bannerText.replace(/\s+/g, '-').toLowerCase()}.png`;
-    link.href = canvas.toDataURL();
-    link.click();
+  const downloadGeneratedImage = () => {
+    if (generatedImageUrl) {
+      downloadImage(generatedImageUrl, 'adventure-rp-generated-image.png');
+    }
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: t('common.success'),
-      description: t('creative.copy_to_clipboard')
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: t('common.success'),
+        description: t('creative.success_copied')
+      });
     });
   };
 
-  const copyBannerHTML = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const dataURL = canvas.toDataURL();
-    const html = `<img src="${dataURL}" alt="${bannerText}" style="width: 100%; max-width: 1200px; height: auto;" />`;
-    copyToClipboard(html);
-  };
-
-  const ToolCard = ({ icon: Icon, title, description, toolKey, comingSoon = false }: {
-    icon: any;
-    title: string;
-    description: string;
-    toolKey: string;
-    comingSoon?: boolean;
-  }) => (
-    <Card 
-      className={`p-6 bg-gaming-card border-gaming-border transition-all duration-300 cursor-pointer
-                 ${comingSoon ? 'opacity-50' : 'hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20'}`}
-      onClick={() => !comingSoon && setSelectedTool(toolKey)}
-    >
-      <div className="flex items-center space-x-4">
-        <div className="p-3 rounded-full bg-primary/20">
-          <Icon className="h-6 w-6 text-primary" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-foreground">{title}</h3>
-          <p className="text-sm text-muted-foreground">{description}</p>
-          {comingSoon && (
-            <Badge variant="secondary" className="mt-2">{t('creative.coming_soon')}</Badge>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
+  const creativeTools = [
+    {
+      id: 'content',
+      title: t('creative.ai_content_generation'),
+      description: t('creative.ai_content_description'),
+      icon: FileText,
+      category: 'AI'
+    },
+    {
+      id: 'image',
+      title: t('creative.ai_image_generation'),
+      description: t('creative.ai_image_description'),
+      icon: Image,
+      category: 'AI'
+    },
+    {
+      id: 'banner',
+      title: t('creative.banner_creator'),
+      description: t('creative.banner_description'),
+      icon: Brush,
+      category: 'Design'
+    }
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">{t('creative.creative_tools')}</h2>
-          <p className="text-muted-foreground">{t('creative.tools_description')}</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <span className="text-sm text-muted-foreground">{t('creative.ai_powered')}</span>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4">
+              {t('creative.title')}
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              {t('creative.description')}
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <ToolCard
-          icon={FileText}
-          title={t('creative.ai_content_generator')}
-          description={t('creative.ai_content_description')}
-          toolKey="content"
-        />
-        <ToolCard
-          icon={Image}
-          title={t('creative.ai_image_generator')}
-          description={t('creative.ai_image_description')}
-          toolKey="image"
-        />
-        <ToolCard
-          icon={Brush}
-          title={t('creative.banner_creator')}
-          description={t('creative.banner_description')}
-          toolKey="banner"
-        />
-        <ToolCard
-          icon={Type}
-          title={t('creative.logo_designer')}
-          description={t('creative.logo_description')}
-          toolKey="logo"
-          comingSoon
-        />
-        <ToolCard
-          icon={Video}
-          title={t('creative.video_editor')}
-          description={t('creative.video_description')}
-          toolKey="video"
-          comingSoon
-        />
-        <ToolCard
-          icon={Music}
-          title={t('creative.audio_mixer')}
-          description={t('creative.audio_description')}
-          toolKey="audio"
-          comingSoon
-        />
-      </div>
+          {/* Tools Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {creativeTools.map((tool) => (
+              <Card 
+                key={tool.id}
+                className={`p-6 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+                  selectedTool === tool.id 
+                    ? 'ring-2 ring-primary bg-primary/5' 
+                    : 'hover:bg-accent/50'
+                }`}
+                onClick={() => setSelectedTool(tool.id)}
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <tool.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{tool.title}</h3>
+                    <Badge variant="secondary">{tool.category}</Badge>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">{tool.description}</p>
+              </Card>
+            ))}
+          </div>
 
-      {/* AI Content Generator Dialog */}
-      <Dialog open={selectedTool === 'content'} onOpenChange={() => setSelectedTool(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>{t('creative.ai_content_generator')}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t('creative.content_type')}</Label>
-                <Select value={contentType} onValueChange={(value: any) => setContentType(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="story">{t('creative.story')}</SelectItem>
-                    <SelectItem value="description">{t('creative.description')}</SelectItem>
-                    <SelectItem value="announcement">{t('creative.announcement')}</SelectItem>
-                    <SelectItem value="rules">{t('creative.rules')}</SelectItem>
-                  </SelectContent>
-                </Select>
+          {/* Tool Interfaces */}
+          {selectedTool === 'content' && (
+            <Card className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <FileText className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold">{t('creative.ai_content_generation')}</h2>
               </div>
-            </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div>
+                    <Label htmlFor="content-type">{t('creative.content_type')}</Label>
+                    <Select value={contentType} onValueChange={(value: any) => setContentType(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="story">{t('creative.story')}</SelectItem>
+                        <SelectItem value="description">{t('creative.description')}</SelectItem>
+                        <SelectItem value="announcement">{t('creative.announcement')}</SelectItem>
+                        <SelectItem value="rules">{t('creative.rules')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div className="space-y-2">
-              <Label>Beskrivelse / Prompt</Label>
-              <Textarea
-                value={contentPrompt}
-                onChange={(e) => setContentPrompt(e.target.value)}
-                placeholder={t('creative.prompt_placeholder')}
-                rows={4}
-              />
-            </div>
+                  <div>
+                    <Label htmlFor="content-prompt">{t('creative.description_prompt')}</Label>
+                    <Textarea
+                      id="content-prompt"
+                      placeholder={t('creative.content_prompt_placeholder')}
+                      value={contentPrompt}
+                      onChange={(e) => setContentPrompt(e.target.value)}
+                      className="min-h-[120px]"
+                    />
+                  </div>
 
-            <Button 
-              onClick={generateAIContent} 
-              disabled={isGenerating}
-              className="w-full"
-            >
-              {isGenerating ? (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                  {t('creative.generating')}
-                </>
-              ) : (
-                <>
-                  <Wand2 className="h-4 w-4 mr-2" />
-                  {t('creative.generate_content')}
-                </>
-              )}
-            </Button>
-
-            {generatedContent && (
-              <Card className="p-4 bg-gaming-dark border-gaming-border">
-                <div className="flex items-center justify-between mb-2">
-                  <Label>{t('creative.generated_content')}</Label>
                   <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => copyToClipboard(generatedContent)}
+                    onClick={generateAIContent}
+                    disabled={isGenerating}
+                    className="w-full"
+                    size="lg"
                   >
-                    <Copy className="h-4 w-4 mr-1" />
-                    Kopier
+                    {isGenerating ? (
+                      <>
+                        <Sparkles className="mr-2 h-5 w-5 animate-spin" />
+                        {t('creative.generating')}
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="mr-2 h-5 w-5" />
+                        {t('creative.generate_content')}
+                      </>
+                    )}
                   </Button>
                 </div>
-                <div className="max-h-60 overflow-y-auto">
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{generatedContent}</p>
+
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <Label>{t('creative.generated_content')}</Label>
+                    {generatedContent && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => copyToClipboard(generatedContent)}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        {t('creative.copy')}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-4 min-h-[300px] max-h-[500px] overflow-y-auto">
+                    {generatedContent ? (
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
+                        <pre className="whitespace-pre-wrap font-sans text-sm">
+                          {generatedContent}
+                        </pre>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-8">
+                        {t('creative.content_will_appear_here')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </Card>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* AI Image Generator Dialog */}
-      <Dialog open={selectedTool === 'image'} onOpenChange={() => setSelectedTool(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Image className="h-5 w-5" />
-              <span>{t('creative.ai_image_generator')}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label>Billede Beskrivelse</Label>
-              <Textarea
-                value={imagePrompt}
-                onChange={(e) => setImagePrompt(e.target.value)}
-                placeholder={t('creative.image_prompt_placeholder')}
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t('creative.style')}</Label>
-                <Select value={imageStyle} onValueChange={(value: any) => setImageStyle(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="realistic">{t('creative.realistic')}</SelectItem>
-                    <SelectItem value="artistic">{t('creative.artistic')}</SelectItem>
-                    <SelectItem value="cartoon">{t('creative.cartoon')}</SelectItem>
-                    <SelectItem value="cyberpunk">{t('creative.cyberpunk')}</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
-              <div className="space-y-2">
-                <Label>{t('creative.size')}</Label>
-                <Select value={imageSize} onValueChange={(value: any) => setImageSize(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="512x512">512x512 (Kvadrat)</SelectItem>
-                    <SelectItem value="1024x1024">1024x1024 (Stor)</SelectItem>
-                    <SelectItem value="1920x1080">1920x1080 (Banner)</SelectItem>
-                  </SelectContent>
-                </Select>
+            </Card>
+          )}
+
+          {selectedTool === 'image' && (
+            <Card className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Image className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold">{t('creative.ai_image_generation')}</h2>
               </div>
-            </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div>
+                    <Label htmlFor="image-prompt">{t('creative.image_description')}</Label>
+                    <Textarea
+                      id="image-prompt"
+                      placeholder={t('creative.image_prompt_placeholder')}
+                      value={imagePrompt}
+                      onChange={(e) => setImagePrompt(e.target.value)}
+                      className="min-h-[100px]"
+                    />
+                  </div>
 
-            <Button 
-              onClick={generateImage} 
-              disabled={isGenerating}
-              className="w-full"
-            >
-              {isGenerating ? (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                  Genererer Billede...
-                </>
-              ) : (
-                <>
-                  <Camera className="h-4 w-4 mr-2" />
-                  {t('creative.generate_image')}
-                </>
-              )}
-            </Button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>{t('creative.style')}</Label>
+                      <Select value={imageStyle} onValueChange={(value: any) => setImageStyle(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="realistic">{t('creative.realistic')}</SelectItem>
+                          <SelectItem value="artistic">{t('creative.artistic')}</SelectItem>
+                          <SelectItem value="cartoon">{t('creative.cartoon')}</SelectItem>
+                          <SelectItem value="cyberpunk">{t('creative.cyberpunk')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-            {generatedImageUrl && (
-              <Card className="p-4 bg-gaming-dark border-gaming-border">
-                <div className="space-y-4">
-                  <Label>Genereret Billede</Label>
-                  <img 
-                    src={generatedImageUrl} 
-                    alt="Generated" 
-                    className="w-full rounded-lg border border-gaming-border"
-                  />
-                  <div className="flex space-x-2">
+                    <div>
+                      <Label>{t('creative.size')}</Label>
+                      <Select value={imageSize} onValueChange={(value: any) => setImageSize(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="512x512">512x512</SelectItem>
+                          <SelectItem value="1024x1024">1024x1024</SelectItem>
+                          <SelectItem value="1920x1080">1920x1080</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button 
+                    onClick={generateImage}
+                    disabled={isGenerating}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Sparkles className="mr-2 h-5 w-5 animate-spin" />
+                        {t('creative.generating')}
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="mr-2 h-5 w-5" />
+                        {t('creative.generate_image')}
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <Label>{t('creative.generated_image')}</Label>
+                    {generatedImageUrl && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={downloadGeneratedImage}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        {t('creative.download')}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-4 min-h-[300px] flex items-center justify-center">
+                    {generatedImageUrl ? (
+                      <img 
+                        src={generatedImageUrl} 
+                        alt="Generated content" 
+                        className="max-w-full max-h-[400px] rounded-lg shadow-lg"
+                      />
+                    ) : (
+                      <p className="text-muted-foreground text-center">
+                        {t('creative.image_will_appear_here')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {selectedTool === 'banner' && (
+            <Card className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Brush className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold">{t('creative.banner_creator')}</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div>
+                    <Label htmlFor="banner-text">{t('creative.banner_text')}</Label>
+                    <Input
+                      id="banner-text"
+                      placeholder={t('creative.banner_text_placeholder')}
+                      value={bannerText}
+                      onChange={(e) => setBannerText(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>{t('creative.banner_style')}</Label>
+                      <Select value={bannerStyle} onValueChange={(value: any) => setBannerStyle(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gaming">{t('creative.gaming')}</SelectItem>
+                          <SelectItem value="minimal">{t('creative.minimal')}</SelectItem>
+                          <SelectItem value="neon">{t('creative.neon')}</SelectItem>
+                          <SelectItem value="retro">{t('creative.retro')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>{t('creative.primary_color')}</Label>
+                      <Input
+                        type="color"
+                        value={bannerColor}
+                        onChange={(e) => setBannerColor(e.target.value)}
+                        className="h-10 w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
                     <Button 
-                      size="sm" 
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = generatedImageUrl;
-                        link.download = 'generated-image.png';
-                        link.click();
-                      }}
+                      onClick={generateBanner}
+                      className="flex-1"
+                      size="lg"
                     >
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
+                      <Type className="mr-2 h-5 w-5" />
+                      {t('creative.create_banner')}
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={downloadBanner}
+                      size="lg"
+                    >
+                      <Download className="mr-2 h-5 w-5" />
+                      {t('creative.download')}
                     </Button>
                   </div>
                 </div>
-              </Card>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Banner Creator Dialog */}
-      <Dialog open={selectedTool === 'banner'} onOpenChange={() => setSelectedTool(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Brush className="h-5 w-5" />
-              <span>{t('creative.banner_creator')}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label>Banner Tekst</Label>
-              <Input
-                value={bannerText}
-                onChange={(e) => setBannerText(e.target.value)}
-                placeholder={t('creative.banner_text_placeholder')}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t('creative.style')}</Label>
-                <Select value={bannerStyle} onValueChange={(value: any) => setBannerStyle(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gaming">{t('creative.gaming')}</SelectItem>
-                    <SelectItem value="minimal">{t('creative.minimal')}</SelectItem>
-                    <SelectItem value="neon">{t('creative.neon')}</SelectItem>
-                    <SelectItem value="retro">{t('creative.retro')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{t('creative.primary_color')}</Label>
-                <Input
-                  type="color"
-                  value={bannerColor}
-                  onChange={(e) => setBannerColor(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="border-2 border-dashed border-gaming-border rounded-lg p-8 text-center">
-              <canvas
-                ref={canvasRef}
-                className="max-w-full h-auto border border-gaming-border rounded"
-                style={{ display: bannerText ? 'block' : 'none', margin: '0 auto' }}
-              />
-              {bannerText && (
-                <div className="mt-2">
-                  <p className="text-sm text-muted-foreground">{t('creative.preview')}</p>
+                <div>
+                  <Label className="mb-4 block">{t('creative.banner_preview')}</Label>
+                  <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-center">
+                    <canvas 
+                      ref={canvasRef}
+                      className="max-w-full border rounded-lg shadow-lg bg-white"
+                      style={{ maxHeight: '300px' }}
+                    />
+                  </div>
                 </div>
-              )}
-              {!bannerText && (
-                <div 
-                  className="inline-block px-8 py-4 rounded-lg text-white font-bold text-xl"
-                  style={{ backgroundColor: bannerColor }}
-                >
-                  {t('creative.your_banner_text')}
-                </div>
-              )}
-            </div>
-
-            <div className="flex space-x-2">
-              <Button onClick={createBanner} className="flex-1">
-                <Brush className="h-4 w-4 mr-2" />
-                {t('creative.create_banner')}
-              </Button>
-            </div>
-
-            {bannerText && (
-              <div className="flex space-x-2">
-                <Button onClick={downloadBanner} className="flex-1">
-                  <Download className="h-4 w-4 mr-2" />
-                  {t('creative.download_banner')}
-                </Button>
-                <Button variant="outline" onClick={copyBannerHTML}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  {t('creative.copy_html')}
-                </Button>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Recent Projects */}
-      <Card className="p-6 bg-gaming-card border-gaming-border">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-foreground">{t('creative.recent_projects')}</h3>
-          <Button variant="outline" size="sm">
-            {t('creative.see_all')}
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { id: 1, title: 'Server Regel Forklaring', type: 'content', hours: 2 },
-            { id: 2, title: 'Cyberpunk Banner', type: 'banner', hours: 5 },
-            { id: 3, title: 'Karakter Historie', type: 'content', hours: 8 }
-          ].map((project) => (
-            <Card key={project.id} className="p-4 bg-gaming-dark border-gaming-border">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded bg-primary/20">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-foreground">{project.title}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Oprettet for {project.hours} timer siden
-                  </p>
-                </div>
-                <Button size="sm" variant="ghost">
-                  <Copy className="h-4 w-4" />
-                </Button>
               </div>
             </Card>
-          ))}
+          )}
+
+          {!selectedTool && (
+            <Card className="p-12 text-center">
+              <Palette className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">{t('creative.select_tool')}</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                {t('creative.select_tool_description')}
+              </p>
+            </Card>
+          )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
