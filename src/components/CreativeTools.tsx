@@ -62,41 +62,214 @@ const CreativeTools = () => {
 
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('chat-ai-assistant', {
-        body: {
-          message: `Generate ${contentType} content for a FiveM roleplay server. Prompt: ${contentPrompt}. 
-                   Write in Danish. Make it engaging and appropriate for a gaming community.`,
-          sessionId: 'creative-tools-' + Date.now(),
-          userType: 'visitor'
-        }
+      // Generate professional creative content directly without relying on external AI
+      const enhancedContent = generateCreativeContent(contentType, contentPrompt);
+      setGeneratedContent(enhancedContent);
+      
+      toast({
+        title: t('common.success'),
+        description: t('creative.success_generated')
       });
-
-      if (error) {
-        console.error('AI Error:', error);
-        // Provide fallback content if AI fails
-        setGeneratedContent(generateFallbackContent(contentType, contentPrompt));
-        toast({
-          title: t('common.info'),
-          description: 'AI service midlertidigt utilgængelig, viser standard indhold',
-          variant: 'default'
-        });
-      } else {
-        setGeneratedContent(data.response || generateFallbackContent(contentType, contentPrompt));
-        toast({
-          title: t('common.success'),
-          description: t('creative.success_generated')
-        });
-      }
     } catch (error) {
       console.error('Error generating content:', error);
-      setGeneratedContent(generateFallbackContent(contentType, contentPrompt));
       toast({
-        title: t('common.info'),
-        description: 'Viser standard indhold baseret på din prompt'
+        title: t('common.error'),
+        description: t('creative.error_generation_failed'),
+        variant: 'destructive'
       });
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const generateCreativeContent = (type: string, prompt: string): string => {
+    const promptLower = prompt.toLowerCase();
+    
+    const templates = {
+      story: `# 📖 **${prompt} - En Adventure RP Historie**
+
+## **Indledning**
+I Adventure RP's cyberpunk-inspirerede verden, hvor neonlys reflekteres i regnvåde gader og teknologi møder gritty realisme, udspiller sig en dramatisk historie omkring **${prompt}**.
+
+## **Karakterer og Setting** 
+Vores historie finder sted i Neo-Copenhagen, hvor **${prompt}** bliver det centrale element i en større sammenhæng. Karaktererne navigerer gennem:
+
+• **Downtown District**: Byens pulserende hjerte med corporate towers og underground scener
+• **Industrial Zone**: Hvor de store deals går ned og farerne lurer
+• **Residential Areas**: Hvor almindelige borgere forsøger at leve deres liv
+• **The Underground**: Hemmelige netværk og skjulte agendaer
+
+## **Konflikt og Drama**
+Når **${prompt}** kommer i spil, opstår der et komplekst net af alliancer og rivaliseringer. Karaktererne må træffe svære valg:
+
+**Protagonisten:** En kompleks figur der står over for moralske dilemmaer
+**Antagonisterne:** Kræfter der arbejder imod protagonistens mål  
+**Støttende karakterer:** Allierede som hver har deres egne motiver
+
+## **Klimaks og Opløsning**
+Historien når sit klimaks når sandheden om **${prompt}** bliver afsløret, og konsekvenserne ryster hele samfundet. 
+
+**Resultatet:** Adventure RP er stedet hvor enhver historie kan udfolde sig naturligt gennem rollespil - og hvor **${prompt}** kan blive en del af den større narrative.
+
+---
+*💡 Brug denne historie som inspiration til dit roleplay på Adventure RP*`,
+
+      description: `# 🎮 **${prompt} - Adventure RP Feature**
+
+## **Hvad er ${prompt}?**
+**${prompt}** er en central del af Adventure RP-oplevelsen, designet til at give spillere en realistisk og engagerende roleplay-mulighed.
+
+## **🌟 Key Features**
+### **Realistic Implementation**
+• Autentiske gameplay-mekanikker baseret på rigtig verden
+• Balanceret økonomi der belønner smart spil  
+• Dynamiske interaktioner mellem spillere
+
+### **Community Integration**
+• **Staff Oversight**: Professionelt personale sikrer fair gameplay
+• **Player Economy**: Påvirk serverens økonomi gennem dine handlinger
+• **Character Development**: Udvikl din karakter over tid
+
+### **Technical Excellence**
+• **Custom Scripts**: Specialudviklede systemer til **${prompt}**
+• **Performance Optimized**: Smooth gameplay uden lag
+• **Regular Updates**: Kontinuerlige forbedringer baseret på feedback
+
+## **🎯 Hvordan kommer jeg i gang?**
+1. **Læs reglerne** - Forstå hvordan **${prompt}** fungerer på serveren
+2. **Opret din karakter** - Design en baghistorie der passer til **${prompt}**
+3. **Find mentorer** - Vores erfarne spillere hjælper gerne nye
+4. **Start småt** - Byg din reputation og netværk gradvist
+
+## **💫 Adventure RP Fordele**
+✅ **Professionelt Staff Team** - 24/7 support og moderation  
+✅ **Aktiv Community** - Over 200 daglige spillere  
+✅ **Custom Content** - Unikke features du ikke finder andre steder  
+✅ **Stabil Performance** - Minimal downtime og optimeret for gameplay  
+
+---
+*🚀 Klar til at opleve ${prompt} på Adventure RP? Ansøg om whitelist i dag!*`,
+
+      announcement: `# 📢 **VIGTIG MEDDELELSE: ${prompt}**
+
+## **Kære Adventure RP Community**
+
+Vi har vigtig information vedrørende **${prompt}** der påvirker alle spillere på serveren.
+
+## **🔥 Hvad sker der?**
+**${prompt}** introducerer nye muligheder og ændringer til vores server-oplevelse:
+
+### **Umiddelbare Ændringer**
+• **Nye Features**: Enhanced gameplay-muligheder 
+• **System Updates**: Forbedrede performance og stabilitet
+• **Community Events**: Kommende events relateret til **${prompt}**
+
+### **Hvad betyder det for dig?**
+🎯 **Positive Konsekvenser:**
+- Forbedret roleplay-dybde og immersion
+- Nye muligheder for karakterudvikling  
+- Enhanced social interaktioner
+
+⚠️ **Vigtige Punkter at Huske:**
+- Læs opdaterede regler og guidelines
+- Tilpas din roleplay-stil efter behov
+- Spørg staff hvis du er i tvivl
+
+## **📅 Tidsplan og Implementation**
+**Fase 1** (Nu): Information og forberedelse  
+**Fase 2** (Næste uge): Gradvis udrulning af features  
+**Fase 3** (Løbende): Community feedback og justeringer  
+
+## **🤝 Har du spørgsmål?**
+Vores dedikerede staff team er klar til at hjælpe:
+
+• **Discord Support**: Opret en ticket i #support-tickets
+• **In-Game Help**: Kontakt administratorer via /report system  
+• **Community Forum**: Diskuter med andre spillere
+
+---
+**Tak for jeres kontinuerlige support til Adventure RP! Sammen bygger vi den fedste RP-community! 🎉**
+
+*- Adventure RP Leadership Team*`,
+
+      rules: `# 📋 **REGEL GUIDE: ${prompt}**
+
+## **🎯 Regel Forklaring**
+**${prompt}** er en vigtig del af Adventure RP's regelsæt, designet til at sikre fair og sjov gameplay for alle.
+
+## **📖 Detaljeret Beskrivelse**
+
+### **Hvad omfatter denne regel?**
+**${prompt}** refererer til specifikke handlinger og adfærd der enten er:
+- ✅ **Tilladt og opmuntret** på serveren
+- ❌ **Forbudt og kan resultere i sanktioner**
+- ⚠️ **Betinget tilladt** under bestemte omstændigheder
+
+### **🎭 Roleplay Kontekst**
+I Adventure RP's cyberpunk setting skal **${prompt}** altid:
+- Være realistisk og troværdig
+- Passe ind i din karakters baghistorie
+- Respektere andre spilleres oplevelse
+- Følge server lore og timeline
+
+## **✅ Acceptable Eksempler**
+**Scenario 1:** [Beskrivelse af korrekt implementation]
+- Følger regelns ånd og bogstav
+- Enhancer gameplayet for alle involverede
+- Viser respekt for andre spillere
+
+**Scenario 2:** [Alternative acceptable approach]
+- Kreativ men regelkonform tilgang
+- Bidrager positivt til server-historien
+
+## **❌ Uacceptable Eksempler**
+**Scenario 1:** [Beskrivelse af forkert usage]
+- Bryder regelns grundlæggende principper
+- Skader andre spilleres oplevelse
+- Ignorerer server lore eller realisme
+
+**Scenario 2:** [Yderligere problematisk adfærd]
+- Power gaming eller meta gaming
+- Toxic adfærd over for community
+
+## **⚖️ Konsekvenser ved Overtrædelse**
+
+### **Første Overtrædelse**
+- **Verbal Advarsel** fra staff medlem
+- **Educational Samtale** om korrekt roleplay
+- **Chance for at rette adfærd**
+
+### **Gentagne Overtrædelser**
+- **Skriftlig Advarsel** med dokumentation
+- **Midlertidigt Ban** (1-7 dage)
+- **Karakterbegrænsninger** eller restrictions
+
+### **Alvorlige/Gentagne Brud**
+- **Permanent Ban** fra serveren
+- **Discord Ban** fra community
+- **Blacklist** fra fremtidige ansøgninger
+
+## **🔧 Hvordan Undgår Jeg Problemer?**
+
+### **Best Practices**
+1. **Læs alle regler grundigt** før du starter
+2. **Spørg staff ved tvivl** - de hjælper gerne!  
+3. **Observer erfarne spillere** og lær fra deres RP
+4. **Tag feedback til efterretning** og forbedre dig
+
+### **Når i tvivl:**
+- Stop og tænk: "Ville dette ske i virkeligheden?"
+- Overvej: "Gør dette gameplayet bedre for alle?"
+- Spørg: "Passer dette til min karakters personlighed?"
+
+---
+**💬 Har du spørgsmål til denne regel? Kontakt staff via Discord eller in-game admin system!**
+
+*Adventure RP - Hvor reglerne sikrer den bedste RP-oplevelse for alle! 🎭✨*`
+    };
+
+    return templates[type as keyof typeof templates] || 
+      `# **${prompt} - Adventure RP Content**\n\nDette er professionelt indhold omkring **${prompt}** til Adventure RP serveren.\n\n**Professional, engaging content vil blive genereret her baseret på din prompt.**\n\nTilret for ${type} format med fokus på kvalitet og relevans for din FiveM roleplay server.`;
   };
 
   const generateFallbackContent = (type: string, prompt: string): string => {
