@@ -1918,6 +1918,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      check_user_permission: {
+        Args: { required_role?: string; user_id: string }
+        Returns: boolean
+      }
       get_all_permissions_for_admin: {
         Args: Record<PropertyKey, never>
         Returns: string[]
