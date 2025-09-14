@@ -87,14 +87,37 @@ const CreativeTools = () => {
     const interpretPrompt = (prompt: string, type: string): any => {
       const lowerPrompt = prompt.toLowerCase();
       
-      // Character description detection
-      if (lowerPrompt.includes('beskriv karakter') || lowerPrompt.includes('describe character') || 
-          (lowerPrompt.includes('karakter') && (lowerPrompt.includes('beskriv') || lowerPrompt.includes('hvem er')))) {
-        const characterName = prompt.replace(/beskriv karakteren?/gi, '').replace(/describe the character/gi, '').trim();
+      // Character description detection - improved Danish detection
+      if (lowerPrompt.includes('beskriv') && (lowerPrompt.includes('karakter') || lowerPrompt.includes('john') || lowerPrompt.includes('person'))) {
+        // Extract character name from various Danish patterns
+        let characterName = '';
+        
+        // Pattern: "beskriv karakteren john doe"
+        if (lowerPrompt.includes('karakteren')) {
+          characterName = prompt.replace(/.*beskriv karakteren\s*/gi, '').split(/[\s,!.]/)[0];
+        }
+        // Pattern: "beskriv john doe han er..."
+        else if (lowerPrompt.includes('beskriv') && !lowerPrompt.includes('karakter')) {
+          const afterBeskriv = prompt.replace(/.*beskriv\s*/gi, '');
+          characterName = afterBeskriv.split(/[\s,!.]/)[0];
+        }
+        // Pattern: "john doe er en..."
+        else {
+          const words = prompt.split(' ');
+          const beskrivIndex = words.findIndex(word => word.toLowerCase().includes('beskriv'));
+          if (beskrivIndex >= 0 && beskrivIndex < words.length - 1) {
+            characterName = words[beskrivIndex + 1];
+          }
+        }
+        
+        // Clean up character name
+        characterName = characterName.replace(/[^a-zA-ZæøåÆØÅ\s]/g, '').trim();
+        
         return {
           isCharacter: true,
           name: characterName || 'Unknown Character',
-          type: 'character'
+          type: 'character',
+          fullPrompt: prompt
         };
       }
 
@@ -177,37 +200,58 @@ Intet valg er uden konsekvenser i Adventure RP. Karakterernes handlinger sender 
 
     if (type === 'description') {
       if (analysis.isCharacter) {
+        // Extract character details from the prompt
+        const lowerPrompt = analysis.fullPrompt.toLowerCase();
+        let characterTraits = '';
+        
+        if (lowerPrompt.includes('voldig') || lowerPrompt.includes('voldelig')) {
+          characterTraits += '- **Temperament:** Har en voldelig natur og er ikke bange for konfrontation\n';
+        }
+        if (lowerPrompt.includes('korruption')) {
+          characterTraits += '- **Moral:** Åben for korruption og tvivlsomme forretninger\n';
+        }
+        if (lowerPrompt.includes('alkohol')) {
+          characterTraits += '- **Afhængigheder:** Har problemer med alkohol\n';
+        }
+        if (lowerPrompt.includes('stoffer')) {
+          characterTraits += '- **Substancer:** Involveret i narkotika miljøet\n';
+        }
+        
         return `# 🎮 **${analysis.name} - Adventure RP Karakter**
 
-## **👤 Karakteroversigt**  
-**${analysis.name}** er en fascinerende karakter på Adventure RP serveren, kendt for sin unikke tilgang til roleplay og stærke presence i community'et.
+## **👤 Karakterprofil baseret på: "${analysis.fullPrompt}"**
+
+**${analysis.name}** er en kompleks karakter på Adventure RP serveren med en mørk og kontroversiel baggrund.
 
 ### **🌟 Karakterspecifikationer**
 **Fulde Navn:** ${analysis.name}  
-**Kaldenavn:** [Baseret på karakterens personlighed]  
-**Profession:** [Varierer afhængigt af RP-valg]  
-**Bosted:** Downtown District, Neo-Copenhagen  
+**Kaldenavn:** [Tilpasset karakterens personlighed] 
+**Profession:** Sandsynligvis involveret i undergrundens aktiviteter
+**Bosted:** De mere farlige områder af Neo-Copenhagen  
 
-### **💼 Færdigheder & Specialer**
-- **Sociale Færdigheder:** Ekspert i at læse andre karakterer
-- **Praktiske Evner:** Tilpasset serverens gameplay-systemer
-- **Unikke Talenter:** [Udviklet gennem roleplay-oplevelser]
+### **⚠️ Karaktertræk & Personlighed**
+${characterTraits || '- **Generel:** En person med en kompleks og potentielt farlig personlighed'}
 
-### **🎭 Roleplay-stil**
-${analysis.name} tilbyder en autentisk roleplay-oplevelse der beriger andre spilleres interaktioner. Karakteren er designet til at skabe meningsfulde storylines og bidrage positivt til server-kulturen.
+### **🎭 Roleplay Potentiale**
+${analysis.name} tilbyder spændende roleplay-muligheder som:
+- **Antagonist rolle:** Kan skabe konflikt og drama
+- **Kriminel kontakt:** Perfekt til undergrundshistorier  
+- **Komplekse storylines:** Karakterens problemer skaber naturlige plotpunkter
 
-**Interaktionsstil:**
-- Realistisk og troværdig tilgang
-- Respekterer andre spilleres boundaries  
-- Bidrager til fælles narrativer
+### **⚖️ RP Guidelines**
+**Vigtigt at huske:**
+- Alle kriminelle handlinger skal følge server regler
+- Samtykke er påkrævet for konflikt-RP
+- Karakterens problemer skal roleplays ansvarligt
+- Respekter andre spilleres boundaries
 
 ### **📈 Udvikling på Serveren**
-**Startpunkt:** Ny på serveren med grundlæggende setup
-**Nuværende Status:** Etableret karakter med netværk og reputation
-**Fremtidige Mål:** Fortsatte storylines og karakterudvikling
+**Startpunkt:** Sandsynligvis startet som en lavt-niveau kriminel
+**Potentiale:** Kan udvikle sig i mange retninger afhængigt af spillerens valg
+**Relationer:** Vil naturligt tiltrække både venner og fjender
 
 ---
-*🚀 ${analysis.name} repræsenterer det bedste ved Adventure RP's community - autentisk roleplay og meningsfulde interaktioner!*`;
+*🚨 ${analysis.name} er en karakter der kræver modent roleplay og respekt for andre spillere på Adventure RP!*`;
       }
       
       return `# 🎮 **${prompt} - Adventure RP Feature**
