@@ -33,10 +33,19 @@ const OurTeam = () => {
 
   const fetchTeamMembers = async () => {
     try {
+      // Use secure column selection - exclude sensitive Discord data for public view
       const { data, error } = await supabase
         .from('team_members')
         .select(`
-          *,
+          id,
+          name,
+          role,
+          bio,
+          image_url,
+          location,
+          order_index,
+          is_active,
+          created_at,
           staff_roles!fk_team_members_staff_role (
             id,
             display_name,
