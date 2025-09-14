@@ -147,7 +147,17 @@ serve(async (req) => {
       .eq('email', email.toLowerCase())
       .maybeSingle();
 
-    console.log('User lookup result:', { user: user ? { id: user.id, email: user.email, banned: user.banned, email_verified: user.email_verified } : null, error: userError });
+    console.log('User lookup result:', { 
+      user: user ? { 
+        id: user.id, 
+        email: user.email, 
+        banned: user.banned, 
+        email_verified: user.email_verified,
+        password_hash_length: user.password_hash?.length,
+        password_hash_start: user.password_hash?.substring(0, 10)
+      } : null, 
+      error: userError 
+    });
 
     if (userError || !user) {
       console.log('User not found or error:', userError);
@@ -174,8 +184,14 @@ serve(async (req) => {
     }
 
     // Verify password using Web Crypto API
-    console.log('Verifying password for user:', user.email);
-    console.log('Password hash format:', user.password_hash ? user.password_hash.substring(0, 10) + '...' : 'null');
+    console.log('Starting password verification for user:', user.email);
+    console.log('Password hash details:', {
+      length: user.password_hash?.length,
+      start: user.password_hash?.substring(0, 10),
+      format: user.password_hash?.length === 64 ? 'SHA-256' : 
+              user.password_hash?.startsWith('$2') ? 'bcrypt' : 'unknown'
+    });
+    
     const isValidPassword = await verifyPassword(password, user.password_hash);
     console.log('Password verification result:', isValidPassword);
 
@@ -186,6 +202,8 @@ serve(async (req) => {
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    console.log('Password verified successfully, proceeding with login');
 
     // Create session
     const sessionToken = crypto.randomUUID();
