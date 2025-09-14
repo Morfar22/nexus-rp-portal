@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 // CORS headers for browser compatibility
 const corsHeaders = {
@@ -88,10 +87,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Valid reset token for user:", customUser.email);
 
-    // Hash the new password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-    console.log("Password hashed successfully");
+    // Hash the new password using SHA-256 (to match custom-login function)
+    const encoder = new TextEncoder();
+    const data = encoder.encode(newPassword);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashedPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    console.log("Password hashed using SHA-256 successfully");
 
     // Update the user's password and clear reset token
     const { error: updateError } = await supabaseAdmin
