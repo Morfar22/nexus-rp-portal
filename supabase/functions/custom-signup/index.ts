@@ -40,13 +40,12 @@ serve(async (req) => {
       );
     }
 
-    // Hash password
-    const passwordHash = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(password + email.toLowerCase())
-    );
-    const hashArray = Array.from(new Uint8Array(passwordHash));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // Import bcrypt for secure password hashing
+    const bcrypt = await import("https://deno.land/x/bcrypt@v0.4.1/mod.ts");
+    
+    // Hash password using bcrypt with salt rounds of 12 for security
+    const saltRounds = 12;
+    const hashHex = await bcrypt.hash(password, saltRounds);
 
     // Create user
     const { data: user, error: userError } = await supabase

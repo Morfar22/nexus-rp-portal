@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,15 +54,10 @@ serve(async (req) => {
       );
     }
 
-    // Verify password
-    const passwordHash = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(password + email.toLowerCase())
-    );
-    const hashArray = Array.from(new Uint8Array(passwordHash));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // Verify password using bcrypt
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
-    if (hashHex !== user.password_hash) {
+    if (!isValidPassword) {
       return new Response(
         JSON.stringify({ error: "Invalid email or password" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
