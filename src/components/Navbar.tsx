@@ -338,34 +338,37 @@ const Navbar = () => {
             if (groupItems.length === 0) return null;
 
             return (
-              <div key={group.group} className="py-3">
-                <div className="text-primary font-semibold px-3 py-2 text-xs uppercase tracking-wider">
+              <div key={group.group} className="py-4">
+                <div className="text-primary font-bold px-4 py-3 text-xs uppercase tracking-[0.1em] bg-gaming-darker/30 rounded-lg mb-2 border-l-3 border-primary/50">
                   {group.group}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1.5 px-1">
                   {groupItems.map((item) => (
                     <Link 
                       key={item.id}
                       to={item.path} 
                       className={`
-                        flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 group
+                        flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden
                         ${location.pathname === item.path 
-                          ? "bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-l-4 border-primary shadow-md"
-                          : "text-muted-foreground hover:text-foreground hover:bg-gaming-darker/80 hover:scale-[1.02]"
+                          ? "bg-gradient-to-r from-primary/25 via-primary/15 to-secondary/25 text-primary border-l-4 border-primary shadow-xl shadow-primary/10 scale-[1.02]"
+                          : "text-muted-foreground hover:text-foreground hover:bg-gaming-darker/60 hover:scale-[1.02] hover:shadow-lg hover:border-l-4 hover:border-primary/30"
                         }
                       `}
                       onClick={() => setIsOpen(false)}
                     >
-                      <div className={`p-2 rounded-md transition-all duration-300 mr-3 ${
+                      <div className={`p-2.5 rounded-lg transition-all duration-300 mr-4 relative z-10 ${
                         location.pathname === item.path 
-                          ? "bg-primary/20 text-primary" 
-                          : "group-hover:bg-gaming-border group-hover:text-primary"
+                          ? "bg-primary/30 text-primary shadow-md" 
+                          : "group-hover:bg-primary/20 group-hover:text-primary group-hover:shadow-md"
                       }`}>
                         <item.icon className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-semibold relative z-10 tracking-wide">
                         {item.label}
                       </span>
+                      {location.pathname === item.path && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 animate-pulse" />
+                      )}
                     </Link>
                   ))}
                 </div>
@@ -390,24 +393,27 @@ const Navbar = () => {
               key={item.id}
               to={item.path} 
               className={`
-                flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 group whitespace-nowrap
+                flex items-center px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 group whitespace-nowrap relative overflow-hidden
                 ${location.pathname === item.path 
-                  ? "bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/30 shadow-md"
-                  : "text-muted-foreground hover:text-foreground hover:bg-gaming-darker/80 hover:scale-[1.02]"
+                  ? "bg-gradient-to-r from-primary/25 via-primary/15 to-secondary/20 text-primary border border-primary/40 shadow-lg shadow-primary/20 scale-[1.05]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-gaming-darker/70 hover:scale-[1.03] hover:shadow-md hover:border hover:border-primary/20"
                 }
               `}
               onClick={() => setIsOpen(false)}
             >
-              <div className={`p-1.5 rounded-md transition-all duration-300 mr-2 ${
+              <div className={`p-2 rounded-lg transition-all duration-300 mr-3 relative z-10 ${
                 location.pathname === item.path 
-                  ? "bg-primary/20 text-primary" 
-                  : "group-hover:bg-gaming-border group-hover:text-primary"
+                  ? "bg-primary/30 text-primary shadow-md" 
+                  : "group-hover:bg-primary/20 group-hover:text-primary group-hover:shadow-sm"
               }`}>
-                <IconComponent className="h-3.5 w-3.5" />
+                <IconComponent className="h-4 w-4" />
               </div>
-              <span className="text-sm font-medium">
+              <span className="text-sm font-bold tracking-wide relative z-10">
                 {item.label}
               </span>
+              {location.pathname === item.path && (
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 animate-pulse" />
+              )}
             </Link>
           );
         })}
@@ -463,17 +469,17 @@ const Navbar = () => {
   );
 
   return (
-     <nav className="border-b border-gaming-border bg-gaming-darker/95 backdrop-blur-xl sticky top-0 z-50 shadow-lg">
-      <div ref={containerRef} className="container mx-auto px-4 h-16 flex items-center justify-between">
+     <nav className="border-b border-gaming-border bg-gaming-card/95 backdrop-blur-xl sticky top-0 z-50 shadow-xl shadow-gaming-darker/20">
+      <div ref={containerRef} className="container mx-auto px-6 h-18 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-3 group">
-          <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary transition-all duration-300 group-hover:scale-110">
-            <Server className="h-6 w-6 text-white" />
+          <div className="p-3 rounded-xl bg-gradient-to-br from-primary via-primary/90 to-secondary transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-primary/25">
+            <Server className="h-7 w-7 text-white" />
           </div>
           <div className="animate-fade-in">
-            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/90 to-secondary bg-clip-text text-transparent tracking-tight">
               {serverName}
             </span>
-            <p className="text-xs text-muted-foreground -mt-1">{t('common.dashboard')}</p>
+            <p className="text-xs text-muted-foreground/80 -mt-1 tracking-wider uppercase font-medium">{t('common.dashboard')}</p>
           </div>
         </Link>
         
@@ -489,21 +495,21 @@ const Navbar = () => {
                 <Menu className="h-6 w-6 text-foreground" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[320px] bg-gaming-card border-gaming-border">
-              <div className="flex flex-col mt-6">
-                <div className="border-b border-gaming-border pb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary">
-                      <Server className="h-5 w-5 text-white" />
+            <SheetContent side="right" className="w-[380px] bg-gaming-card/95 border-gaming-border backdrop-blur-xl">
+              <div className="flex flex-col mt-8">
+                <div className="border-b border-gaming-border pb-6 mb-2">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-primary via-primary/90 to-secondary shadow-lg shadow-primary/25">
+                      <Server className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-foreground">{serverName}</h2>
-                      <p className="text-xs text-muted-foreground">Navigation Menu</p>
+                      <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{serverName}</h2>
+                      <p className="text-sm text-muted-foreground/80 tracking-wide font-medium">Navigation Menu</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex flex-col custom-scrollbar max-h-[60vh] overflow-y-auto">
+                <div className="flex flex-col custom-scrollbar max-h-[55vh] overflow-y-auto pr-2">
                   <NavLinks forceVertical={true} />
                 </div>
                 
@@ -524,8 +530,8 @@ const Navbar = () => {
         ) : (
           /* Desktop navigation when not overflowing */
           <>
-            <div ref={contentRef} className="flex items-center space-x-1 bg-gaming-card/50 rounded-xl px-3 py-2 border border-gaming-border/50 overflow-x-auto navbar-scrollbar max-w-[60vw] backdrop-blur-sm">
-              <div className="flex items-center space-x-1 min-w-max">
+            <div ref={contentRef} className="flex items-center space-x-2 bg-gaming-card/80 rounded-2xl px-4 py-3 border border-gaming-border/60 overflow-x-auto navbar-scrollbar max-w-[60vw] backdrop-blur-md shadow-lg shadow-gaming-darker/10">
+              <div className="flex items-center space-x-2 min-w-max">
                 <NavLinks />
               </div>
             </div>
