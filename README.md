@@ -69,5 +69,3 @@ Simply open [Lovable](https://lovable.dev/projects/c2b9c9da-596f-4acf-999d-5d33f
 Yes, you can!
 
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-test
