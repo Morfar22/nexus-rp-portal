@@ -44,6 +44,23 @@ const TeamManager = () => {
   useEffect(() => {
     fetchStaffRoles();
     fetchTeamMembers();
+    
+    // Debug current user authentication
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current authenticated user:', user);
+      
+      if (user) {
+        const { data: customUser } = await supabase
+          .from('custom_users')
+          .select('id, email, role, banned')
+          .eq('id', user.id)
+          .single();
+        console.log('Current custom user:', customUser);
+      }
+    };
+    
+    checkAuth();
   }, []);
 
   const fetchStaffRoles = async () => {
@@ -171,12 +188,27 @@ const TeamManager = () => {
 
   const updateTeamMember = async (memberId: string, updates: any) => {
     try {
+      console.log('Updating team member:', memberId, 'with updates:', updates);
+      
       const { staff_roles, created_at, updated_at, id, ...updateData } = updates;
+      
+      // If staff_role_id is being updated, also update the role field
+      if (updateData.staff_role_id) {
+        const selectedRole = staffRoles.find(role => role.id === updateData.staff_role_id);
+        if (selectedRole) {
+          updateData.role = selectedRole.display_name;
+          console.log('Setting role field to:', selectedRole.display_name);
+        }
+      }
+      
+      console.log('Final update data:', updateData);
 
       const { error } = await supabase
         .from('team_members')
         .update(updateData)
         .eq('id', memberId);
+
+      console.log('Supabase update result:', { error });
 
       if (error) throw error;
 
