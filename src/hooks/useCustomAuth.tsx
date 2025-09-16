@@ -80,6 +80,10 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
         if (data.banned) {
           return { error: data.error, banned: true, userInfo: data.userInfo };
         }
+        // If login fails due to password mismatch, suggest password reset
+        if (data.error.includes('Invalid credentials') || data.error.includes('Password verification failed')) {
+          return { error: 'Invalid email or password. If you forgot your password, please use the "Forgot Password" option.' };
+        }
         return { error: data.error };
       }
 
@@ -92,6 +96,7 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
 
       return { error: 'Login failed' };
     } catch (error: any) {
+      console.error('Login error:', error);
       return { error: error.message || 'Login failed' };
     }
   };
