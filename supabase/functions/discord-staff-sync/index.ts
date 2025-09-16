@@ -274,6 +274,7 @@ async function syncStaffMembers(guildId: string) {
 
         const memberData = {
           name: discordMember.nick || discordMember.user.username,
+          role: staffRoleName, // Add the required role column
           staff_role_id: dbStaffRole.id,
           discord_id: discordMember.user.id,
           auto_synced: true,
