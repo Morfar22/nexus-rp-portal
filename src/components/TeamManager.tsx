@@ -85,6 +85,8 @@ const TeamManager = () => {
   const fetchTeamMembers = async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching team members from database...');
+      
       const { data, error } = await supabase
         .from('team_members')
         .select(`
@@ -98,8 +100,12 @@ const TeamManager = () => {
         `)
         .order('order_index', { ascending: true });
 
+      console.log('Raw team members data from DB:', data);
+      console.log('Fetch error:', error);
+
       if (error) throw error;
       const members = data || [];
+      console.log('Setting team members state to:', members);
       setTeamMembers(members);
 
       // Calculate stats
