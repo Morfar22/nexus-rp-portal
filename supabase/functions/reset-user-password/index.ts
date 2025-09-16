@@ -76,7 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const resetLink = `${redirectDomain}/auth?reset_token=${resetToken}&email=${encodeURIComponent(targetEmail)}`;
+    const resetLink = `${redirectDomain}/reset-password?token=${resetToken}&email=${encodeURIComponent(targetEmail)}`;
     console.log("Password reset link generated for:", targetEmail);
 
     // Get RESEND API key from Supabase secrets
