@@ -12,6 +12,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { Server, Mail, Lock, User, AlertCircle, Shield, Ban } from "lucide-react";
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 
+// Error boundary wrapper for auth context
+const AuthContextWrapper = ({ children }: { children: React.ReactNode }) => {
+  try {
+    return <>{children}</>;
+  } catch (error) {
+    console.error('Auth context not available:', error);
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+        <Card className="bg-gaming-card border-gaming-border shadow-gaming">
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+            <p className="text-foreground">Authentication system is loading...</p>
+            <Button onClick={() => window.location.reload()} className="mt-4">
+              Refresh Page
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+};
+
 const CustomAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +50,7 @@ const CustomAuth = () => {
   const captchaRef = useRef<HCaptcha>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
   const { user, loading, signIn, signUp } = useCustomAuth();
 
   // Handle Discord OAuth callback
@@ -630,4 +653,8 @@ const CustomAuth = () => {
   );
 };
 
-export default CustomAuth;
+export default () => (
+  <AuthContextWrapper>
+    <CustomAuth />
+  </AuthContextWrapper>
+);
