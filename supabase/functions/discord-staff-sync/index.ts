@@ -145,7 +145,27 @@ async function syncStaffMembers(guildId: string) {
   // Get staff role mappings from Discord settings
   let staffRoleMappings = settings.setting_value.staff_role_mappings;
   
-  console.log('Staff role mappings from settings:', JSON.stringify(staffRoleMappings, null, 2));
+  // If no dedicated staff role mappings, create them from admin/moderator roles only (exclude user roles)
+  if (!staffRoleMappings) {
+    console.log('No staff_role_mappings found, using admin/moderator roles only...');
+    const roleMappings = settings.setting_value.role_mappings;
+    if (roleMappings) {
+      staffRoleMappings = {};
+      
+      // Only map admin and moderator Discord roles to staff positions
+      if (roleMappings.admin) {
+        staffRoleMappings['Admin'] = roleMappings.admin;
+      }
+      
+      if (roleMappings.moderator && roleMappings.moderator !== roleMappings.admin) {
+        staffRoleMappings['Moderator'] = roleMappings.moderator;
+      }
+      
+      console.log('Using admin/moderator role mappings only:', JSON.stringify(staffRoleMappings, null, 2));
+    }
+  }
+  
+  console.log('Final staff role mappings:', JSON.stringify(staffRoleMappings, null, 2));
   
   if (!staffRoleMappings) {
     console.log('Discord staff role mappings not configured yet');
