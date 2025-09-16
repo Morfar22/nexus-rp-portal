@@ -83,7 +83,6 @@ export default function SocialMediaManager() {
         .upsert({
           setting_key: 'social_media_settings',
           setting_value: settings as any,
-          created_by: user?.id,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'setting_key'
