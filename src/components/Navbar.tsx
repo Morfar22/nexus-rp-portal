@@ -1,6 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
-import { Server, LogIn, LogOut, User, Menu, X } from "lucide-react";
+import { 
+  Server, LogIn, LogOut, User, Menu, X,
+  Home, FileSearch, Scale, CreditCard, Users as UsersIcon, 
+  Globe, Heart, Tv, UserCheck, Trophy, Calendar, 
+  Vote, FileText, BarChart3, Palette, Shield, Settings
+} from "lucide-react";
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,34 +25,50 @@ const Navbar = () => {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [serverName, setServerName] = useState("adventure rp");
+  // Navigation groups structure like the staff sidebar
+  const navigationGroups = [
+    {
+      group: "Public",
+      items: [
+        { id: 'home', label: t('navigation.home'), path: '/', icon: Home, visible: true, order: 0, staffOnly: false, userOnly: false },
+        { id: 'rules', label: t('navigation.rules'), path: '/rules', icon: FileSearch, visible: true, order: 1, staffOnly: false, userOnly: false },
+        { id: 'laws', label: t('navigation.laws'), path: '/laws', icon: Scale, visible: true, order: 2, staffOnly: false, userOnly: false },
+        { id: 'packages', label: t('navigation.packages'), path: '/packages', icon: CreditCard, visible: true, order: 3, staffOnly: false, userOnly: false },
+        { id: 'live', label: t('navigation.live'), path: '/live', icon: Tv, visible: true, order: 7, staffOnly: false, userOnly: false },
+      ]
+    },
+    {
+      group: "Community", 
+      items: [
+        { id: 'team', label: t('navigation.team'), path: '/team', icon: UsersIcon, visible: true, order: 4, staffOnly: false, userOnly: false },
+        { id: 'partners', label: t('navigation.partners'), path: '/partners', icon: Globe, visible: true, order: 5, staffOnly: false, userOnly: false },
+        { id: 'supporters', label: t('navigation.supporters'), path: '/supporters', icon: Heart, visible: true, order: 6, staffOnly: false, userOnly: false },
+        { id: 'characters', label: t('navigation.characters'), path: '/characters', icon: UserCheck, visible: true, order: 8, staffOnly: false, userOnly: false },
+        { id: 'events', label: t('navigation.events'), path: '/events', icon: Calendar, visible: true, order: 9, staffOnly: false, userOnly: false },
+        { id: 'voting', label: t('navigation.voting'), path: '/voting', icon: Vote, visible: true, order: 10, staffOnly: false, userOnly: false },
+        { id: 'achievements', label: t('navigation.achievements'), path: '/achievements', icon: Trophy, visible: true, order: 11, staffOnly: false, userOnly: false },
+      ]
+    },
+    {
+      group: "User Features",
+      items: [
+        { id: 'apply', label: t('navigation.apply'), path: '/apply', icon: FileText, visible: true, order: 12, staffOnly: false, userOnly: true },
+        { id: 'profile', label: t('navigation.profile'), path: '/profile', icon: User, visible: true, order: 13, staffOnly: false, userOnly: true },
+      ]
+    },
+    {
+      group: "Staff Tools",
+      items: [
+        { id: 'staff', label: t('navigation.staff_panel'), path: '/staff', icon: Shield, visible: true, order: 14, staffOnly: true, userOnly: false },
+        { id: 'servers', label: t('navigation.server_management'), path: '/servers', icon: Server, visible: true, order: 15, staffOnly: true, userOnly: false },
+        { id: 'analytics', label: t('navigation.analytics'), path: '/analytics', icon: BarChart3, visible: true, order: 16, staffOnly: true, userOnly: false },
+        { id: 'creative-tools', label: t('navigation.creative_tools'), path: '/creative-tools', icon: Palette, visible: true, order: 17, staffOnly: true, userOnly: false }
+      ]
+    }
+  ];
+
   const [navbarConfig, setNavbarConfig] = useState({
-    items: [
-      // === PUBLIC PAGES === (No authentication required)
-      { id: 'home', label: t('navigation.home'), path: '/', visible: true, order: 0, staffOnly: false, userOnly: false },
-      { id: 'rules', label: t('navigation.rules'), path: '/rules', visible: true, order: 1, staffOnly: false, userOnly: false },
-      { id: 'laws', label: t('navigation.laws'), path: '/laws', visible: true, order: 2, staffOnly: false, userOnly: false },
-      { id: 'packages', label: t('navigation.packages'), path: '/packages', visible: true, order: 3, staffOnly: false, userOnly: false },
-      { id: 'team', label: t('navigation.team'), path: '/team', visible: true, order: 4, staffOnly: false, userOnly: false },
-      { id: 'partners', label: t('navigation.partners'), path: '/partners', visible: true, order: 5, staffOnly: false, userOnly: false },
-      { id: 'supporters', label: t('navigation.supporters'), path: '/supporters', visible: true, order: 6, staffOnly: false, userOnly: false },
-      { id: 'live', label: t('navigation.live'), path: '/live', visible: true, order: 7, staffOnly: false, userOnly: false },
-      
-      // === COMMUNITY FEATURES === (Public but enhanced for users)
-      { id: 'characters', label: t('navigation.characters'), path: '/characters', visible: true, order: 8, staffOnly: false, userOnly: false },
-      { id: 'events', label: t('navigation.events'), path: '/events', visible: true, order: 9, staffOnly: false, userOnly: false },
-      { id: 'voting', label: t('navigation.voting'), path: '/voting', visible: true, order: 10, staffOnly: false, userOnly: false },
-      { id: 'achievements', label: t('navigation.achievements'), path: '/achievements', visible: true, order: 11, staffOnly: false, userOnly: false },
-      
-      // === USER-ONLY PAGES === (Require authentication)
-      { id: 'apply', label: t('navigation.apply'), path: '/apply', visible: true, order: 12, staffOnly: false, userOnly: true },
-      { id: 'profile', label: t('navigation.profile'), path: '/profile', visible: true, order: 13, staffOnly: false, userOnly: true },
-      
-      // === STAFF-ONLY PAGES === (Require staff permissions)
-      { id: 'staff', label: t('navigation.staff_panel'), path: '/staff', visible: true, order: 14, staffOnly: true, userOnly: false },
-      { id: 'servers', label: t('navigation.server_management'), path: '/servers', visible: true, order: 15, staffOnly: true, userOnly: false },
-      { id: 'analytics', label: t('navigation.analytics'), path: '/analytics', visible: true, order: 16, staffOnly: true, userOnly: false },
-      { id: 'creative-tools', label: t('navigation.creative_tools'), path: '/creative-tools', visible: true, order: 17, staffOnly: true, userOnly: false }
-    ]
+    items: navigationGroups.flatMap(group => group.items)
   });
   const isMobile = useIsMobile();
 
@@ -169,7 +190,17 @@ const Navbar = () => {
           
         if (data?.setting_value) {
           console.log('Loading navbar config from database:', data.setting_value);
-          setNavbarConfig(data.setting_value as typeof navbarConfig);
+          // Merge database config with our navigation groups structure
+          const dbConfig = data.setting_value as any;
+          if (dbConfig.items && Array.isArray(dbConfig.items)) {
+            const mergedItems = navigationGroups.flatMap(group => 
+              group.items.map(item => {
+                const dbItem = dbConfig.items.find((db: any) => db.id === item.id);
+                return dbItem ? { ...item, ...dbItem, icon: item.icon } : item;
+              })
+            );
+            setNavbarConfig({ items: mergedItems });
+          }
         } else {
           console.log('No navbar config found in database, using default');
         }
@@ -213,7 +244,16 @@ const Navbar = () => {
         (payload) => {
           console.log('Navbar config updated:', payload);
           if (payload.new && (payload.new as any).setting_value) {
-            setNavbarConfig((payload.new as any).setting_value as typeof navbarConfig);
+            const dbConfig = (payload.new as any).setting_value as any;
+            if (dbConfig.items && Array.isArray(dbConfig.items)) {
+              const mergedItems = navigationGroups.flatMap(group => 
+                group.items.map(item => {
+                  const dbItem = dbConfig.items.find((db: any) => db.id === item.id);
+                  return dbItem ? { ...item, ...dbItem, icon: item.icon } : item;
+                })
+              );
+              setNavbarConfig({ items: mergedItems });
+            }
           }
         }
       )
@@ -283,33 +323,94 @@ const Navbar = () => {
       return null;
     }
 
-    // Use the pre-calculated visible items
+    if (forceVertical || shouldUseHamburgerMenu) {
+      // Render grouped navigation for mobile/vertical layout (like sidebar)
+      return (
+        <>
+          {navigationGroups.map((group) => {
+            const groupItems = group.items.filter(item => {
+              if (!item.visible) return false;
+              if (item.staffOnly && !isStaff) return false;
+              if (item.userOnly && !user) return false;
+              return true;
+            });
+
+            if (groupItems.length === 0) return null;
+
+            return (
+              <div key={group.group} className="py-3">
+                <div className="text-primary font-semibold px-3 py-2 text-xs uppercase tracking-wider">
+                  {group.group}
+                </div>
+                <div className="space-y-1">
+                  {groupItems.map((item) => (
+                    <Link 
+                      key={item.id}
+                      to={item.path} 
+                      className={`
+                        flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 group
+                        ${location.pathname === item.path 
+                          ? "bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-l-4 border-primary shadow-md"
+                          : "text-muted-foreground hover:text-foreground hover:bg-gaming-darker/80 hover:scale-[1.02]"
+                        }
+                      `}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <div className={`p-2 rounded-md transition-all duration-300 mr-3 ${
+                        location.pathname === item.path 
+                          ? "bg-primary/20 text-primary" 
+                          : "group-hover:bg-gaming-border group-hover:text-primary"
+                      }`}>
+                        <item.icon className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium">
+                        {item.label}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </>
+      );
+    }
+
+    // Render horizontal navigation for desktop (simplified, no groups)
     const items = visibleItems;
-
-    // Removed excessive logging for performance
-
     return (
       <>
-        {items.map((item) => (
-          <Link 
-            key={item.id}
-            to={item.path} 
-             className={`
-              relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 group
-              ${forceVertical || shouldUseHamburgerMenu ? 'block' : 'inline-block'}
-              ${location.pathname === item.path 
-                ? "bg-gradient-primary text-white shadow-glow-primary border border-primary/50"
-                : "text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:scale-105"
-              }
-            `}
-            onClick={() => setIsOpen(false)}
-          >
-            <span className="relative z-10">{item.label}</span>
-            {location.pathname === item.path && (
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg blur-sm -z-10" />
-            )}
-          </Link>
-        ))}
+        {items.map((item) => {
+          const IconComponent = navigationGroups
+            .flatMap(g => g.items)
+            .find(navItem => navItem.id === item.id)?.icon || Home;
+            
+          return (
+            <Link 
+              key={item.id}
+              to={item.path} 
+              className={`
+                flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 group whitespace-nowrap
+                ${location.pathname === item.path 
+                  ? "bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/30 shadow-md"
+                  : "text-muted-foreground hover:text-foreground hover:bg-gaming-darker/80 hover:scale-[1.02]"
+                }
+              `}
+              onClick={() => setIsOpen(false)}
+            >
+              <div className={`p-1.5 rounded-md transition-all duration-300 mr-2 ${
+                location.pathname === item.path 
+                  ? "bg-primary/20 text-primary" 
+                  : "group-hover:bg-gaming-border group-hover:text-primary"
+              }`}>
+                <IconComponent className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-sm font-medium">
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
       </>
     );
   };
@@ -389,7 +490,7 @@ const Navbar = () => {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[320px] bg-gaming-card border-gaming-border">
-              <div className="flex flex-col space-y-6 mt-6">
+              <div className="flex flex-col mt-6">
                 <div className="border-b border-gaming-border pb-4">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary">
@@ -402,7 +503,7 @@ const Navbar = () => {
                   </div>
                 </div>
                 
-                <div className="flex flex-col space-y-2">
+                <div className="flex flex-col custom-scrollbar max-h-[60vh] overflow-y-auto">
                   <NavLinks forceVertical={true} />
                 </div>
                 
@@ -423,8 +524,8 @@ const Navbar = () => {
         ) : (
           /* Desktop navigation when not overflowing */
           <>
-            <div ref={contentRef} className="flex items-center space-x-2 bg-gaming-darker/30 rounded-xl px-4 py-2 border border-gaming-border/50 overflow-x-auto navbar-scrollbar max-w-[60vw]">
-              <div className="flex items-center space-x-2 min-w-max">
+            <div ref={contentRef} className="flex items-center space-x-1 bg-gaming-card/50 rounded-xl px-3 py-2 border border-gaming-border/50 overflow-x-auto navbar-scrollbar max-w-[60vw] backdrop-blur-sm">
+              <div className="flex items-center space-x-1 min-w-max">
                 <NavLinks />
               </div>
             </div>
