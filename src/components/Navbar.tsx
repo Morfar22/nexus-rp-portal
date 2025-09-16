@@ -475,11 +475,19 @@ const Navbar = () => {
           <div className="p-3 rounded-xl bg-gradient-to-br from-primary via-primary/90 to-secondary transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-primary/25">
             <Server className="h-7 w-7 text-white" />
           </div>
-          <div className="animate-fade-in">
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/90 to-secondary bg-clip-text text-transparent tracking-tight">
-              {serverName}
-            </span>
-            <p className="text-xs text-muted-foreground/80 -mt-1 tracking-wider uppercase font-medium">{t('common.dashboard')}</p>
+          <div className="animate-fade-in relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 rounded-lg blur-xl opacity-60 animate-pulse" />
+            <div className="relative z-10">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent tracking-tight drop-shadow-sm">
+                {serverName}
+              </span>
+              <div className="flex items-center space-x-2 -mt-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-primary to-secondary animate-pulse" />
+                <p className="text-xs text-muted-foreground/90 tracking-wider uppercase font-semibold bg-gradient-to-r from-muted-foreground/60 to-muted-foreground/90 bg-clip-text text-transparent">
+                  {t('common.dashboard')}
+                </p>
+              </div>
+            </div>
           </div>
         </Link>
         
