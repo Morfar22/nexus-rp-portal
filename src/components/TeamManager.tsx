@@ -578,7 +578,7 @@ const TeamManager = () => {
                   <Label htmlFor="edit-member-bio" className="text-foreground">Bio</Label>
                   <Textarea
                     id="edit-member-bio"
-                    value={editingMember.bio}
+                    value={editingMember.bio || ""}
                     onChange={(e) => setEditingMember({ ...editingMember, bio: e.target.value })}
                     className="bg-gaming-dark border-gaming-border text-foreground"
                   />
@@ -588,7 +588,7 @@ const TeamManager = () => {
                   <Label htmlFor="edit-member-image" className="text-foreground">Image URL</Label>
                   <Input
                     id="edit-member-image"
-                    value={editingMember.image_url}
+                    value={editingMember.image_url || ""}
                     onChange={(e) => setEditingMember({ ...editingMember, image_url: e.target.value })}
                     className="bg-gaming-dark border-gaming-border text-foreground"
                   />
@@ -598,7 +598,7 @@ const TeamManager = () => {
                   <Label htmlFor="edit-member-location" className="text-foreground">Location</Label>
                   <Input
                     id="edit-member-location"
-                    value={editingMember.location}
+                    value={editingMember.location || ""}
                     onChange={(e) => setEditingMember({ ...editingMember, location: e.target.value })}
                     className="bg-gaming-dark border-gaming-border text-foreground"
                   />
