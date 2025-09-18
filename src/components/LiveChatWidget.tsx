@@ -583,7 +583,7 @@ const LiveChatWidget = () => {
             }
           });
 
-          if (!aiError && aiData && !aiData.shouldEscalate && aiData.confidence > 0.6) {
+          if (!aiError && aiData && !aiData.shouldEscalate && aiData.confidence > 0.3) {
             // AI can handle this, but still save the user message
             await supabase
               .from('chat_messages')
