@@ -539,12 +539,19 @@ const LiveChatWidget = () => {
             onConflict: 'session_id,user_id,user_type'
           });
       } else {
-        await supabase
+        let deleteQuery = supabase
           .from('chat_typing_indicators')
           .delete()
           .eq('session_id', session.id)
-          .eq('user_id', currentUserId)
           .eq('user_type', 'visitor');
+        
+        if (currentUserId) {
+          deleteQuery = deleteQuery.eq('user_id', currentUserId);
+        } else {
+          deleteQuery = deleteQuery.is('user_id', null);
+        }
+        
+        await deleteQuery;
       }
     } catch (error) {
       console.error('Error updating typing indicator:', error);
