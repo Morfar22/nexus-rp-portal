@@ -68,55 +68,97 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
   };
 
   const searchUsers = async () => {
-    if (!searchEmail) return;
+    console.log('🔍 Search function called with email:', searchEmail);
+    
+    if (!searchEmail) {
+      console.log('❌ No search email provided');
+      toast({
+        title: "Error",
+        description: "Please enter an email or username to search",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
-      console.log('Searching for users with query:', searchEmail);
+      console.log('🚀 Starting search for:', searchEmail);
       
       const { data, error } = await supabase
         .rpc('search_users_data', { search_query: searchEmail });
 
+      console.log('📊 Raw search response:', { data, error });
+
       if (error) {
-        console.error('Search error:', error);
+        console.error('❌ Search RPC error:', error);
         throw error;
       }
       
-      console.log('Search results:', data);
+      console.log('✅ Search results:', data);
       
       // Filter to only regular users (not staff)
       const regularUsers = data?.filter(user => user.role === 'user') || [];
-      console.log('Filtered regular users:', regularUsers);
+      console.log('👤 Filtered regular users:', regularUsers);
       
       setAllUsers(regularUsers);
+      
+      if (regularUsers.length === 0) {
+        toast({
+          title: "No users found",
+          description: "No regular users found with that search term",
+        });
+      } else {
+        toast({
+          title: "Search complete",
+          description: `Found ${regularUsers.length} user(s)`,
+        });
+      }
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error('💥 Error searching users:', error);
       toast({
         title: "Error",
-        description: "Failed to search users",
+        description: `Failed to search users: ${error.message}`,
         variant: "destructive",
       });
     }
   };
 
   const promoteUser = async (userId: string, newRole: string) => {
+    console.log('🚀 Promote function called:', { userId, newRole });
+    
+    if (!userId || !newRole) {
+      console.log('❌ Missing userId or newRole');
+      toast({
+        title: "Error", 
+        description: "Missing user ID or role information",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      console.log('Promoting user:', { userId, newRole });
+      console.log('💾 Updating user role in database...');
       
       const { error } = await supabase
         .from('custom_users')
         .update({ role: newRole })
         .eq('id', userId);
 
+      console.log('📊 Database update response:', { error });
+
       if (error) {
-        console.error('Database error:', error);
+        console.error('❌ Database error:', error);
         throw error;
       }
 
-      console.log('User promoted successfully');
+      console.log('✅ User promoted successfully!');
       
       const selectedRoleInfo = staffRoles.find(r => r.id === newRole);
+      
+      // Refresh the staff list
       await fetchStaff();
       onRefresh?.();
+      
+      // Reset form
       setIsAddingStaff(false);
       setSearchEmail("");
       setSelectedRole("");
@@ -127,10 +169,10 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
         description: `User promoted to ${selectedRoleInfo?.display_name} successfully`,
       });
     } catch (error) {
-      console.error('Error promoting user:', error);
+      console.error('💥 Error promoting user:', error);
       toast({
         title: "Error",
-        description: "Failed to promote user",
+        description: `Failed to promote user: ${error.message}`,
         variant: "destructive",
       });
     }
