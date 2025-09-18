@@ -517,7 +517,15 @@ export type Database = {
           visitor_email?: string | null
           visitor_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_typing_indicators: {
         Row: {
