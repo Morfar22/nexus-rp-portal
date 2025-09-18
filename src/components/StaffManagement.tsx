@@ -136,18 +136,29 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
     }
     
     try {
-      console.log('💾 Updating user role in database...');
+      console.log('💾 Using edge function to update user role...');
       
-      const { error } = await supabase
-        .from('custom_users')
-        .update({ role: newRole })
-        .eq('id', userId);
+      // Get current admin user ID from local storage or context
+      const adminUserId = localStorage.getItem('currentUserId') || '5027696b-aa78-4d31-84c6-a94ee5940f5f'; // Fallback to your admin ID
+      
+      const { data, error } = await supabase.functions.invoke('manage-staff-roles', {
+        body: {
+          action: 'promote',
+          userId: userId,
+          newRole: newRole,
+          adminUserId: adminUserId
+        }
+      });
 
-      console.log('📊 Database update response:', { error });
+      console.log('📊 Edge function response:', { data, error });
 
       if (error) {
-        console.error('❌ Database error:', error);
+        console.error('❌ Edge function error:', error);
         throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Unknown error occurred');
       }
 
       console.log('✅ User promoted successfully!');
@@ -180,12 +191,19 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
 
   const changeUserRole = async (member: any, newRole: string) => {
     try {
-      const { error } = await supabase
-        .from('custom_users')
-        .update({ role: newRole })
-        .eq('id', member.user_id);
+      const adminUserId = localStorage.getItem('currentUserId') || '5027696b-aa78-4d31-84c6-a94ee5940f5f';
+      
+      const { data, error } = await supabase.functions.invoke('manage-staff-roles', {
+        body: {
+          action: 'change_role',
+          userId: member.user_id,
+          newRole: newRole,
+          adminUserId: adminUserId
+        }
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.error);
 
       const newRoleInfo = staffRoles.find(r => r.id === newRole);
       await fetchStaff();
@@ -199,7 +217,7 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
       console.error('Error changing role:', error);
       toast({
         title: "Error",
-        description: "Failed to change role",
+        description: `Failed to change role: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -207,12 +225,18 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
 
   const removeStaff = async (member: any) => {
     try {
-      const { error } = await supabase
-        .from('custom_users')
-        .update({ role: 'user' })
-        .eq('id', member.user_id);
+      const adminUserId = localStorage.getItem('currentUserId') || '5027696b-aa78-4d31-84c6-a94ee5940f5f';
+      
+      const { data, error } = await supabase.functions.invoke('manage-staff-roles', {
+        body: {
+          action: 'demote',
+          userId: member.user_id,
+          adminUserId: adminUserId
+        }
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.error);
 
       await fetchStaff();
       onRefresh?.();
@@ -225,7 +249,7 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
       console.error('Error removing staff:', error);
       toast({
         title: "Error",
-        description: "Failed to remove staff member",
+        description: `Failed to remove staff member: ${error.message}`,
         variant: "destructive",
       });
     }
