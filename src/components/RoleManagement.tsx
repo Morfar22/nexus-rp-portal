@@ -325,14 +325,26 @@ export function RoleManagement() {
 
   const assignRole = async (userId: string, roleId: string) => {
     try {
+      // Map staff role to simple role value for custom_users table
+      const selectedStaffRole = roles.find(r => r.id === roleId);
+      let simpleRole = 'user';
+      
+      if (selectedStaffRole) {
+        // Map based on hierarchy level or name
+        if (selectedStaffRole.hierarchy_level >= 80) {
+          simpleRole = 'admin';
+        } else if (selectedStaffRole.hierarchy_level >= 60) {
+          simpleRole = 'staff';
+        } else {
+          simpleRole = 'moderator';
+        }
+      }
+
+      // Update user role in custom_users table with simple role value
       const { error } = await supabase
-        .from('user_role_assignments')
-        .insert({
-          user_id: userId,
-          role_id: roleId,
-          assigned_by: user?.id,
-          is_active: true
-        });
+        .from('custom_users')
+        .update({ role: simpleRole })
+        .eq('id', userId);
 
       if (error) throw error;
 
@@ -357,12 +369,16 @@ export function RoleManagement() {
 
   const removeRoleAssignment = async (assignmentId: string) => {
     try {
-      const { error } = await supabase
-        .from('user_role_assignments')
-        .update({ is_active: false })
-        .eq('id', assignmentId);
+      // Find the assignment and reset user role to 'user'
+      const assignment = userAssignments.find(a => a.id === assignmentId);
+      if (assignment) {
+        const { error } = await supabase
+          .from('custom_users')
+          .update({ role: 'user' })
+          .eq('id', assignment.user_id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
       await fetchUserAssignments();
       
