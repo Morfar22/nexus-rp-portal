@@ -54,8 +54,10 @@ const LiveChatSupport = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentAgent, setCurrentAgent] = useState<AgentProfile | null>(null);
   const [visitorProfile, setVisitorProfile] = useState<VisitorProfile | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { 
     settings: notificationSettings, 
     setSettings: setNotificationSettings,
@@ -81,8 +83,11 @@ const LiveChatSupport = () => {
   }, [selectedSession]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Only scroll to bottom if user was already at the bottom
+    if (isAtBottom) {
+      scrollToBottom();
+    }
+  }, [messages, isAtBottom]);
 
   const loadCurrentAgent = async () => {
     try {
@@ -245,6 +250,30 @@ const LiveChatSupport = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const checkIfAtBottom = () => {
+    const scrollArea = scrollAreaRef.current;
+    if (scrollArea) {
+      const viewport = scrollArea.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        const { scrollTop, scrollHeight, clientHeight } = viewport;
+        const threshold = 100; // pixels from bottom
+        const atBottom = scrollHeight - scrollTop - clientHeight < threshold;
+        setIsAtBottom(atBottom);
+        return atBottom;
+      }
+    }
+    return true;
+  };
+
+  const handleScroll = () => {
+    checkIfAtBottom();
+  };
+
+  const scrollToBottomManually = () => {
+    setIsAtBottom(true);
+    scrollToBottom();
   };
 
   const assignToSelf = async (session: ChatSession) => {
@@ -654,30 +683,47 @@ const LiveChatSupport = () => {
               </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.sender_type === 'staff' ? 'justify-end' : 'justify-start'}`}
-                  >
+            <div className="flex-1 relative">
+              <ScrollArea 
+                ref={scrollAreaRef}
+                className="h-full p-4"
+                onScrollCapture={handleScroll}
+              >
+                <div className="space-y-4">
+                  {messages.map((message) => (
                     <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
-                        message.sender_type === 'staff'
-                          ? 'bg-neon-teal text-white'
-                          : 'bg-gaming-dark border border-gaming-border text-foreground'
-                      }`}
+                      key={message.id}
+                      className={`flex ${message.sender_type === 'staff' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <p className="text-sm">{message.message}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {formatTime(message.created_at)}
-                      </p>
+                      <div
+                        className={`max-w-[80%] p-3 rounded-lg ${
+                          message.sender_type === 'staff'
+                            ? 'bg-neon-teal text-white'
+                            : 'bg-gaming-dark border border-gaming-border text-foreground'
+                        }`}
+                      >
+                        <p className="text-sm">{message.message}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {formatTime(message.created_at)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+              
+              {/* Scroll to bottom button */}
+              {!isAtBottom && (
+                <Button
+                  onClick={scrollToBottomManually}
+                  className="absolute bottom-4 right-4 rounded-full w-10 h-10 p-0 bg-neon-teal hover:bg-neon-teal/80 shadow-lg"
+                  size="sm"
+                >
+                  ↓
+                </Button>
+              )}
+            </div>
 
             {/* Message Input */}
             <div className="p-4 border-t border-gaming-border">
