@@ -71,12 +71,23 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
     if (!searchEmail) return;
     
     try {
+      console.log('Searching for users with query:', searchEmail);
+      
       const { data, error } = await supabase
-        .rpc('search_users_data', { search_query: searchEmail })
-        .eq('role', 'user'); // Only search regular users
+        .rpc('search_users_data', { search_query: searchEmail });
 
-      if (error) throw error;
-      setAllUsers(data || []);
+      if (error) {
+        console.error('Search error:', error);
+        throw error;
+      }
+      
+      console.log('Search results:', data);
+      
+      // Filter to only regular users (not staff)
+      const regularUsers = data?.filter(user => user.role === 'user') || [];
+      console.log('Filtered regular users:', regularUsers);
+      
+      setAllUsers(regularUsers);
     } catch (error) {
       console.error('Error searching users:', error);
       toast({
@@ -89,13 +100,20 @@ const StaffManagement = ({ onRefresh }: StaffManagementProps) => {
 
   const promoteUser = async (userId: string, newRole: string) => {
     try {
+      console.log('Promoting user:', { userId, newRole });
+      
       const { error } = await supabase
         .from('custom_users')
         .update({ role: newRole })
         .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
 
+      console.log('User promoted successfully');
+      
       const selectedRoleInfo = staffRoles.find(r => r.id === newRole);
       await fetchStaff();
       onRefresh?.();
