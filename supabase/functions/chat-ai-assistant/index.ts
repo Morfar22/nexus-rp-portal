@@ -299,8 +299,10 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
       confidenceScore += 0.2;
     }
 
+    console.log('Storing AI interaction and message...');
+    
     // Store AI interaction in database
-    const { data: interactionData } = await supabase
+    const { data: interactionData, error: interactionError } = await supabase
       .from('chat_ai_interactions')
       .insert({
         session_id: sessionId,
@@ -312,8 +314,15 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
       .select()
       .single();
 
+    if (interactionError) {
+      console.error('Error storing AI interaction:', interactionError);
+      throw interactionError;
+    }
+
+    console.log('AI interaction stored successfully:', interactionData?.id);
+
     // Insert AI response as a chat message so it appears in the chat
-    await supabase
+    const { data: messageData, error: messageError } = await supabase
       .from('chat_messages')
       .insert({
         session_id: sessionId,
@@ -321,7 +330,16 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
         sender_type: 'ai',
         sender_name: 'AI Assistant',
         sender_id: interactionData?.id // Link to the AI interaction for feedback
-      });
+      })
+      .select()
+      .single();
+
+    if (messageError) {
+      console.error('Error storing AI message:', messageError);
+      throw messageError;
+    }
+
+    console.log('AI message stored successfully:', messageData?.id);
 
     // Record analytics
     await supabase
