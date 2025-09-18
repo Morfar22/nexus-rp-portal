@@ -86,13 +86,18 @@ const LiveChatSupport = () => {
 
   const loadCurrentAgent = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Get current user from localStorage (custom auth)
+      const currentUserId = localStorage.getItem('currentUserId') || '5027696b-aa78-4d31-84c6-a94ee5940f5f';
+      
+      if (!currentUserId) {
+        console.error('No current user ID found');
+        return;
+      }
 
       const { data: profile, error } = await supabase
         .from('custom_users')
         .select('id, username, avatar_url, email')
-        .eq('id', user.id)
+        .eq('id', currentUserId)
         .single();
 
       if (error) throw error;
@@ -245,20 +250,24 @@ const LiveChatSupport = () => {
   const assignToSelf = async (session: ChatSession) => {
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Get current user from localStorage (custom auth)
+      const currentUserId = localStorage.getItem('currentUserId') || '5027696b-aa78-4d31-84c6-a94ee5940f5f';
+      
+      if (!currentUserId) {
+        throw new Error('No current user ID found');
+      }
 
       const { error } = await supabase
         .from('chat_sessions')
         .update({
           status: 'active',
-          assigned_to: user.id
+          assigned_to: currentUserId
         })
         .eq('id', session.id);
 
       if (error) throw error;
 
-      setSelectedSession({ ...session, status: 'active', assigned_to: user.id });
+      setSelectedSession({ ...session, status: 'active', assigned_to: currentUserId });
       
       // Log to Discord
       try {
@@ -301,8 +310,12 @@ const LiveChatSupport = () => {
     });
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Get current user from localStorage (custom auth)
+      const currentUserId = localStorage.getItem('currentUserId') || '5027696b-aa78-4d31-84c6-a94ee5940f5f';
+      
+      if (!currentUserId) {
+        throw new Error('No current user ID found');
+      }
 
       const { data, error } = await supabase
         .from('chat_messages')
@@ -310,7 +323,7 @@ const LiveChatSupport = () => {
           session_id: selectedSession.id,
           message: newMessage,
           sender_type: 'staff',
-          sender_id: user.id
+          sender_id: currentUserId
         })
         .select();
 
@@ -340,13 +353,15 @@ const LiveChatSupport = () => {
     console.log('Starting ban process for session:', selectedSession);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Get current user from localStorage (custom auth)
+      const currentUserId = localStorage.getItem('currentUserId') || '5027696b-aa78-4d31-84c6-a94ee5940f5f';
+      
+      if (!currentUserId) {
         console.error('User not authenticated');
         throw new Error('Not authenticated');
       }
 
-      console.log('Current user:', user.id);
+      console.log('Current user:', currentUserId);
 
       // Get user's IP address (best effort)
       let userIP = null;
@@ -363,7 +378,7 @@ const LiveChatSupport = () => {
         user_id: selectedSession.user_id,
         visitor_email: selectedSession.visitor_email,
         visitor_name: selectedSession.visitor_name,
-        banned_by: user.id,
+        banned_by: currentUserId,
         ip_address: userIP
       });
 
@@ -374,7 +389,7 @@ const LiveChatSupport = () => {
           user_id: selectedSession.user_id,
           visitor_email: selectedSession.visitor_email,
           visitor_name: selectedSession.visitor_name,
-          banned_by: user.id,
+          banned_by: currentUserId,
           ip_address: userIP,
           reason: 'Banned from live chat'
         });
