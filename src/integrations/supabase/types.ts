@@ -475,6 +475,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "chat_messages_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
