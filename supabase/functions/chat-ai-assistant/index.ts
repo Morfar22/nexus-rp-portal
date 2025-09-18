@@ -322,6 +322,14 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
     console.log('AI interaction stored successfully:', interactionData?.id);
 
     // Insert AI response as a chat message so it appears in the chat
+    console.log('Attempting to insert AI message with data:', {
+      session_id: sessionId,
+      message: aiResponse.substring(0, 100) + '...',
+      sender_type: 'ai',
+      sender_name: 'AI Assistant',
+      sender_id: interactionData?.id
+    });
+
     const { data: messageData, error: messageError } = await supabase
       .from('chat_messages')
       .insert({
@@ -329,17 +337,18 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
         message: aiResponse,
         sender_type: 'ai',
         sender_name: 'AI Assistant',
-        sender_id: interactionData?.id // Link to the AI interaction for feedback
+        sender_id: interactionData?.id
       })
       .select()
       .single();
 
     if (messageError) {
       console.error('Error storing AI message:', messageError);
-      throw messageError;
+      console.error('Full error details:', JSON.stringify(messageError, null, 2));
+      // Don't throw error here - still return successful AI response even if message storage fails
+    } else {
+      console.log('AI message stored successfully:', messageData?.id);
     }
-
-    console.log('AI message stored successfully:', messageData?.id);
 
     // Record analytics
     await supabase
