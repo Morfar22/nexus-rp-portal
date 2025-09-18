@@ -300,7 +300,7 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
     }
 
     // Store AI interaction in database
-    await supabase
+    const { data: interactionData } = await supabase
       .from('chat_ai_interactions')
       .insert({
         session_id: sessionId,
@@ -308,6 +308,19 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
         ai_response: aiResponse,
         confidence_score: confidenceScore,
         escalated_to_human: shouldEscalate
+      })
+      .select()
+      .single();
+
+    // Insert AI response as a chat message so it appears in the chat
+    await supabase
+      .from('chat_messages')
+      .insert({
+        session_id: sessionId,
+        message: aiResponse,
+        sender_type: 'ai',
+        sender_name: 'AI Assistant',
+        sender_id: interactionData?.id // Link to the AI interaction for feedback
       });
 
     // Record analytics

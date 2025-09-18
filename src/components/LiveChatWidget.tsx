@@ -298,6 +298,23 @@ const LiveChatWidget = () => {
               sender_id: newMessage.sender_id,
               attachments: []
             };
+            
+            // If this is an AI message, track it for feedback
+            if (newMessage.sender_type === 'ai' && newMessage.sender_id) {
+              // Fetch the AI interaction for feedback purposes
+              supabase
+                .from('chat_ai_interactions')
+                .select('*')
+                .eq('id', newMessage.sender_id)
+                .single()
+                .then(({ data }) => {
+                  if (data) {
+                    setAiInteractions(prev => [...prev, data]);
+                    setLastAiResponse(data);
+                  }
+                });
+            }
+            
             return [...prev, message];
           });
         }
@@ -313,41 +330,9 @@ const LiveChatWidget = () => {
   };
 
   const subscribeToAIInteractions = () => {
-    if (!session) return;
-
-    const channel = supabase
-      .channel(`ai_interactions_${session.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_ai_interactions',
-          filter: `session_id=eq.${session.id}`
-        },
-        (payload) => {
-          console.log('LiveChatWidget: Received new AI interaction:', payload);
-          const aiInteraction = payload.new as any;
-          
-          // Add AI response as a message
-          const aiMessage: Message = {
-            id: `ai_${aiInteraction.id}`,
-            message: aiInteraction.ai_response,
-            sender_type: 'ai',
-            created_at: aiInteraction.created_at,
-            attachments: []
-          };
-
-          setMessages(prev => [...prev, aiMessage]);
-          setAiInteractions(prev => [...prev, aiInteraction]);
-          setLastAiResponse(aiInteraction);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // No longer needed - AI responses are now saved as regular chat messages
+    // This prevents duplicate AI messages from appearing
+    return () => {};
   };
 
   const subscribeToSessionUpdates = () => {
