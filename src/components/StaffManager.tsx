@@ -137,15 +137,29 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
         return;
       }
 
-      // Update user role in custom_users table
+      // Map staff role to simple role value for custom_users table
+      const selectedStaffRole = staffRoles.find(r => r.id === roleId);
+      let simpleRole = 'user';
+      
+      if (selectedStaffRole) {
+        // Map based on hierarchy level or name
+        if (selectedStaffRole.hierarchy_level >= 80) {
+          simpleRole = 'admin';
+        } else if (selectedStaffRole.hierarchy_level >= 60) {
+          simpleRole = 'staff';
+        } else {
+          simpleRole = 'moderator';
+        }
+      }
+
+      // Update user role in custom_users table with simple role value
       const { error } = await supabase
         .from('custom_users')
-        .update({ role: roleId })
+        .update({ role: simpleRole })
         .eq('id', userId);
 
       if (error) throw error;
 
-      const selectedStaffRole = staffRoles.find(r => r.id === roleId);
       await fetchStaff();
       onRefresh?.();
       setIsAddingStaff(false);
