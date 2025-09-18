@@ -14,7 +14,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import Navbar from "@/components/Navbar";
 import { StaffSidebar } from "@/components/StaffSidebar";
-import TeamManagementTabs from "@/components/TeamManagementTabs";
+import StaffManagement from "@/components/StaffManagement";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
@@ -56,7 +56,6 @@ import DiscordBotManager from "@/components/DiscordBotManager";
 import IPWhitelistManager from "@/components/IPWhitelistManager";
 import ApplicationManager from "@/components/ApplicationManager";
 import RulesManager from "@/components/RulesManager";
-import StaffManager from "@/components/StaffManager";
 import UserManagementSection from "@/components/UserManagementSection";
 
 import ServerManager from "@/components/ServerManager";
@@ -74,7 +73,6 @@ import { PartnersOverview } from "@/components/PartnersOverview";
 import { EmailTemplateManager } from "@/components/EmailTemplateManager";
 import TwitchStreamersManager from "@/components/TwitchStreamersManager";
 import { DeploymentSettings } from "@/components/DeploymentSettings";
-import { RoleManagement } from "@/components/RoleManagement";
 import { PermissionGate } from "@/components/PermissionGate";
 import LiveChatManager from "@/components/LiveChatManager";
 import DesignManager from "@/components/DesignManager";
@@ -898,7 +896,6 @@ const StaffPanel = () => {
                     {activeTab === "rules" && "Rules Management"}
                     {activeTab === "laws" && "Laws Management"}
                     {activeTab === "staff" && "Staff Management"}
-                    {activeTab === "role-management" && "Role & Permissions Management"}
                     {activeTab === "users" && "User Management"}
                     {activeTab === "team" && "Team Page Management"}
                     {activeTab === "partners" && "Partners Management"}
@@ -961,15 +958,7 @@ const StaffPanel = () => {
               {activeTab === "staff" && (
                 <PermissionGate permissions={["users.manage", "roles.assign"]} showFallback={true}>
                   <div className="space-y-6">
-                    <StaffManager onRefresh={refreshData} />
-                  </div>
-                </PermissionGate>
-              )}
-
-              {activeTab === "role-management" && (
-                <PermissionGate permission="roles.manage" showFallback={true}>
-                  <div className="space-y-6">
-                    <RoleManagement />
+                    <StaffManagement onRefresh={refreshData} />
                   </div>
                 </PermissionGate>
               )}
@@ -984,7 +973,7 @@ const StaffPanel = () => {
 
               {activeTab === "team" && (
                 <div className="space-y-6">
-                  <TeamManagementTabs />
+                  <StaffManagement />
                 </div>
               )}
 
