@@ -327,7 +327,7 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
       message: aiResponse.substring(0, 100) + '...',
       sender_type: 'ai',
       sender_name: 'AI Assistant',
-      sender_id: interactionData?.id
+      sender_id: null
     });
 
     const { data: messageData, error: messageError } = await supabase
@@ -337,7 +337,7 @@ Husk: Vær ALTID entusiastisk, hjælpsom og super venlig! Få folk til at føle 
         message: aiResponse,
         sender_type: 'ai',
         sender_name: 'AI Assistant',
-        sender_id: interactionData?.id
+        sender_id: null
       })
       .select()
       .single();
