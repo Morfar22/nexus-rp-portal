@@ -141,6 +141,8 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
       let retryCount = 0;
       const maxRetries = 2;
       
+      console.log('🤖 Calling OpenAI API with GPT-5...');
+      
       while (retryCount <= maxRetries) {
         try {
           const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -159,17 +161,23 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
             }),
           });
 
+          console.log(`🤖 OpenAI API Response: Status ${response.status}`);
+
           if (response.status === 429) {
-            // Rate limited - use fallback
+            const errorData = await response.text();
+            console.log('🚫 Rate limited by OpenAI API:', errorData);
             throw new Error('RATE_LIMITED');
           }
 
           if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.statusText}`);
+            const errorData = await response.text();
+            console.log(`❌ OpenAI API Error: ${response.status} - ${errorData}`);
+            throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorData}`);
           }
 
           const data = await response.json();
           aiResponse = data.choices[0].message.content;
+          console.log('✅ OpenAI API Success! Response received.');
           
           // 🧠 LEARNING: Boost confidence if we found similar successful examples
           if (learningContext) {
