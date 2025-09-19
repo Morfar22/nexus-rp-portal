@@ -25,6 +25,40 @@ serve(async (req) => {
     }
 
     console.log('AI Assistant processing message:', { sessionId, message, userType });
+    
+    // Check if API key is available
+    if (!openAIApiKey) {
+      console.log('❌ No OpenAI API Key found - using fallback only');
+      const fallbackResponse = "Hej! Tak for din besked. Jeg har lige nu nogle tekniske problemer, men jeg kan stadig hjælpe dig med grundlæggende spørgsmål om Adventure RP. Hvad kan jeg gøre for dig?";
+      
+      // Store the interaction
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      await supabase.from('chat_ai_interactions').insert({
+        session_id: sessionId,
+        user_question: message,
+        ai_response: fallbackResponse,
+        confidence_score: 0.3,
+        escalated_to_human: false,
+        was_helpful: false
+      });
+      
+      await supabase.from('chat_messages').insert({
+        session_id: sessionId,
+        message: fallbackResponse,
+        sender_type: 'ai',
+        sender_name: 'AI Assistant',
+        sender_id: null
+      });
+      
+      return new Response(JSON.stringify({
+        response: fallbackResponse,
+        confidence: 0.3,
+        shouldEscalate: false,
+        metadata: { helpful: false, responseLength: fallbackResponse.length }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -153,7 +187,7 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-5-2025-08-07',
+              model: 'gpt-4o-mini',
               messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: message }
@@ -197,7 +231,12 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
         }
       }
     } catch (error) {
-      console.log('OpenAI unavailable, using fallback response:', error.message);
+      console.log('❌ OpenAI Error Details:', {
+        message: error.message,
+        stack: error.stack,
+        apiKeyPresent: !!openAIApiKey,
+        apiKeyStart: openAIApiKey?.substring(0, 7) + '...',
+      });
       
       // Generate intelligent fallback based on message content
       aiResponse = generateFallbackResponse(message, generalSettings);
