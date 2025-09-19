@@ -176,7 +176,7 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
       let retryCount = 0;
       const maxRetries = 2;
       
-      console.log('🤖 Calling OpenAI API with GPT-5...');
+      console.log('🤖 Calling OpenAI API with GPT-4o-mini...');
       
       while (retryCount <= maxRetries) {
         try {
@@ -192,7 +192,7 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: message }
               ],
-              max_completion_tokens: 600,
+              max_tokens: 600,
             }),
           });
 
