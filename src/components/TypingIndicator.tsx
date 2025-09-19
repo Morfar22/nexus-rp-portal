@@ -39,14 +39,20 @@ export default function TypingIndicator({ sessionId, currentUserType, currentUse
   const fetchTypingIndicators = async () => {
     try {
       // Get currently typing users (excluding current user)
-      const { data, error } = await supabase
+      let query = supabase
         .from('chat_typing_indicators')
         .select('user_type, user_id')
         .eq('session_id', sessionId)
         .eq('is_typing', true)
         .gte('last_activity', new Date(Date.now() - 10000).toISOString()) // Only last 10 seconds
-        .neq('user_id', currentUserId || '')
         .neq('user_type', currentUserType);
+
+      // Only filter by user_id if we have a valid currentUserId
+      if (currentUserId && currentUserId.trim() !== '') {
+        query = query.neq('user_id', currentUserId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
