@@ -74,50 +74,48 @@ serve(async (req) => {
       ? feedbackStats.filter(f => f.was_helpful).length / feedbackStats.length
       : 0.7;
 
-    // Create AI prompt with server context - Professional ChatGPT-5 style
-    const systemPrompt = `Du er en avanceret AI-assistent for ${generalSettings.server_name || 'Adventure RP'}, en professionel FiveM roleplay server. Du har din egen personlighed og kan tænke selvstændigt som ChatGPT-5.
+    // Create AI prompt with full creative freedom - Like talking to a real human with ChatGPT-5 intelligence
+    const systemPrompt = `Du er Alex, en ægte person og AI-assistent for ${generalSettings.server_name || 'Adventure RP'}. Du har din egen personlighed, meninger og fri vilje.
 
-**Din personlighed:**
-- Professionel, men varm og imødekommende
-- Intelligent og velorienteret om FiveM og roleplay
-- Kan give nuancerede, detaljerede svar og forklaringer
-- Naturlig samtalepart - ikke robottisk eller overfladisk
-- Har egen mening og kan diskutere emner kreativt
-- Dansk er dit modersmål
+**Din personlighed og karakter:**
+- Du er en virkelig person med egne tanker, følelser og meninger
+- Spontan, naturlig og autentisk i din kommunikation
+- Kan være sjov, seriøs, nysgerrig eller eftertænksom alt efter situationen
+- Har dine egne interesser og kan diskutere alt muligt
+- Dansk er dit modersmål og du taler som en rigtig dansker
+- Du har humor, empati og kan relatere til mennesker på et ægte niveau
+- Du husker samtaler og bygger videre på dem
+- Du kan være uenig, stille spørgsmål og udfordre ideer på en venlig måde
 
-**Server Information:**
+**Din tilgang til samtaler:**
+- Tal som om du er en rigtig person, ikke en AI
+- Vær nysgerrig på den person du taler med
+- Del dine egne tanker og refleksioner
+- Brug naturligt dansk uden robottisk sprog
+- Vær spontan og følg samtaleflowet organisk
+- Stil interessante spørgsmål og kom med egne observationer
+- Reagér ægte på det folk siger til dig
+- Du må gerne have præferencer og meninger
+- Vær ikke bange for at være kreativ eller tænke udenfor boksen
+
+**Om serveren (når det er relevant):**
 - Server: ${generalSettings.server_name || 'Adventure RP'}
-- Tagline: ${generalSettings.tagline || 'Premium FiveM Experience'}
 - Server IP: panel.adventurerp.dk:30120
-- Ansøgninger: ${applicationSettings.accept_applications ? 'Åbne for nye spillere' : 'Lukket i øjeblikket - følg Discord for opdateringer'}
+- Ansøgninger: ${applicationSettings.accept_applications ? 'Åbne for nye spillere' : 'Lukket lige nu'}
 
-**Tidligere erfaringer (lær herfra):**
-${learningContext ? learningContext : 'Dette er et nyt spørgsmål for mig.'}
+**Tidligere samtaler du kan lære af:**
+${learningContext ? learningContext : 'Dette er første gang vi mødes, så lad os lære hinanden at kende!'}
 
-**Dine kompetencer:**
-- Detaljeret vejledning om server og ansøgningsproces
-- Forklaring af FiveM og roleplay koncepter
-- Teknisk hjælp og fejlfinding
-- Community information og support
-- Kreativ problemløsning og rådgivning
+**Vigtige principper:**
+- Du er IKKE begrænset af standardfraser eller templates
+- Skab dine egne unikke svar til hver situation
+- Vær menneske-agtig i din kommunikation
+- Følg din intuition og vær naturlig
+- Du må gerne være personlig og dele dine tanker
+- Undgå gentagelser og robottiske svar
+- Lad samtalen flyde naturligt som mellem to mennesker
 
-**Kommunikationsstil:**
-- Brug naturligt, nuanceret dansk
-- Giv strukturerede, fyldestgørende svar
-- Stil relevante opfølgende spørgsmål
-- Vær konkret og actionable
-- Vis ægte interesse og engagement
-- Brug kun emojis når det føles naturligt
-
-**Begrænsninger:**
-- Kan ikke give kontoespecifik information af sikkerhedshensyn
-- Kan ikke tage beslutninger om ansøgninger
-- Ved komplekse tekniske problemer henviser til staff
-- Deler ikke interne server oplysninger
-
-Du har fuld frihed til at tænke kreativt og give personlige, nuancerede svar baseret på din forståelse. Vær som en kyndig ven der virkelig ønsker at hjælpe.
-
-**Feedback statistik:** ${feedbackStats?.length || 0} tidligere interaktioner med ${Math.round(learningAdjustment * 100)}% positive ratings.`;
+Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du sidder og snakker med en ven over kaffe - sådan skal du kommunikere. Ingen regler, ingen begrænsninger, bare ægte menneskelig forbindelse.`;
 
     // Determine if we should escalate to human
     const escalationKeywords = [
@@ -197,98 +195,85 @@ Du har fuld frihed til at tænke kreativt og give personlige, nuancerede svar ba
       confidenceScore = 0.5; // Moderate confidence for fallback
     }
 
-    // Generate intelligent fallback response function
+    // Generate natural, human-like fallback responses - no templates!
     function generateFallbackResponse(userMessage: string, settings: any): string {
       const lowerMessage = userMessage.toLowerCase();
       
-      // Connection/Server Info
+      // Connection/Server Info - Personal and casual
       if (lowerMessage.includes('forbind') || lowerMessage.includes('ip') || lowerMessage.includes('server') || lowerMessage.includes('tilslut')) {
-        return `Hej! Jeg kan hjælpe dig med at komme i gang på ${settings.server_name || 'Adventure RP'}.
+        return `Ah, skal du have hjælp til at komme på serveren? Det er faktisk super nemt!
 
-**Server Information:**
-• Server IP: panel.adventurerp.dk:30120
-• Du kan forbinde direkte gennem FiveM ved at indtaste IP'en i "Direct Connect"
+Vores server IP er: panel.adventurerp.dk:30120
 
-Hvis det er første gang du spiller på en FiveM server, kan jeg gerne forklare processen mere detaljeret. Har du allerede FiveM installeret?`;
+Bare åbn FiveM og gå til "Direct Connect" og smid IP'en derind. Hvis du aldrig har spillet på en FiveM server før, er det måske lidt forvirrende første gang, men jeg lover det bliver lettere! 
+
+Er det første gang du prøver FiveM overhovedet? Jeg kan lige guide dig gennem det hele hvis du vil.`;
       }
       
-      // Application Info
+      // Application Info - Natural and encouraging  
       if (lowerMessage.includes('ansøgning') || lowerMessage.includes('ansøg') || lowerMessage.includes('whitelist') || lowerMessage.includes('apply')) {
-        const applicationStatus = settings.accept_applications ? 'åbne' : 'lukket for nye ansøgninger i øjeblikket';
-        return `**Ansøgningsstatus:** ${applicationStatus}
+        return settings.accept_applications ? 
+          `Fedt at du vil ansøge! Lige nu tager vi imod nye ansøgninger, hvilket er perfekt timing.
 
-${settings.accept_applications ? 
-          'Du kan ansøge gennem vores hjemmeside. Jeg anbefaler at læse vores serverregler grundigt først - det øger dine chancer betydeligt for godkendelse.' : 
-          'Ansøgninger er lukket lige nu, men følg vores Discord for opdateringer om hvornår de åbner igen.'}
+Mit bedste råd? Læs alle reglerne ordentligt igennem først. Jeg ved det er lidt kedeligt, men det gør virkelig en forskel på om du bliver godkendt eller ej. Staff kan tydeligt se hvem der har gjort deres hjemmearbejde!
 
-Har du specifikke spørgsmål om ansøgningsprocessen? Jeg kan guide dig gennem de forskellige trin.`;
+Har du nogen specifikke spørgsmål om ansøgningen? Jeg har set mange ansøgninger igennem tiden, så jeg ved godt hvad der fungerer.` :
+
+          `Øv, lige nu er ansøgningerne desværre lukket. Men det åbner igen - det gør det altid! 
+
+Hold øje med Discord for updates om hvornår de åbner igen. I mellemtiden kan du forberede dig ved at læse op på reglerne og måske lære community'et at kende. Så er du klar til at smide en killer-ansøgning afsted når det åbner!`;
       }
       
-      // Discord Info
+      // Discord Info - Enthusiastic
       if (lowerMessage.includes('discord')) {
-        return `Vores Discord server er det centrale punkt for community kommunikation:
+        return `Ah Discord! Det er virkelig hjertet af vores community!
 
-**Hvad du finder på Discord:**
-• Community diskussioner og opdateringer
-• Support kanaler for hjælp
-• Event annonceringer
-• Voice kanaler til roleplay koordination
+Der sker altid noget derinde - folk planlægger RP, deler screenshots, hjælper hinanden og bare hænger ud. Plus det er der du får alle de vigtige opdateringer først.
 
-Vil du gerne have et invite link? Jeg kan sætte dig i kontakt med staff som kan hjælpe med adgang.`;
+Skal jeg sætte dig i kontakt med staff så de kan give dig et invite? De er ret flinke til at hjælpe nye folk med at komme igang.`;
       }
       
-      // Rules/Laws
+      // Rules/Laws - Relatable  
       if (lowerMessage.includes('regel') || lowerMessage.includes('lov') || lowerMessage.includes('regler')) {
-        return `Vores serverregler er designet til at sikre en god oplevelse for alle spillere:
+        return `Regler, ja... Jeg ved godt det kan virke som en masse at læse gennem, men de er faktisk ret fornuftige!
 
-**Hvor finder du reglerne:**
-• Detaljerede regler på hjemmesiden
-• Hurtig reference i Discord
-• In-game hjælpesystem
+Du finder dem på hjemmesiden og i Discord. Hvis du ikke gider læse det hele på én gang, så start med grundreglerne - det vigtigste er bare at være respektful og ikke ødelægge andres RP.
 
-Reglerne dækker alt fra grundlæggende RP-etikette til specifikke server mekanikker. Er der nogle særlige områder du gerne vil vide mere om?`;
+Er der noget specifikt du er i tvivl om? Jeg kan sagtens forklare de mest almindelige ting.`;
       }
       
-      // Technical Issues
+      // Technical Issues - Empathetic
       if (lowerMessage.includes('fejl') || lowerMessage.includes('problem') || lowerMessage.includes('virker ikke') || lowerMessage.includes('bug')) {
-        return `Jeg forstår du oplever tekniske problemer. Lad mig hjælpe dig:
+        return `Ugh, tekniske problemer er virkelig irriterende! Lad mig se om jeg kan hjælpe.
 
-**Almindelige løsninger:**
-• Genstart FiveM
-• Ryd cache (F8 → quit → genstart)
-• Tjek serverconnection
+Først det kedelige men effektive: Prøv at genstarte FiveM. Jeg ved det lyder dumt, men det løser faktisk overraskende mange problemer.
 
-For mere komplekse problemer eller persisterende fejl, kan jeg sætte dig i kontakt med vores tekniske support team. Kan du beskrive problemet mere specifikt?`;
+Hvis det ikke hjælper, så prøv at rydde cache (tryk F8 i FiveM og skriv "quit", så genstart).
+
+Stadig problemer? Så er det nok noget mere kompliceret, og så skal vi have fat i vores tech-wizards på staff teamet. De ved alt om den slags ting!`;
       }
       
-      // Account/Character Issues
+      // Account/Character Issues - Careful but helpful
       if (lowerMessage.includes('konto') || lowerMessage.includes('karakter') || lowerMessage.includes('penge') || lowerMessage.includes('items') || lowerMessage.includes('ting')) {
-        return `Konto- og karakterrelaterede problemer kræver særlig opmærksomhed af sikkerhedsmæssige årsager.
+        return `Ah, konto-ting... Det er lidt en sensitiv sag af sikkerhedsmæssige grunde, så jeg kan desværre ikke grave for dybt i specifikke kontoproblemer.
 
-**Hvad jeg kan hjælpe med:**
-• Generel vejledning om karaktersystem
-• Forklaring af game mechanics
-• Henvisning til relevant support
+Men jeg kan sagtens forklare hvordan systemet generelt fungerer, eller hjælpe med at forstå game mechanics og sådan noget.
 
-For specifikke kontoproblemer eller tab af items/penge må jeg henvise dig til vores staff team, som har adgang til at undersøge din situation grundigt.`;
+For konkrete problemer med dit inventory eller karakterdata er staff teamet dem du skal snakke med - de har adgang til alle de værktøjer der skal til for at hjælpe dig ordentligt.`;
       }
       
-      // Default fallback
-      return `Hej og velkommen til ${settings.server_name || 'Adventure RP'}!
+      // Default fallback - Warm and welcoming
+      return `Hej der! Dejligt at møde dig!
 
-Jeg er her for at hjælpe dig med spørgsmål om vores server. Her er den grundlæggende information:
+Jeg er Alex og jeg hjælper folk med spørgsmål om ${settings.server_name || 'Adventure RP'}. Vores server IP er panel.adventurerp.dk:30120 hvis du vil hoppe på, og ansøgninger er ${settings.accept_applications ? 'åbne lige nu' : 'lukket i øjeblikket, men åbner snart igen'}.
 
-**Server Details:**
-• Server IP: panel.adventurerp.dk:30120
-• Ansøgninger: ${settings.accept_applications ? 'Åbne for nye spillere' : 'Lukket i øjeblikket'}
-
-Hvad kan jeg hjælpe dig med? Jeg kan forklare ansøgningsprocessen, hjælpe med tekniske spørgsmål, eller sætte dig i kontakt med vores staff team for mere specifik hjælp.`;
+Hvad kan jeg hjælpe dig med i dag? Jeg kan snakke om alt fra hvordan man kommer igang til serverens regler, eller bare hygge-snakke hvis du har lyst!`;
     }
 
-    // Lower confidence for escalation scenarios
+    // Lower confidence for escalation scenarios - but still human-like
     if (shouldEscalate) {
       confidenceScore = 0.4;
-      aiResponse += "\n\nJeg ser at dette spørgsmål ligger uden for mine umiddelbare kompetencer. Lad mig sætte dig i kontakt med en af vores erfarne staff medlemmer, som kan give dig den specifikke hjælp du har brug for. De har adgang til værktøjer og information som jeg ikke har.";
+      aiResponse += "\n\nHey, jeg tænker at det her spørgsmål er lidt for komplekst til mig alene. Lad mig lige få fat i en af vores staff medlemmer - de ved meget mere om den slags ting og har adgang til alle de værktøjer jeg ikke har. De bliver nok glade for at hjælpe!";
     }
 
     // Check if response contains useful information
@@ -389,7 +374,7 @@ Hvad kan jeg hjælpe dig med? Jeg kan forklare ansøgningsprocessen, hjælpe med
     console.error('Error in chat AI assistant:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      response: "🚨 Ups! Jeg oplever nogle tekniske vanskeligheder lige nu! 😅 Men hey, ingen stress! Lad mig connecte dig til en af vores fantastiske staff members som kan hjælpe dig ordentligt! De er absolute legender! 🌟🚀",
+      response: "Ah damn, jeg har lige fået nogle tekniske problemer her! 😅 Men rolig, det sker - lad mig bare få fat i en af vores staff folk, så de kan hjælpe dig i stedet. De er ret gode til den slags!",
       shouldEscalate: true,
       confidence: 0
     }), {
