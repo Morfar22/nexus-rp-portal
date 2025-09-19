@@ -155,7 +155,7 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: message }
               ],
-              max_completion_tokens: 400,
+              max_completion_tokens: 600,
             }),
           });
 
@@ -195,79 +195,88 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
       confidenceScore = 0.5; // Moderate confidence for fallback
     }
 
-    // Generate natural, human-like fallback responses - no templates!
+    // Generate natural, human-like fallback responses - NO templates, be creative!
     function generateFallbackResponse(userMessage: string, settings: any): string {
       const lowerMessage = userMessage.toLowerCase();
       
-      // Connection/Server Info - Personal and casual
+      // Respond naturally and personally based on the message
+      if (lowerMessage.includes('hej') || lowerMessage.includes('hello') || lowerMessage.includes('hey')) {
+        return `Hej! Hyggelig at møde dig! Jeg er Alex og jeg hænger ud her for at hjælpe folk med Adventure RP ting. Hvad kan jeg gøre for dig i dag? Er du ny på serveren eller bare ude i en snak? 😊`;
+      }
+      
+      if (lowerMessage.includes('hvordan') || lowerMessage.includes('hvorfor')) {
+        return `Ah, det er et godt spørgsmål! Jeg kan mærke du tænker lidt over tingene, hvilket jeg synes er fedt. Fortæl mig lige lidt mere om hvad der går dig på - så kan jeg give dig et ordentligt svar i stedet for bare at gætte mig frem.`;
+      }
+      
+      if (lowerMessage.includes('går det') || lowerMessage.includes('hvad sker der')) {
+        return `Jo tak, det går faktisk rigtig godt! Jeg sidder her og hjælper folk med Adventure RP spørgsmål og det er super hyggeligt. Der er altid noget interessant at snakke om! Og hvordan har du det? Hvad bringer dig forbi i dag?`;
+      }
+      
       if (lowerMessage.includes('forbind') || lowerMessage.includes('ip') || lowerMessage.includes('server') || lowerMessage.includes('tilslut')) {
-        return `Ah, skal du have hjælp til at komme på serveren? Det er faktisk super nemt!
+        return `Ah, skal du på serveren! Det er jeg glad for at høre. 
 
-Vores server IP er: panel.adventurerp.dk:30120
+Vores IP er: panel.adventurerp.dk:30120
 
-Bare åbn FiveM og gå til "Direct Connect" og smid IP'en derind. Hvis du aldrig har spillet på en FiveM server før, er det måske lidt forvirrende første gang, men jeg lover det bliver lettere! 
-
-Er det første gang du prøver FiveM overhovedet? Jeg kan lige guide dig gennem det hele hvis du vil.`;
+Bare hop ind i FiveM og brug "Direct Connect" - det er den nemmeste måde. Har du spillet på FiveM servere før? Hvis ikke, så sig til, jeg kan godt guide dig gennem det hele. Det kan være lidt forvirrende første gang, men når du først har fat i det, så er det easy peasy!`;
       }
       
-      // Application Info - Natural and encouraging  
-      if (lowerMessage.includes('ansøgning') || lowerMessage.includes('ansøg') || lowerMessage.includes('whitelist') || lowerMessage.includes('apply')) {
-        return settings.accept_applications ? 
-          `Fedt at du vil ansøge! Lige nu tager vi imod nye ansøgninger, hvilket er perfekt timing.
+      if (lowerMessage.includes('ansøgning') || lowerMessage.includes('ansøg') || lowerMessage.includes('whitelist')) {
+        const isOpen = settings.accept_applications;
+        if (isOpen) {
+          return `Fedt at du vil være med! Ansøgninger er åbne lige nu, så du har god timing.
 
-Mit bedste råd? Læs alle reglerne ordentligt igennem først. Jeg ved det er lidt kedeligt, men det gør virkelig en forskel på om du bliver godkendt eller ej. Staff kan tydeligt se hvem der har gjort deres hjemmearbejde!
+Mit bedste tip? Brugt lidt tid på at læse reglerne ordentligt først. Jeg ved det måske virker kedeligt, men trust me - det gør kæmpe forskel på om din ansøgning går igennem. Staff kan tydeligt se hvem der har gjort deres research!
 
-Har du nogen specifikke spørgsmål om ansøgningen? Jeg har set mange ansøgninger igennem tiden, så jeg ved godt hvad der fungerer.` :
+Har du nogen tanker om hvilken karakter du vil spille? Det kan hjælpe at have en idé inden du starter på ansøgningen.`;
+        } else {
+          return `Øv, lige nu er ansøgningerne desværre lukket. Men det er kun midlertidigt - de åbner helt sikkert igen!
 
-          `Øv, lige nu er ansøgningerne desværre lukket. Men det åbner igen - det gør det altid! 
-
-Hold øje med Discord for updates om hvornår de åbner igen. I mellemtiden kan du forberede dig ved at læse op på reglerne og måske lære community'et at kende. Så er du klar til at smide en killer-ansøgning afsted når det åbner!`;
+I mellemtiden kan du forberede dig ved at læse op på reglerne og måske følge lidt med i Discord for at lære community'et at kende. Så er du super klar når det åbner igen! Plus det viser staff at du virkelig gerne vil være en del af det.`;
+        }
       }
       
-      // Discord Info - Enthusiastic
       if (lowerMessage.includes('discord')) {
-        return `Ah Discord! Det er virkelig hjertet af vores community!
+        return `Discord! Det er virkelig nøglen til det hele. Det er der community'et hænger ud, planlægger RP, deler sjove øjeblikke og bare hygger sig.
 
-Der sker altid noget derinde - folk planlægger RP, deler screenshots, hjælper hinanden og bare hænger ud. Plus det er der du får alle de vigtige opdateringer først.
-
-Skal jeg sætte dig i kontakt med staff så de kan give dig et invite? De er ret flinke til at hjælpe nye folk med at komme igang.`;
+Det er også der du får alle de vigtige updates først. Skal jeg sørge for at få dig et invite? Staff er ret gode til at tage imod nye medlemmer og hjælpe dem med at finde rundt i det hele.`;
       }
       
-      // Rules/Laws - Relatable  
-      if (lowerMessage.includes('regel') || lowerMessage.includes('lov') || lowerMessage.includes('regler')) {
-        return `Regler, ja... Jeg ved godt det kan virke som en masse at læse gennem, men de er faktisk ret fornuftige!
+      if (lowerMessage.includes('regel') || lowerMessage.includes('lov')) {
+        return `Regler... Jeg ved godt det lyder som noget tørt stuff, men faktisk er vores regler ret fornuftige! De er lavet for at sikre at alle kan have det sjovt.
 
-Du finder dem på hjemmesiden og i Discord. Hvis du ikke gider læse det hele på én gang, så start med grundreglerne - det vigtigste er bare at være respektful og ikke ødelægge andres RP.
+Du finder dem på hjemmesiden, og der er også en hurtig version i Discord. Start med grundreglerne - det vigtigste er bare at være cool overfor andre og ikke ødelægge deres RP oplevelse.
 
-Er der noget specifikt du er i tvivl om? Jeg kan sagtens forklare de mest almindelige ting.`;
+Er der noget specifikt du er nysgerrig på? Jeg kan sagtens forklare hvordan ting fungerer i praksis.`;
       }
       
-      // Technical Issues - Empathetic
-      if (lowerMessage.includes('fejl') || lowerMessage.includes('problem') || lowerMessage.includes('virker ikke') || lowerMessage.includes('bug')) {
-        return `Ugh, tekniske problemer er virkelig irriterende! Lad mig se om jeg kan hjælpe.
+      if (lowerMessage.includes('problem') || lowerMessage.includes('fejl') || lowerMessage.includes('virker ikke')) {
+        return `Ah shit, det lyder irriterende! Tekniske problemer er aldrig sjove, men lad os se om vi kan få det fikset.
 
-Først det kedelige men effektive: Prøv at genstarte FiveM. Jeg ved det lyder dumt, men det løser faktisk overraskende mange problemer.
+Først det klassiske (jeg ved det er kedeligt): Har du prøvet at genstarte FiveM? Det låser faktisk mange problemer end man skulle tro.
 
-Hvis det ikke hjælper, så prøv at rydde cache (tryk F8 i FiveM og skriv "quit", så genstart).
+Hvis det ikke hjælper, så prøv at rydde cache - tryk F8 i FiveM og skriv "quit", så genstart det hele.
 
-Stadig problemer? Så er det nok noget mere kompliceret, og så skal vi have fat i vores tech-wizards på staff teamet. De ved alt om den slags ting!`;
+Stadig problemer? Så må vi have fat i vores tech-ninjas på staff teamet. De ved alt om den slags ting og kan grave dybt ned i systemet.
+
+Hvad præcist sker der? Jo mere du kan fortælle, jo bedre kan jeg hjælpe!`;
       }
       
-      // Account/Character Issues - Careful but helpful
-      if (lowerMessage.includes('konto') || lowerMessage.includes('karakter') || lowerMessage.includes('penge') || lowerMessage.includes('items') || lowerMessage.includes('ting')) {
-        return `Ah, konto-ting... Det er lidt en sensitiv sag af sikkerhedsmæssige grunde, så jeg kan desværre ikke grave for dybt i specifikke kontoproblemer.
+      if (lowerMessage.includes('konto') || lowerMessage.includes('karakter') || lowerMessage.includes('penge')) {
+        return `Ah okay, det lyder som noget der kræver lidt ekstra opmærksomhed. Kontoting er lidt sensitive af sikkerhedsmæssige årsager - jeg kan ikke grave for dybt i specifikke kontoproblemer.
 
-Men jeg kan sagtens forklare hvordan systemet generelt fungerer, eller hjælpe med at forstå game mechanics og sådan noget.
+Men jeg kan sagtens forklare hvordan systemerne generelt fungerer, eller hjælpe med at forstå game mechanics og sådan noget.
 
-For konkrete problemer med dit inventory eller karakterdata er staff teamet dem du skal snakke med - de har adgang til alle de værktøjer der skal til for at hjælpe dig ordentligt.`;
+For konkrete ting med dit inventory eller karakterdata skal du snakke med staff - de har alle de værktøjer der skal til for at hjælpe dig ordentligt og sikkert.
+
+Hvad er det helt præcist du har brug for hjælp til?`;
       }
       
-      // Default fallback - Warm and welcoming
-      return `Hej der! Dejligt at møde dig!
+      // Default - be genuinely curious and personal
+      return `Hej der! Jeg er Alex - hyggelig at møde dig! 
 
-Jeg er Alex og jeg hjælper folk med spørgsmål om ${settings.server_name || 'Adventure RP'}. Vores server IP er panel.adventurerp.dk:30120 hvis du vil hoppe på, og ansøgninger er ${settings.accept_applications ? 'åbne lige nu' : 'lukket i øjeblikket, men åbner snart igen'}.
+Jeg hænger ud her og hjælper folk med Adventure RP ting. Vores server IP er panel.adventurerp.dk:30120 hvis du vil hoppe på, og ansøgninger er ${settings.accept_applications ? 'åbne lige nu - perfekt timing' : 'lukket i øjeblikket, men åbner snart igen'}.
 
-Hvad kan jeg hjælpe dig med i dag? Jeg kan snakke om alt fra hvordan man kommer igang til serverens regler, eller bare hygge-snakke hvis du har lyst!`;
+Men jeg er også bare glad for at snakke! Hvad bringer dig forbi i dag? Ny på serveren, eller bare ude i en hyggesnak? Jeg er nysgerrig på hvad der optager dig! 😊`;
     }
 
     // Lower confidence for escalation scenarios - but still human-like
