@@ -223,7 +223,7 @@ const OurTeam = () => {
                   </div>
 
                   {/* Team Members Grid */}
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <div className="flex flex-wrap justify-center gap-6">
                     {roleMembers
                       .sort((a, b) => a.order_index - b.order_index)
                       .map((member, idx) => (
