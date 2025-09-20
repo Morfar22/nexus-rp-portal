@@ -236,16 +236,12 @@ const CustomRoleManager = () => {
 
   const updateRole = async (role: StaffRole) => {
     try {
-      const { error } = await supabase
-        .from('staff_roles')
-        .update({
-          display_name: role.display_name,
-          description: role.description,
-          color: role.color,
-          hierarchy_level: role.hierarchy_level,
-          is_active: role.is_active
-        })
-        .eq('id', role.id);
+      const { data, error } = await supabase.functions.invoke('custom-role-management', {
+        body: { 
+          action: 'update_role', 
+          data: role
+        }
+      });
 
       if (error) throw error;
 
@@ -266,10 +262,12 @@ const CustomRoleManager = () => {
 
   const deleteRole = async (roleId: string) => {
     try {
-      const { error } = await supabase
-        .from('staff_roles')
-        .delete()
-        .eq('id', roleId);
+      const { error } = await supabase.functions.invoke('custom-role-management', {
+        body: { 
+          action: 'delete_role', 
+          roleId: roleId
+        }
+      });
 
       if (error) throw error;
 
@@ -290,27 +288,15 @@ const CustomRoleManager = () => {
 
   const updateRolePermissions = async (roleId: string, permissionIds: string[]) => {
     try {
-      // First delete existing permissions for this role
-      const { error: deleteError } = await supabase
-        .from('role_permissions')
-        .delete()
-        .eq('role_id', roleId);
+      const { error } = await supabase.functions.invoke('custom-role-management', {
+        body: { 
+          action: 'update_role_permissions',
+          roleId: roleId,
+          permissionIds: permissionIds
+        }
+      });
 
-      if (deleteError) throw deleteError;
-
-      // Then insert new permissions
-      if (permissionIds.length > 0) {
-        const newRolePermissions = permissionIds.map(permissionId => ({
-          role_id: roleId,
-          permission_id: permissionId
-        }));
-
-        const { error: insertError } = await supabase
-          .from('role_permissions')
-          .insert(newRolePermissions);
-
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
 
       // Refresh role permissions
       await fetchRolePermissions();
@@ -330,14 +316,16 @@ const CustomRoleManager = () => {
 
   const assignRoleToUser = async () => {
     try {
-      const { error } = await supabase
-        .from('user_role_assignments')
-        .insert([{
-          user_id: assignRole.user_id,
-          role_id: assignRole.role_id,
-          expires_at: assignRole.expires_at || null,
-          is_active: true
-        }]);
+      const { error } = await supabase.functions.invoke('custom-role-management', {
+        body: { 
+          action: 'assign_role_to_user',
+          data: {
+            user_id: assignRole.user_id,
+            role_id: assignRole.role_id,
+            expires_at: assignRole.expires_at || null
+          }
+        }
+      });
 
       if (error) throw error;
 
@@ -360,10 +348,12 @@ const CustomRoleManager = () => {
 
   const removeUserRole = async (assignmentId: string) => {
     try {
-      const { error } = await supabase
-        .from('user_role_assignments')
-        .update({ is_active: false })
-        .eq('id', assignmentId);
+      const { error } = await supabase.functions.invoke('custom-role-management', {
+        body: { 
+          action: 'remove_user_role',
+          assignmentId: assignmentId
+        }
+      });
 
       if (error) throw error;
 

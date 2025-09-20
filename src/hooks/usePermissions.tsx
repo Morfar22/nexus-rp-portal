@@ -115,7 +115,9 @@ export const usePermissions = (): UserPermissions => {
   };
 
   const hasPermission = (permission: string): boolean => {
-    return permissions.includes(permission);
+    const hasIt = permissions.includes(permission);
+    console.log(`Permission check: ${permission} = ${hasIt}`, { permissions, user: user?.email });
+    return hasIt;
   };
 
   const hasAnyPermission = (requiredPermissions: string[]): boolean => {
