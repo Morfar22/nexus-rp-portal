@@ -114,7 +114,15 @@ export type Database = {
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "application_types_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       applications: {
         Row: {

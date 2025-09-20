@@ -285,12 +285,15 @@ const ApplicationTypesManager = () => {
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{type.description}</p>
                     <ul className="text-xs text-muted-foreground mb-1">
-                      {type.form_fields?.map((field, index) =>
-                        <li key={`${type.id}-field-${index}-${field.id || field.key || 'unknown'}`}>
-                          - {field.label}{field.id === "discord_name" &&
-                            <span className="ml-1 text-neon-blue font-semibold">(required, automatic)</span>}
-                        </li>
-                      )}
+                      {type.form_fields?.map((field, index) => {
+                        const uniqueKey = `${type.id}-field-${index}-${field.id || field.key || Date.now()}-${Math.random()}`;
+                        return (
+                          <li key={uniqueKey}>
+                            - {field.label}{field.id === "discord_name" &&
+                              <span className="ml-1 text-neon-blue font-semibold">(required, automatic)</span>}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                   <div className="flex items-center space-x-2">
