@@ -197,7 +197,7 @@ const ApplicationManager = () => {
     notify_denials: true
   });
   const { toast } = useToast();
-  const { permissions, hasAnyPermission } = usePermissions();
+  const { permissions, hasAnyPermission, roleAssignments } = usePermissions();
 
   useEffect(() => {
     fetchApplications();
@@ -206,23 +206,26 @@ const ApplicationManager = () => {
   }, []);
 
   useEffect(() => {
-    // Filter applications based on user permissions
-    if (permissions.length === 0) {
+    // Filter applications based on user's staff roles
+    if (roleAssignments.length === 0) {
       setFilteredApplications([]);
       return;
     }
 
+    // Get user's role names
+    const userRoleNames = roleAssignments.map(ra => ra.staff_roles?.name).filter(Boolean);
+    
     const filtered = applications.filter(app => {
-      // If no required permissions, everyone can see it
+      // If no required roles, everyone can see it
       if (!app.required_permissions || app.required_permissions.length === 0) {
         return true;
       }
-      // Check if user has at least one of the required permissions
-      return app.required_permissions.some(perm => permissions.includes(perm));
+      // Check if user has at least one of the required roles
+      return app.required_permissions.some(requiredRole => userRoleNames.includes(requiredRole));
     });
 
     setFilteredApplications(filtered);
-  }, [applications, permissions]);
+  }, [applications, roleAssignments]);
 
   const fetchAvailableRoles = async () => {
     try {
