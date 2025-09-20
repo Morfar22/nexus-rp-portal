@@ -107,7 +107,7 @@ const Navbar = () => {
 
       try {
         const { data, error } = await supabase
-          .from('profiles')
+          .from('custom_users')
           .select('*')
           .eq('id', user.id)
           .single();

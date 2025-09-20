@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setTimeout(async () => {
             try {
               const { data: profile, error } = await supabase
-                .from('profiles')
+                .from('custom_users')
                 .select('banned, username')
                 .eq('id', session.user.id)
                 .maybeSingle();
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const checkBanStatus = async () => {
       try {
         const { data: profile, error } = await supabase
-          .from('profiles')
+          .from('custom_users')
           .select('banned')
           .eq('id', user.id)
           .maybeSingle();
@@ -159,7 +159,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'profiles',
+          table: 'custom_users',
           filter: `id=eq.${user.id}`,
         },
         async (payload) => {
