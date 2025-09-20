@@ -42,26 +42,27 @@ const ApplicationTypesManager = () => {
     required_permissions: [],
     is_active: true
   });
-  const [availablePermissions, setAvailablePermissions] = useState<any[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
   const { user } = useCustomAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchApplicationTypes();
-    fetchAvailablePermissions();
+    fetchAvailableRoles();
   }, []);
 
-  const fetchAvailablePermissions = async () => {
+  const fetchAvailableRoles = async () => {
     try {
       const { data, error } = await supabase
-        .from('permissions')
-        .select('id, name, display_name, description, category')
-        .order('category', { ascending: true });
+        .from('staff_roles')
+        .select('id, name, display_name, description, color, hierarchy_level')
+        .eq('is_active', true)
+        .order('hierarchy_level', { ascending: true });
 
       if (error) throw error;
-      setAvailablePermissions(data || []);
+      setAvailableRoles(data || []);
     } catch (error) {
-      console.error('Error fetching permissions:', error);
+      console.error('Error fetching roles:', error);
     }
   };
 
@@ -243,41 +244,42 @@ const ApplicationTypesManager = () => {
               </div>
 
               <div>
-                <Label className="text-foreground">Required Permissions</Label>
+                <Label className="text-foreground">Required Staff Roles</Label>
                 <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
-                  {availablePermissions.map((permission) => (
-                    <div key={permission.id} className="flex items-center space-x-2">
+                  {availableRoles.map((role) => (
+                    <div key={role.id} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`perm-${permission.id}`}
-                        checked={newType.required_permissions.includes(permission.name)}
+                        id={`role-${role.id}`}
+                        checked={newType.required_permissions.includes(role.name)}
                         onCheckedChange={(checked) => {
                           if (checked) {
                             setNewType({
                               ...newType,
-                              required_permissions: [...newType.required_permissions, permission.name]
+                              required_permissions: [...newType.required_permissions, role.name]
                             });
                           } else {
                             setNewType({
                               ...newType,
-                              required_permissions: newType.required_permissions.filter(p => p !== permission.name)
+                              required_permissions: newType.required_permissions.filter(p => p !== role.name)
                             });
                           }
                         }}
                       />
                       <Label 
-                        htmlFor={`perm-${permission.id}`}
-                        className="text-sm text-foreground cursor-pointer"
+                        htmlFor={`role-${role.id}`}
+                        className="text-sm text-foreground cursor-pointer flex items-center gap-2"
                       >
-                        {permission.display_name}
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: role.color }}
+                        />
+                        {role.display_name}
                       </Label>
-                      {permission.description && (
-                        <span className="text-xs text-muted-foreground">({permission.description})</span>
-                      )}
                     </div>
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Kun staff med disse permissions kan se og håndtere ansøgninger af denne type
+                  Kun staff med disse roller kan se og håndtere ansøgninger af denne type
                 </p>
               </div>
               <div className="p-4 bg-gaming-dark rounded border">
@@ -335,33 +337,37 @@ const ApplicationTypesManager = () => {
                   </div>
 
                   <div>
-                    <Label className="text-foreground">Required Permissions</Label>
+                    <Label className="text-foreground">Required Staff Roles</Label>
                     <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
-                      {availablePermissions.map((permission) => (
-                        <div key={permission.id} className="flex items-center space-x-2">
+                      {availableRoles.map((role) => (
+                        <div key={role.id} className="flex items-center space-x-2">
                           <Checkbox
-                            id={`edit-perm-${permission.id}`}
-                            checked={editingType.required_permissions?.includes(permission.name) || false}
+                            id={`edit-role-${role.id}`}
+                            checked={editingType.required_permissions?.includes(role.name) || false}
                             onCheckedChange={(checked) => {
                               const currentPerms = editingType.required_permissions || [];
                               if (checked) {
                                 setEditingType({
                                   ...editingType,
-                                  required_permissions: [...currentPerms, permission.name]
+                                  required_permissions: [...currentPerms, role.name]
                                 });
                               } else {
                                 setEditingType({
                                   ...editingType,
-                                  required_permissions: currentPerms.filter(p => p !== permission.name)
+                                  required_permissions: currentPerms.filter(p => p !== role.name)
                                 });
                               }
                             }}
                           />
                           <Label 
-                            htmlFor={`edit-perm-${permission.id}`}
-                            className="text-sm text-foreground cursor-pointer"
+                            htmlFor={`edit-role-${role.id}`}
+                            className="text-sm text-foreground cursor-pointer flex items-center gap-2"
                           >
-                            {permission.display_name}
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: role.color }}
+                            />
+                            {role.display_name}
                           </Label>
                         </div>
                       ))}
@@ -391,13 +397,22 @@ const ApplicationTypesManager = () => {
                     </ul>
                     {type.required_permissions && type.required_permissions.length > 0 && (
                       <div className="mt-2">
-                        <p className="text-xs font-medium text-foreground mb-1">Required Permissions:</p>
+                        <p className="text-xs font-medium text-foreground mb-1">Required Staff Roles:</p>
                         <div className="flex flex-wrap gap-1">
-                          {type.required_permissions.map((perm) => (
-                            <Badge key={perm} variant="outline" className="text-xs">
-                              {perm}
-                            </Badge>
-                          ))}
+                          {type.required_permissions.map((roleName) => {
+                            const role = availableRoles.find(r => r.name === roleName);
+                            return (
+                              <Badge key={roleName} variant="outline" className="text-xs flex items-center gap-1">
+                                {role && (
+                                  <div 
+                                    className="w-2 h-2 rounded-full" 
+                                    style={{ backgroundColor: role.color }}
+                                  />
+                                )}
+                                {role?.display_name || roleName}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
