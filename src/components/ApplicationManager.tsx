@@ -202,6 +202,7 @@ const ApplicationManager = () => {
   const fetchApplications = async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching applications...');
       // Fetch applications with their type (no profile join since there's no FK)
       const { data, error } = await supabase
         .from('applications')
@@ -214,6 +215,7 @@ const ApplicationManager = () => {
         `)
         .order('created_at', { ascending: false });
 
+      console.log('Applications query result:', { data, error });
       if (error) throw error;
       const apps = data || [];
 
