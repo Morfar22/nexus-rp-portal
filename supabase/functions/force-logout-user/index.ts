@@ -28,7 +28,16 @@ serve(async (req) => {
     const { userId } = await req.json()
 
     if (!userId) {
-      throw new Error('User ID is required')
+      console.error('Missing userId in request')
+      return new Response(
+        JSON.stringify({ 
+          error: 'User ID is required' 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     console.log('Force logout request for user:', userId)
@@ -41,7 +50,9 @@ serve(async (req) => {
     
     if (customSessionError) {
       console.error('Error deleting custom sessions:', customSessionError)
-      throw customSessionError
+      // Don't throw error here - user might not have custom sessions
+    } else {
+      console.log('Successfully deleted custom sessions for user:', userId)
     }
 
     // Also try to sign out from Supabase auth system if user exists there
@@ -50,21 +61,26 @@ serve(async (req) => {
       console.log('Also signed out from Supabase auth system')
     } catch (authError) {
       // This is expected for custom auth users, so we don't throw
-      console.log('User not in Supabase auth system (custom auth user)')
+      console.log('User not in Supabase auth system (custom auth user):', authError.message)
     }
 
     console.log('Successfully force logged out user:', userId)
 
     // Log the admin action
-    await supabaseAdmin
-      .from('audit_logs')
-      .insert({
-        action: 'force_logout',
-        resource_type: 'user',
-        resource_id: userId,
-        user_id: null, // Will be filled by RLS if admin is authenticated
-        new_values: { action: 'force_logout', target_user: userId }
-      })
+    try {
+      await supabaseAdmin
+        .from('audit_logs')
+        .insert({
+          action: 'force_logout',
+          resource_type: 'user',
+          resource_id: userId,
+          user_id: null, // Will be filled by RLS if admin is authenticated
+          new_values: { action: 'force_logout', target_user: userId }
+        })
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError)
+      // Don't fail the entire operation for audit log issues
+    }
 
     return new Response(
       JSON.stringify({ 

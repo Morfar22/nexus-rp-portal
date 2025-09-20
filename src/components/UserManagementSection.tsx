@@ -231,10 +231,12 @@ const resetUserPassword = async (userId: string, email: string) => {
 
 const forceLogoutUser = async (userId: string, username: string) => {
   try {
-    const { error } = await supabase.functions.invoke('force-logout-user', {
+    console.log('Force logout request for:', { userId, username });
+    const { data, error } = await supabase.functions.invoke('force-logout-user', {
       body: { userId }
     });
 
+    console.log('Force logout response:', { data, error });
     if (error) throw error;
 
     toast({
