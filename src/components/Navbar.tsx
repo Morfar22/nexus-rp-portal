@@ -177,6 +177,30 @@ const Navbar = () => {
     };
 
     checkStaffRole();
+
+    // Subscribe to role assignment changes for real-time updates
+    if (user) {
+      const roleSubscription = supabase
+        .channel('user_role_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_role_assignments',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            // Re-check staff status when role assignments change
+            checkStaffRole();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(roleSubscription);
+      };
+    }
   }, [user]);
 
   useEffect(() => {
