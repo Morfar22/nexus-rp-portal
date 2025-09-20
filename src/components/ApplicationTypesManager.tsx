@@ -68,16 +68,18 @@ const ApplicationTypesManager = () => {
 
   // Always insert Discord field first if not present
   function ensureDiscordField(fields: any[]) {
-    const hasDiscord = fields.some(f => f.id === "discord_name");
-    return hasDiscord ? fields : [discordField, ...fields];
+    // Remove any existing discord_name fields first to prevent duplicates
+    const filteredFields = fields.filter(f => f.id !== "discord_name");
+    return [discordField, ...filteredFields];
   }
 
   const createApplicationType = async () => {
     try {
       console.log('Creating application type:', newType);
       let fields = newType.form_fields.length > 0 ? newType.form_fields : defaultFields;
+      console.log('Initial fields:', fields);
       fields = ensureDiscordField(fields);
-      console.log('Final fields:', fields);
+      console.log('Final fields after ensureDiscordField:', fields);
       
       const typeToInsert = {
         ...newType,
@@ -284,7 +286,7 @@ const ApplicationTypesManager = () => {
                     <p className="text-sm text-muted-foreground mb-2">{type.description}</p>
                     <ul className="text-xs text-muted-foreground mb-1">
                       {type.form_fields?.map((field, index) =>
-                        <li key={`${type.id}-${field.id || field.key || `field-${index}`}`}>
+                        <li key={`${type.id}-field-${index}-${field.id || field.key || 'unknown'}`}>
                           - {field.label}{field.id === "discord_name" &&
                             <span className="ml-1 text-neon-blue font-semibold">(required, automatic)</span>}
                         </li>
