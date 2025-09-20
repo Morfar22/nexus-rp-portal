@@ -92,6 +92,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          required_permissions: string[] | null
           updated_at: string
         }
         Insert: {
@@ -102,6 +103,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          required_permissions?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -112,6 +114,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          required_permissions?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -137,6 +140,7 @@ export type Database = {
           form_data: Json
           id: string
           notes: string | null
+          required_permissions: string[] | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string | null
@@ -156,6 +160,7 @@ export type Database = {
           form_data?: Json
           id?: string
           notes?: string | null
+          required_permissions?: string[] | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
@@ -175,6 +180,7 @@ export type Database = {
           form_data?: Json
           id?: string
           notes?: string | null
+          required_permissions?: string[] | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null

@@ -8,10 +8,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, CheckCircle, XCircle, Clock, Trash2, Webhook, Settings } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Clock, Trash2, Webhook, Settings, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import ApplicationTypesManager from "./ApplicationTypesManager";
 
 const ApplicationSettingsPanel = () => {
@@ -181,9 +183,11 @@ const ApplicationSettingsPanel = () => {
 
 const ApplicationManager = () => {
   const [applications, setApplications] = useState<any[]>([]);
+  const [filteredApplications, setFilteredApplications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
+  const [availablePermissions, setAvailablePermissions] = useState<any[]>([]);
   const [discordSettings, setDiscordSettings] = useState<any>({
     enabled: false,
     staff_webhook_url: "",
@@ -193,11 +197,46 @@ const ApplicationManager = () => {
     notify_denials: true
   });
   const { toast } = useToast();
+  const { permissions, hasAnyPermission } = usePermissions();
 
   useEffect(() => {
     fetchApplications();
     fetchDiscordSettings();
+    fetchAvailablePermissions();
   }, []);
+
+  useEffect(() => {
+    // Filter applications based on user permissions
+    if (permissions.length === 0) {
+      setFilteredApplications([]);
+      return;
+    }
+
+    const filtered = applications.filter(app => {
+      // If no required permissions, everyone can see it
+      if (!app.required_permissions || app.required_permissions.length === 0) {
+        return true;
+      }
+      // Check if user has at least one of the required permissions
+      return hasAnyPermission(app.required_permissions);
+    });
+
+    setFilteredApplications(filtered);
+  }, [applications, permissions, hasAnyPermission]);
+
+  const fetchAvailablePermissions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('permissions')
+        .select('id, name, display_name, description, category')
+        .order('category', { ascending: true });
+
+      if (error) throw error;
+      setAvailablePermissions(data || []);
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+    }
+  };
 
   const fetchApplications = async () => {
     try {
@@ -210,7 +249,8 @@ const ApplicationManager = () => {
           *,
           application_types (
             name,
-            form_fields
+            form_fields,
+            required_permissions
           )
         `)
         .order('created_at', { ascending: false });
@@ -306,6 +346,36 @@ const ApplicationManager = () => {
       toast({
         title: "Error",
         description: "Failed to update Discord settings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateApplicationPermissions = async (applicationId: string, newPermissions: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .update({ required_permissions: newPermissions })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      // Update local state
+      setApplications(prev => prev.map(app => 
+        app.id === applicationId 
+          ? { ...app, required_permissions: newPermissions }
+          : app
+      ));
+
+      toast({
+        title: "Success",
+        description: "Application permissions updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating application permissions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application permissions",
         variant: "destructive",
       });
     }
@@ -536,8 +606,10 @@ const ApplicationManager = () => {
 
       <TabsContent value="applications">
         <ApplicationsList 
-          applications={applications}
+          applications={filteredApplications}
+          availablePermissions={availablePermissions}
           updateApplicationStatus={updateApplicationStatus}
+          updateApplicationPermissions={updateApplicationPermissions}
           deleteApplication={deleteApplication}
           getStatusColor={getStatusColor}
         />
@@ -561,8 +633,9 @@ const ApplicationManager = () => {
   );
 };
 
-const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplication, getStatusColor }: any) => {
+const ApplicationsList = ({ applications, availablePermissions, updateApplicationStatus, updateApplicationPermissions, deleteApplication, getStatusColor }: any) => {
   const [selectedApp, setSelectedApp] = useState<any>(null);
+  const [editingPermissions, setEditingPermissions] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
 
   return (
@@ -598,9 +671,95 @@ const ApplicationsList = ({ applications, updateApplicationStatus, deleteApplica
                   <p className="text-xs text-muted-foreground">
                     Applied: {new Date(app.created_at).toLocaleDateString()}
                   </p>
+                  {(app.required_permissions && app.required_permissions.length > 0) && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium text-foreground">Required Permissions:</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {app.required_permissions.map((perm: string) => (
+                          <Badge key={perm} variant="secondary" className="text-xs">
+                            {perm}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingPermissions(app)}
+                      >
+                        <Shield className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md bg-gaming-card border-gaming-border">
+                      <DialogHeader>
+                        <DialogTitle className="text-foreground">Edit Application Permissions</DialogTitle>
+                        <DialogDescription className="text-muted-foreground">
+                          Vælg hvilke permissions der kræves for at se denne ansøgning
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      {editingPermissions && (
+                        <div className="space-y-4">
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {availablePermissions.map((permission) => (
+                              <div key={permission.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`app-perm-${permission.id}`}
+                                  checked={editingPermissions.required_permissions?.includes(permission.name) || false}
+                                  onCheckedChange={(checked) => {
+                                    const currentPerms = editingPermissions.required_permissions || [];
+                                    if (checked) {
+                                      setEditingPermissions({
+                                        ...editingPermissions,
+                                        required_permissions: [...currentPerms, permission.name]
+                                      });
+                                    } else {
+                                      setEditingPermissions({
+                                        ...editingPermissions,
+                                        required_permissions: currentPerms.filter(p => p !== permission.name)
+                                      });
+                                    }
+                                  }}
+                                />
+                                <Label 
+                                  htmlFor={`app-perm-${permission.id}`}
+                                  className="text-sm text-foreground cursor-pointer"
+                                >
+                                  {permission.display_name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setEditingPermissions(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                updateApplicationPermissions(
+                                  editingPermissions.id, 
+                                  editingPermissions.required_permissions || []
+                                );
+                                setEditingPermissions(null);
+                              }}
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button

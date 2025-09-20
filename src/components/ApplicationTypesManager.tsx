@@ -12,7 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Trash2, Save, X, Settings } from "lucide-react";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import FormFieldEditor from "./FormFieldEditor";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const discordField = {
   id: 'discord_name',
@@ -36,14 +39,31 @@ const ApplicationTypesManager = () => {
     name: "",
     description: "",
     form_fields: [],
+    required_permissions: [],
     is_active: true
   });
+  const [availablePermissions, setAvailablePermissions] = useState<any[]>([]);
   const { user } = useCustomAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchApplicationTypes();
+    fetchAvailablePermissions();
   }, []);
+
+  const fetchAvailablePermissions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('permissions')
+        .select('id, name, display_name, description, category')
+        .order('category', { ascending: true });
+
+      if (error) throw error;
+      setAvailablePermissions(data || []);
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+    }
+  };
 
   const fetchApplicationTypes = async () => {
     try {
@@ -102,6 +122,7 @@ const ApplicationTypesManager = () => {
         name: "",
         description: "",
         form_fields: [],
+        required_permissions: [],
         is_active: true
       });
       toast({
@@ -220,6 +241,45 @@ const ApplicationTypesManager = () => {
                 />
                 <Label className="text-foreground">Active</Label>
               </div>
+
+              <div>
+                <Label className="text-foreground">Required Permissions</Label>
+                <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
+                  {availablePermissions.map((permission) => (
+                    <div key={permission.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`perm-${permission.id}`}
+                        checked={newType.required_permissions.includes(permission.name)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setNewType({
+                              ...newType,
+                              required_permissions: [...newType.required_permissions, permission.name]
+                            });
+                          } else {
+                            setNewType({
+                              ...newType,
+                              required_permissions: newType.required_permissions.filter(p => p !== permission.name)
+                            });
+                          }
+                        }}
+                      />
+                      <Label 
+                        htmlFor={`perm-${permission.id}`}
+                        className="text-sm text-foreground cursor-pointer"
+                      >
+                        {permission.display_name}
+                      </Label>
+                      {permission.description && (
+                        <span className="text-xs text-muted-foreground">({permission.description})</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Kun staff med disse permissions kan se og håndtere ansøgninger af denne type
+                </p>
+              </div>
               <div className="p-4 bg-gaming-dark rounded border">
                 <p className="text-sm text-muted-foreground">
                   <b>Note:</b> Discord Username will always be included as a required field in all application types.
@@ -273,6 +333,40 @@ const ApplicationTypesManager = () => {
                       </Button>
                     </div>
                   </div>
+
+                  <div>
+                    <Label className="text-foreground">Required Permissions</Label>
+                    <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
+                      {availablePermissions.map((permission) => (
+                        <div key={permission.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-perm-${permission.id}`}
+                            checked={editingType.required_permissions?.includes(permission.name) || false}
+                            onCheckedChange={(checked) => {
+                              const currentPerms = editingType.required_permissions || [];
+                              if (checked) {
+                                setEditingType({
+                                  ...editingType,
+                                  required_permissions: [...currentPerms, permission.name]
+                                });
+                              } else {
+                                setEditingType({
+                                  ...editingType,
+                                  required_permissions: currentPerms.filter(p => p !== permission.name)
+                                });
+                              }
+                            }}
+                          />
+                          <Label 
+                            htmlFor={`edit-perm-${permission.id}`}
+                            className="text-sm text-foreground cursor-pointer"
+                          >
+                            {permission.display_name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-start justify-between">
@@ -295,6 +389,18 @@ const ApplicationTypesManager = () => {
                         );
                       })}
                     </ul>
+                    {type.required_permissions && type.required_permissions.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs font-medium text-foreground mb-1">Required Permissions:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {type.required_permissions.map((perm) => (
+                            <Badge key={perm} variant="outline" className="text-xs">
+                              {perm}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Dialog>
