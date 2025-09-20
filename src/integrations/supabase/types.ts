@@ -182,6 +182,13 @@ export type Database = {
             referencedRelation: "application_types"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       audit_logs: {

@@ -75,8 +75,10 @@ const ApplicationForm = () => {
 
     const initialData: any = {};
     type?.form_fields?.forEach((field: any) => {
-      if (field.key === "discord_name") initialData[field.key] = discordName;
-      else initialData[field.key] = '';
+      // Handle both 'key' and 'id' properties for field identification
+      const fieldKey = field.key || field.id;
+      if (fieldKey === "discord_name") initialData[fieldKey] = discordName;
+      else initialData[fieldKey] = '';
     });
     setFormData(initialData);
   };
@@ -93,7 +95,8 @@ const ApplicationForm = () => {
   const validateForm = () => {
     if (!selectedType) return false;
     for (const field of selectedType.form_fields) {
-      if (field.required && !formData[field.key]?.trim()) {
+      const fieldKey = field.key || field.id;
+      if (field.required && !formData[fieldKey]?.trim()) {
         toast({ title: "Validation Error", description: `${field.label} is required`, variant: "destructive" });
         return false;
       }
@@ -167,8 +170,10 @@ const ApplicationForm = () => {
 
   // 4. I selve form-renderingen: 'discord_name' input er disabled og automatisk sat
   const renderFormField = (field: any) => {
-    const value = formData[field.key] || '';
-    if (field.key === "discord_name") {
+    // Handle both 'key' and 'id' properties for field identification
+    const fieldKey = field.key || field.id;
+    const value = formData[fieldKey] || '';
+    if (fieldKey === "discord_name") {
       return (
         <Input value={discordName} disabled className="bg-gaming-dark border-gaming-border text-foreground" />
       );
@@ -179,7 +184,7 @@ const ApplicationForm = () => {
         return (
           <Input
             value={value}
-            onChange={e => handleFieldChange(field.key, e.target.value)}
+            onChange={e => handleFieldChange(fieldKey, e.target.value)}
             placeholder={`Enter your ${field.label.toLowerCase()}...`}
             className="bg-gaming-dark border-gaming-border text-foreground"
             required={field.required}
@@ -190,7 +195,7 @@ const ApplicationForm = () => {
           <Input
             type="number"
             value={value}
-            onChange={e => handleFieldChange(field.key, e.target.value)}
+            onChange={e => handleFieldChange(fieldKey, e.target.value)}
             placeholder={`Enter your ${field.label.toLowerCase()}...`}
             className="bg-gaming-dark border-gaming-border text-foreground"
             required={field.required}
@@ -200,7 +205,7 @@ const ApplicationForm = () => {
         return (
           <Textarea
             value={value}
-            onChange={e => handleFieldChange(field.key, e.target.value)}
+            onChange={e => handleFieldChange(fieldKey, e.target.value)}
             placeholder={`Enter your ${field.label.toLowerCase()}...`}
             className="bg-gaming-dark border-gaming-border text-foreground min-h-[120px]"
             required={field.required}
@@ -208,7 +213,7 @@ const ApplicationForm = () => {
         );
       case 'select':
         return (
-          <Select value={value} onValueChange={val => handleFieldChange(field.key, val)}>
+          <Select value={value} onValueChange={val => handleFieldChange(fieldKey, val)}>
             <SelectTrigger className="bg-gaming-dark border-gaming-border text-foreground">
               <SelectValue placeholder={`Select ${field.label.toLowerCase()}...`} />
             </SelectTrigger>
@@ -225,7 +230,7 @@ const ApplicationForm = () => {
         return (
           <Input
             value={value}
-            onChange={e => handleFieldChange(field.key, e.target.value)}
+            onChange={e => handleFieldChange(fieldKey, e.target.value)}
             placeholder={`Enter your ${field.label.toLowerCase()}...`}
             className="bg-gaming-dark border-gaming-border text-foreground"
             required={field.required}
@@ -314,8 +319,8 @@ const ApplicationForm = () => {
                 <Card className="p-6 bg-gaming-card border-gaming-border">
                   <h2 className="text-xl font-semibold text-foreground mb-6">{selectedType.name} Form</h2>
                   <div className="space-y-6">
-                    {selectedType.form_fields?.map((field: any) => (
-                      <div key={field.key} className="space-y-2">
+                     {selectedType.form_fields?.map((field: any) => (
+                       <div key={field.key || field.id} className="space-y-2">
                         <Label className="text-foreground">
                           {field.label}
                           {field.required && <span className="text-red-400 ml-1">*</span>}
