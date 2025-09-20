@@ -540,7 +540,10 @@ const TeamManager = () => {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2 mt-4">
-                          <Button variant="outline" size="sm" onClick={() => setEditingMember(member)}>
+                          <Button variant="outline" size="sm" onClick={() => {
+                            console.log('🔧 Edit button clicked for member:', member);
+                            setEditingMember(member);
+                          }}>
                             <Edit className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
@@ -560,7 +563,10 @@ const TeamManager = () => {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteTeamMember(member.id)}>Delete</AlertDialogAction>
+                                <AlertDialogAction onClick={() => {
+                                  console.log('🗑️ Delete button clicked for member:', member.id);
+                                  deleteTeamMember(member.id);
+                                }}>Delete</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -666,7 +672,10 @@ const TeamManager = () => {
                 <Button variant="outline" onClick={() => setEditingMember(null)}>
                   Cancel
                 </Button>
-                <Button onClick={() => updateTeamMember(editingMember.id, editingMember)}>
+                <Button onClick={() => {
+                  console.log('💾 Save button clicked for editing member:', editingMember);
+                  updateTeamMember(editingMember.id, editingMember);
+                }}>
                   <Save className="h-4 w-4 mr-2" />
                   Update Member
                 </Button>
