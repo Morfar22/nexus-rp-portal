@@ -33,15 +33,27 @@ serve(async (req) => {
 
     console.log('Force logout request for user:', userId)
 
-    // Use admin client to sign out all sessions for the user
-    const { error } = await supabaseAdmin.auth.admin.signOut(userId, 'global')
+    // Delete all custom sessions for the user (custom auth system)
+    const { error: customSessionError } = await supabaseAdmin
+      .from('custom_sessions')
+      .delete()
+      .eq('user_id', userId)
     
-    if (error) {
-      console.error('Error signing out user:', error)
-      throw error
+    if (customSessionError) {
+      console.error('Error deleting custom sessions:', customSessionError)
+      throw customSessionError
     }
 
-    console.log('Successfully signed out user:', userId)
+    // Also try to sign out from Supabase auth system if user exists there
+    try {
+      await supabaseAdmin.auth.admin.signOut(userId, 'global')
+      console.log('Also signed out from Supabase auth system')
+    } catch (authError) {
+      // This is expected for custom auth users, so we don't throw
+      console.log('User not in Supabase auth system (custom auth user)')
+    }
+
+    console.log('Successfully force logged out user:', userId)
 
     // Log the admin action
     await supabaseAdmin
