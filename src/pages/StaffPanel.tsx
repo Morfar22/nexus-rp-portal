@@ -897,7 +897,7 @@ const StaffPanel = () => {
                     {activeTab === "laws" && "Laws Management"}
                     {activeTab === "staff" && "Staff Management"}
                     {activeTab === "users" && "User Management"}
-                    {activeTab === "team" && "Team Page Management"}
+                    
                     {activeTab === "partners" && "Partners Management"}
                     {activeTab === "navbar" && "Navigation Management"}
                     {activeTab === "live-streamers" && "Live Streamers"}
@@ -971,11 +971,6 @@ const StaffPanel = () => {
                 </PermissionGate>
               )}
 
-              {activeTab === "team" && (
-                <div className="space-y-6">
-                  <StaffManagement />
-                </div>
-              )}
 
               {activeTab === "partners" && (
                 <div className="space-y-6">

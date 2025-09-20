@@ -68,7 +68,6 @@ const navigationItems = [
       { id: "staff", label: "Staff", icon: UserCheck },
       { id: "users", label: "Users", icon: Users },
       { id: "chat", label: "Live Chat", icon: MessageSquare },
-      { id: "team", label: "Team Page", icon: UserPlus },
       { id: "partners", label: "Partners", icon: Globe },
     ]
   },
