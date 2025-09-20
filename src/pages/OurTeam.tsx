@@ -110,30 +110,37 @@ const OurTeam = () => {
       <Navbar />
       <main className="container mx-auto px-4 pt-20 pb-8">
         {/* Management Panel for Staff */}
-        {user && (user.role === 'admin' || user.role === 'staff') && (
-          <div className="mb-8 flex justify-end">
-            <Dialog open={managementOpen} onOpenChange={setManagementOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Settings className="h-4 w-4" />
-                  Administrer Team
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                <Tabs defaultValue="members" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="members">Team Medlemmer</TabsTrigger>
-                    <TabsTrigger value="roles">Roller</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="members" className="mt-6">
-                    <TeamManager />
-                  </TabsContent>
-                  <TabsContent value="roles" className="mt-6">
-                    <RoleManager />
-                  </TabsContent>
-                </Tabs>
-              </DialogContent>
-            </Dialog>
+        {user && (user.role === 'admin' || user.role === 'staff') ? (
+          <div className="mb-8">
+            <p className="text-green-400 mb-2">✅ Management panel visible - User role: {user.role}</p>
+            <div className="flex justify-end">
+              <Dialog open={managementOpen} onOpenChange={setManagementOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Settings className="h-4 w-4" />
+                    Administrer Team
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                  <Tabs defaultValue="members" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="members">Team Medlemmer</TabsTrigger>
+                      <TabsTrigger value="roles">Roller</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="members" className="mt-6">
+                      <TeamManager />
+                    </TabsContent>
+                    <TabsContent value="roles" className="mt-6">
+                      <RoleManager />
+                    </TabsContent>
+                  </Tabs>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-8">
+            <p className="text-red-400">❌ Management panel hidden - User: {user ? `${user.role} (${user.email})` : 'Not logged in'}</p>
           </div>
         )}
 
