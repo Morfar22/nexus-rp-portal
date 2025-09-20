@@ -187,7 +187,7 @@ const ApplicationManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
-  const [availablePermissions, setAvailablePermissions] = useState<any[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
   const [discordSettings, setDiscordSettings] = useState<any>({
     enabled: false,
     staff_webhook_url: "",
@@ -202,7 +202,7 @@ const ApplicationManager = () => {
   useEffect(() => {
     fetchApplications();
     fetchDiscordSettings();
-    fetchAvailablePermissions();
+    fetchAvailableRoles();
   }, []);
 
   useEffect(() => {
@@ -224,17 +224,18 @@ const ApplicationManager = () => {
     setFilteredApplications(filtered);
   }, [applications, permissions, hasAnyPermission]);
 
-  const fetchAvailablePermissions = async () => {
+  const fetchAvailableRoles = async () => {
     try {
       const { data, error } = await supabase
-        .from('permissions')
-        .select('id, name, display_name, description, category')
-        .order('category', { ascending: true });
+        .from('staff_roles')
+        .select('id, name, display_name, description, color, hierarchy_level')
+        .eq('is_active', true)
+        .order('hierarchy_level', { ascending: true });
 
       if (error) throw error;
-      setAvailablePermissions(data || []);
+      setAvailableRoles(data || []);
     } catch (error) {
-      console.error('Error fetching permissions:', error);
+      console.error('Error fetching roles:', error);
     }
   };
 
@@ -607,7 +608,7 @@ const ApplicationManager = () => {
       <TabsContent value="applications">
         <ApplicationsList 
           applications={filteredApplications}
-          availablePermissions={availablePermissions}
+          availableRoles={availableRoles}
           updateApplicationStatus={updateApplicationStatus}
           updateApplicationPermissions={updateApplicationPermissions}
           deleteApplication={deleteApplication}
@@ -633,7 +634,7 @@ const ApplicationManager = () => {
   );
 };
 
-const ApplicationsList = ({ applications, availablePermissions, updateApplicationStatus, updateApplicationPermissions, deleteApplication, getStatusColor }: any) => {
+const ApplicationsList = ({ applications, availableRoles, updateApplicationStatus, updateApplicationPermissions, deleteApplication, getStatusColor }: any) => {
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [editingPermissions, setEditingPermissions] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -707,31 +708,35 @@ const ApplicationsList = ({ applications, availablePermissions, updateApplicatio
                       {editingPermissions && (
                         <div className="space-y-4">
                           <div className="space-y-2 max-h-60 overflow-y-auto">
-                            {availablePermissions.map((permission) => (
-                              <div key={permission.id} className="flex items-center space-x-2">
+                            {availableRoles.map((role) => (
+                              <div key={role.id} className="flex items-center space-x-2">
                                 <Checkbox
-                                  id={`app-perm-${permission.id}`}
-                                  checked={editingPermissions.required_permissions?.includes(permission.name) || false}
+                                  id={`app-role-${role.id}`}
+                                  checked={editingPermissions.required_permissions?.includes(role.name) || false}
                                   onCheckedChange={(checked) => {
                                     const currentPerms = editingPermissions.required_permissions || [];
                                     if (checked) {
                                       setEditingPermissions({
                                         ...editingPermissions,
-                                        required_permissions: [...currentPerms, permission.name]
+                                        required_permissions: [...currentPerms, role.name]
                                       });
                                     } else {
                                       setEditingPermissions({
                                         ...editingPermissions,
-                                        required_permissions: currentPerms.filter(p => p !== permission.name)
+                                        required_permissions: currentPerms.filter(p => p !== role.name)
                                       });
                                     }
                                   }}
                                 />
                                 <Label 
-                                  htmlFor={`app-perm-${permission.id}`}
-                                  className="text-sm text-foreground cursor-pointer"
+                                  htmlFor={`app-role-${role.id}`}
+                                  className="text-sm text-foreground cursor-pointer flex items-center gap-2"
                                 >
-                                  {permission.display_name}
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: role.color }}
+                                  />
+                                  {role.display_name}
                                 </Label>
                               </div>
                             ))}
