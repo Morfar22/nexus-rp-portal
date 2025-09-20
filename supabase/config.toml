@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.custom-logout]
 verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
