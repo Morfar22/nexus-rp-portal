@@ -58,12 +58,19 @@ const StaffProtectedRoute = ({ children }: StaffProtectedRouteProps) => {
   }
 
   // Check if user has permission to access staff panel
-  const hasStaffAccess = hasPermission('staff.view');
+  // Check for any staff-related permissions or if user has admin role
+  const hasStaffAccess = hasPermission('system.admin') || 
+                        hasPermission('roles.manage') || 
+                        hasPermission('users.manage') || 
+                        hasPermission('staff.manage_roles') ||
+                        hasPermission('applications.view');
   
   console.log('StaffProtectedRoute Debug:', {
     user: user?.email,
     hasStaffAccess,
-    allPermissions: hasPermission('staff.view')
+    systemAdmin: hasPermission('system.admin'),
+    rolesManage: hasPermission('roles.manage'),
+    usersManage: hasPermission('users.manage')
   });
 
   if (!hasStaffAccess) {
