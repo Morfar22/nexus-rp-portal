@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TeamManager from '@/components/TeamManager';
 import RoleManager from '@/components/RoleManager';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 
 interface TeamMember {
@@ -34,7 +34,7 @@ const OurTeam = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [managementOpen, setManagementOpen] = useState(false);
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
