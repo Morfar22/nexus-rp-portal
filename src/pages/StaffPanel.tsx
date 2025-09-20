@@ -81,6 +81,7 @@ import { PackageManager } from "@/components/PackageManager";
 import { SubscriptionOverview } from "@/components/SubscriptionOverview";
 import LawsManager from "@/components/LawsManager";
 import SocialMediaManager from "@/components/SocialMediaManager";
+import CustomRoleManager from "@/components/CustomRoleManager";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -896,6 +897,7 @@ const StaffPanel = () => {
                     {activeTab === "rules" && "Rules Management"}
                     {activeTab === "laws" && "Laws Management"}
                     {activeTab === "staff" && "Staff Management"}
+                    {activeTab === "custom-roles" && "Custom Rolle Management"}
                     {activeTab === "users" && "User Management"}
                     
                     {activeTab === "partners" && "Partners Management"}
@@ -959,6 +961,14 @@ const StaffPanel = () => {
                 <PermissionGate permissions={["users.manage", "roles.assign"]} showFallback={true}>
                   <div className="space-y-6">
                     <StaffManagement onRefresh={refreshData} />
+                  </div>
+                </PermissionGate>
+              )}
+
+              {activeTab === "custom-roles" && (
+                <PermissionGate permissions={["roles.manage", "system.admin"]} showFallback={true}>
+                  <div className="space-y-6">
+                    <CustomRoleManager />
                   </div>
                 </PermissionGate>
               )}
