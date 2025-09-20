@@ -77,13 +77,19 @@ export default function Packages() {
         throw new Error('No session token found');
       }
 
+      console.log('Checking subscription for user:', user.id, 'with token:', session_token);
+
       const { data, error } = await supabase.functions.invoke("check-subscription", {
         headers: {
           Authorization: `Bearer ${session_token}`,
         },
       });
 
+      console.log('Check subscription response:', { data, error });
+
       if (error) throw error;
+      
+      console.log('Setting subscription data:', data);
       setSubscription(data);
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -264,18 +270,21 @@ const handleCustomSubscribe = async (amount: number) => {
               <div>
                 <h3 className="font-semibold text-foreground">Subscription Status</h3>
                 <p className="text-muted-foreground">
-                  {subscription.subscribed ? (
-                    <>
-                      Active: {subscription.subscription_tier}
-                      {subscription.subscription_end && (
-                        <span className="ml-2">
-                          (expires {new Date(subscription.subscription_end).toLocaleDateString()})
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    "No active subscription"
-                  )}
+                  {(() => {
+                    console.log('Rendering subscription status:', subscription);
+                    return subscription.subscribed ? (
+                      <>
+                        Active: {subscription.subscription_tier}
+                        {subscription.subscription_end && (
+                          <span className="ml-2">
+                            (expires {new Date(subscription.subscription_end).toLocaleDateString()})
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      "No active subscription"
+                    );
+                  })()}
                 </p>
               </div>
               <div className="flex gap-2">

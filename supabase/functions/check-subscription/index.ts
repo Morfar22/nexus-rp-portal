@@ -161,6 +161,34 @@ serve(async (req) => {
       logStep("No active subscription found");
     }
 
+    // Check if there's already a valid manual subscription before overwriting
+    const { data: existingSubscription } = await supabaseClient
+      .from("subscribers")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (existingSubscription?.subscribed && existingSubscription.subscription_end) {
+      const endDate = new Date(existingSubscription.subscription_end);
+      const now = new Date();
+      
+      if (endDate > now && !hasActiveSub) {
+        logStep("Found valid existing manual subscription, preserving it", { 
+          tier: existingSubscription.subscription_tier, 
+          endDate: existingSubscription.subscription_end 
+        });
+        return new Response(JSON.stringify({
+          subscribed: true,
+          subscription_tier: existingSubscription.subscription_tier,
+          subscription_end: existingSubscription.subscription_end,
+          package_id: existingSubscription.package_id
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+    }
+
     await supabaseClient.from("subscribers").upsert({
       email: user.email,
       user_id: user.id,
