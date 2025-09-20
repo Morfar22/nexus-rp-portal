@@ -190,7 +190,8 @@ const Navbar = () => {
             table: 'user_role_assignments',
             filter: `user_id=eq.${user.id}`
           },
-          () => {
+          (payload) => {
+            console.log('Role assignment changed:', payload);
             // Re-check staff status when role assignments change
             checkStaffRole();
           }
