@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ interface Package {
 }
 
 export function PackageManager() {
+  const { session_token } = useCustomAuth();
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
@@ -65,6 +67,11 @@ export function PackageManager() {
   };
 
   const handleSave = async () => {
+    if (!session_token) {
+      toast.error("Authentication required");
+      return;
+    }
+
     try {
       const packageData = {
         name: formData.name,
@@ -78,23 +85,21 @@ export function PackageManager() {
         order_index: formData.order_index,
       };
 
-      if (editingPackage) {
-        const { error } = await supabase
-          .from("packages")
-          .update(packageData)
-          .eq("id", editingPackage.id);
+      const action = editingPackage ? 'update' : 'create';
+      const payload = {
+        action,
+        sessionToken: session_token,
+        data: packageData,
+        ...(editingPackage && { packageId: editingPackage.id })
+      };
 
-        if (error) throw error;
-        toast.success("Package updated successfully");
-      } else {
-        const { error } = await supabase
-          .from("packages")
-          .insert([packageData]);
+      const { data, error } = await supabase.functions.invoke('package-manager', {
+        body: payload,
+      });
 
-        if (error) throw error;
-        toast.success("Package created successfully");
-      }
+      if (error) throw error;
 
+      toast.success(editingPackage ? "Package updated successfully" : "Package created successfully");
       fetchPackages();
       resetForm();
       setIsDialogOpen(false);
@@ -121,6 +126,11 @@ export function PackageManager() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!session_token) {
+      toast.error("Authentication required");
+      return;
+    }
+
     try {
       // Check if package has active subscriptions
       const { data: subscribers, error: checkError } = await supabase
@@ -154,11 +164,13 @@ Are you sure you want to continue?`;
         if (!confirm("Are you sure you want to delete this package?")) return;
       }
 
-      // Now delete the package
-      const { error } = await supabase
-        .from("packages")
-        .delete()
-        .eq("id", id);
+      const { data, error } = await supabase.functions.invoke('package-manager', {
+        body: {
+          action: 'delete',
+          sessionToken: session_token,
+          packageId: id,
+        },
+      });
 
       if (error) throw error;
       toast.success("Package deleted successfully");
