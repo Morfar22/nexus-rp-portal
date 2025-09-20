@@ -44,8 +44,16 @@ serve(async (req) => {
       body: { session_token: sessionToken }
     });
     
-    if (sessionError) throw new Error(`Session validation error: ${sessionError.message}`);
-    if (!sessionData?.valid) throw new Error("Invalid session");
+    logStep("Session validation response", { sessionData, sessionError });
+    
+    if (sessionError) {
+      logStep("Session validation failed", { error: sessionError });
+      throw new Error(`Session validation error: ${sessionError.message}`);
+    }
+    if (!sessionData?.valid) {
+      logStep("Session is invalid", { sessionData });
+      throw new Error("Invalid session");
+    }
     
     const user = sessionData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");

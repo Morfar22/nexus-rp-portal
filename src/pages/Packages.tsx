@@ -72,9 +72,15 @@ export default function Packages() {
 
     setCheckingSubscription(true);
     try {
+      // Get the custom session token from localStorage
+      const sessionToken = localStorage.getItem('sessionToken');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
+
       const { data, error } = await supabase.functions.invoke("check-subscription", {
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          Authorization: `Bearer ${sessionToken}`,
         },
       });
 
