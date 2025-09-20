@@ -299,8 +299,8 @@ const ApplicationTypesManager = () => {
                           applicationTypeId={type.id}
                           initialFields={type.form_fields.filter(f => f.id !== "discord_name")}
                           onSave={fields => {
-                            // Always inject discord_name!
-                            updateApplicationType(type.id, { form_fields: [discordField, ...fields] });
+                            // Let ensureDiscordField handle adding discord_name
+                            updateApplicationType(type.id, { form_fields: fields });
                           }}
                         />
                       </DialogContent>
