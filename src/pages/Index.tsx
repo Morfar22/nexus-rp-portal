@@ -323,7 +323,7 @@ const Index = () => {
               className="text-xl px-10 py-4 font-orbitron font-bold text-white bg-gradient-to-r from-teal-primary to-teal-light hover:from-teal-light hover:to-teal-primary border-2 border-teal-primary/50 hover:border-teal-primary shadow-lg hover:shadow-teal-primary/50 hover:scale-105 transition-all duration-300"
               asChild
             >
-              <Link to="/apply">
+              <Link to="/application-form">
                 <Zap className="h-6 w-6 mr-2" />
                 {t('homepage.apply_whitelist')}
               </Link>

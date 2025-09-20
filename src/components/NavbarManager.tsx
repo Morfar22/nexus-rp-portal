@@ -52,7 +52,7 @@ const NavbarManager = () => {
 
       const defaultItems: NavbarItem[] = [
         { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false },
-        { id: 'apply', label: 'Apply', path: '/apply', visible: true, order: 1, staffOnly: false },
+        { id: 'apply', label: 'Apply', path: '/application-form', visible: true, order: 1, staffOnly: false },
         { id: 'rules', label: 'Rules', path: '/rules', visible: true, order: 2, staffOnly: false },
         { id: 'team', label: 'Our Team', path: '/team', visible: true, order: 3, staffOnly: false },
         { id: 'partners', label: 'Partners', path: '/partners', visible: true, order: 4, staffOnly: false },

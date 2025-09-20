@@ -52,7 +52,7 @@ const Navbar = () => {
     {
       group: "User Features",
       items: [
-        { id: 'apply', label: t('navigation.apply'), path: '/apply', icon: FileText, visible: true, order: 12, staffOnly: false, userOnly: true },
+        { id: 'apply', label: t('navigation.apply'), path: '/application-form', icon: FileText, visible: true, order: 12, staffOnly: false, userOnly: true },
         { id: 'profile', label: t('navigation.profile'), path: '/profile', icon: User, visible: true, order: 13, staffOnly: false, userOnly: true },
       ]
     },

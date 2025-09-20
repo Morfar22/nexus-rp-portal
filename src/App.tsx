@@ -19,7 +19,7 @@ import Index from "./pages/Index";
 
 // Lazy load heavy pages for better Core Web Vitals
 const LazyCustomAuth = lazy(() => import("./pages/CustomAuth"));
-const LazyApply = lazy(() => import("./pages/Apply"));
+
 const LazyApplicationForm = lazy(() => import("./pages/ApplicationForm"));
 const LazyRules = lazy(() => import("./pages/Rules"));
 const LazyLaws = lazy(() => import("./pages/Laws"));
@@ -113,15 +113,6 @@ const AppContent = () => {
                 </Suspense>
               } />
               
-              <Route path="/apply" element={
-                <CustomProtectedRoute>
-                  <ApplicationGate>
-                    <Suspense fallback={<PageLoader />}>
-                      <LazyApply />
-                    </Suspense>
-                  </ApplicationGate>
-                </CustomProtectedRoute>
-              } />
               
               <Route path="/application-form" element={
                 <CustomProtectedRoute>
