@@ -29,7 +29,7 @@ interface Subscription {
 }
 
 export default function Packages() {
-  const { user } = useCustomAuth();
+  const { user, session_token } = useCustomAuth();
   const [packages, setPackages] = useState<Package[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,15 +72,14 @@ export default function Packages() {
 
     setCheckingSubscription(true);
     try {
-      // Get the custom session token from localStorage
-      const sessionToken = localStorage.getItem('sessionToken');
-      if (!sessionToken) {
+      // Get the custom session token from useCustomAuth context
+      if (!session_token) {
         throw new Error('No session token found');
       }
 
       const { data, error } = await supabase.functions.invoke("check-subscription", {
         headers: {
-          Authorization: `Bearer ${sessionToken}`,
+          Authorization: `Bearer ${session_token}`,
         },
       });
 
