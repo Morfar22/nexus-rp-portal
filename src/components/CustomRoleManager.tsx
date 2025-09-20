@@ -420,7 +420,7 @@ const CustomRoleManager = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
             <Crown className="h-6 w-6 text-yellow-500" />
-            <h2 className="text-2xl font-bold text-foreground">Custom Rolle Management</h2>
+            <h2 className="text-2xl font-bold text-foreground">Staff & Rolle Management</h2>
           </div>
           <Button onClick={() => setIsCreatingRole(true)} className="bg-primary hover:bg-primary/80">
             <Plus className="h-4 w-4 mr-2" />

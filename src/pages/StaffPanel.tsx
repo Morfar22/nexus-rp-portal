@@ -14,7 +14,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import Navbar from "@/components/Navbar";
 import { StaffSidebar } from "@/components/StaffSidebar";
-import StaffManagement from "@/components/StaffManagement";
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
@@ -896,8 +896,7 @@ const StaffPanel = () => {
                     {activeTab === "applications" && "Application Management"}
                     {activeTab === "rules" && "Rules Management"}
                     {activeTab === "laws" && "Laws Management"}
-                    {activeTab === "staff" && "Staff Management"}
-                    {activeTab === "custom-roles" && "Custom Rolle Management"}
+                    {activeTab === "custom-roles" && "Roller & Staff Management"}
                     {activeTab === "users" && "User Management"}
                     
                     {activeTab === "partners" && "Partners Management"}
@@ -957,13 +956,6 @@ const StaffPanel = () => {
                 </div>
               )}
 
-              {activeTab === "staff" && (
-                <PermissionGate permissions={["users.manage", "roles.assign"]} showFallback={true}>
-                  <div className="space-y-6">
-                    <StaffManagement onRefresh={refreshData} />
-                  </div>
-                </PermissionGate>
-              )}
 
               {activeTab === "custom-roles" && (
                 <PermissionGate permissions={["roles.manage", "system.admin"]} showFallback={true}>

@@ -29,9 +29,12 @@ export const usePermissions = (): UserPermissions => {
     try {
       setLoading(true);
 
-      // Check if user has admin role in custom_users (for custom authentication)
-      if (user.role === 'admin') {
-        // Admin gets all permissions - direct query since we have permissive policies now
+      // Check if user has admin role via custom roles system
+      const { data: roleData } = await supabase
+        .rpc('get_user_current_role', { user_uuid: user.id });
+
+      if (roleData === 'admin') {
+        // Admin gets all permissions
         const { data: allPermissions, error } = await supabase
           .from('permissions')
           .select('name');
@@ -42,7 +45,7 @@ export const usePermissions = (): UserPermissions => {
         } else {
           setPermissions(allPermissions?.map(p => p.name) || []);
         }
-        setRoleAssignments([]);
+        setRoleAssignments([{ role: 'admin', display_name: 'Administrator' }]);
         setLoading(false);
         return;
       }
@@ -112,29 +115,20 @@ export const usePermissions = (): UserPermissions => {
   };
 
   const hasPermission = (permission: string): boolean => {
-    // Admin always has all permissions (fallback)
-    if (user?.role === 'admin') return true;
-    
     return permissions.includes(permission);
   };
 
   const hasAnyPermission = (requiredPermissions: string[]): boolean => {
-    // Admin always has all permissions (fallback)
-    if (user?.role === 'admin') return true;
-    
     return requiredPermissions.some(permission => permissions.includes(permission));
   };
 
   const hasAllPermissions = (requiredPermissions: string[]): boolean => {
-    // Admin always has all permissions (fallback)
-    if (user?.role === 'admin') return true;
-    
     return requiredPermissions.every(permission => permissions.includes(permission));
   };
 
   useEffect(() => {
     fetchPermissions();
-  }, [user?.id, user?.role]);
+  }, [user?.id]);
 
   return {
     permissions,

@@ -482,13 +482,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "chat_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "chat_messages_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -538,13 +531,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "custom_users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_sessions_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -701,13 +687,6 @@ export type Database = {
             referencedRelation: "custom_users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "custom_sessions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       custom_users: {
@@ -850,13 +829,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "custom_users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_verification_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1196,13 +1168,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "custom_users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "password_reset_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1639,13 +1604,6 @@ export type Database = {
             referencedRelation: "custom_users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "subscribers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       supporters: {
@@ -1877,13 +1835,6 @@ export type Database = {
             referencedRelation: "custom_users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "user_role_assignments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       user_roles: {
@@ -2021,21 +1972,6 @@ export type Database = {
           },
         ]
       }
-      user_roles_view: {
-        Row: {
-          role: string | null
-          user_id: string | null
-        }
-        Insert: {
-          role?: never
-          user_id?: string | null
-        }
-        Update: {
-          role?: never
-          user_id?: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       analytics_query_deprecated: {
@@ -2109,6 +2045,10 @@ export type Database = {
           name: string
           updated_at: string
         }[]
+      }
+      get_user_current_role: {
+        Args: { user_uuid?: string }
+        Returns: string
       }
       get_user_data: {
         Args: { user_uuid?: string }
