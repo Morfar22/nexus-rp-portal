@@ -218,11 +218,11 @@ const ApplicationManager = () => {
         return true;
       }
       // Check if user has at least one of the required permissions
-      return hasAnyPermission(app.required_permissions);
+      return app.required_permissions.some(perm => permissions.includes(perm));
     });
 
     setFilteredApplications(filtered);
-  }, [applications, permissions, hasAnyPermission]);
+  }, [applications, permissions]);
 
   const fetchAvailableRoles = async () => {
     try {
@@ -674,13 +674,22 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                   </p>
                   {(app.required_permissions && app.required_permissions.length > 0) && (
                     <div className="mt-2">
-                      <p className="text-xs font-medium text-foreground">Required Permissions:</p>
+                      <p className="text-xs font-medium text-foreground">Required Staff Roles:</p>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {app.required_permissions.map((perm: string) => (
-                          <Badge key={perm} variant="secondary" className="text-xs">
-                            {perm}
-                          </Badge>
-                        ))}
+                        {app.required_permissions.map((roleName: string) => {
+                          const role = availableRoles?.find(r => r.name === roleName);
+                          return (
+                            <Badge key={roleName} variant="secondary" className="text-xs flex items-center gap-1">
+                              {role && (
+                                <div 
+                                  className="w-2 h-2 rounded-full" 
+                                  style={{ backgroundColor: role.color }}
+                                />
+                              )}
+                              {role?.display_name || roleName}
+                            </Badge>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -708,7 +717,7 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                       {editingPermissions && (
                         <div className="space-y-4">
                           <div className="space-y-2 max-h-60 overflow-y-auto">
-                            {availableRoles.map((role) => (
+                            {availableRoles?.map((role) => (
                               <div key={role.id} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={`app-role-${role.id}`}
