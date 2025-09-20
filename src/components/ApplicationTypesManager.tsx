@@ -74,16 +74,25 @@ const ApplicationTypesManager = () => {
 
   const createApplicationType = async () => {
     try {
+      console.log('Creating application type:', newType);
       let fields = newType.form_fields.length > 0 ? newType.form_fields : defaultFields;
       fields = ensureDiscordField(fields);
-      const { error } = await supabase
+      console.log('Final fields:', fields);
+      
+      const typeToInsert = {
+        ...newType,
+        form_fields: fields,
+        created_by: user?.id
+      };
+      
+      console.log('Data to insert:', typeToInsert);
+      
+      const { data, error } = await supabase
         .from('application_types')
-        .insert({
-          ...newType,
-          form_fields: fields,
-          created_by: user?.id
-        });
+        .insert(typeToInsert);
 
+      console.log('Insert result:', { data, error });
+      
       if (error) throw error;
       await fetchApplicationTypes();
       setIsCreating(false);
@@ -98,9 +107,10 @@ const ApplicationTypesManager = () => {
         description: "Application type created successfully",
       });
     } catch (error) {
+      console.error('Failed to create application type:', error);
       toast({
         title: "Error",
-        description: "Failed to create application type",
+        description: `Failed to create application type: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -274,7 +284,7 @@ const ApplicationTypesManager = () => {
                     <p className="text-sm text-muted-foreground mb-2">{type.description}</p>
                     <ul className="text-xs text-muted-foreground mb-1">
                       {type.form_fields?.map((field, index) =>
-                        <li key={field.id || field.key || `field-${index}`}>
+                        <li key={`${type.id}-${field.id || field.key || `field-${index}`}`}>
                           - {field.label}{field.id === "discord_name" &&
                             <span className="ml-1 text-neon-blue font-semibold">(required, automatic)</span>}
                         </li>
