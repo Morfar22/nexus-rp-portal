@@ -93,11 +93,18 @@ export function PackageManager() {
         ...(editingPackage && { packageId: editingPackage.id })
       };
 
+      console.log('Calling package-manager function with:', payload);
+      
       const { data, error } = await supabase.functions.invoke('package-manager', {
         body: payload,
       });
 
-      if (error) throw error;
+      console.log('Function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
 
       toast.success(editingPackage ? "Package updated successfully" : "Package created successfully");
       fetchPackages();
@@ -105,7 +112,11 @@ export function PackageManager() {
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Error saving package:", error);
-      toast.error("Failed to save package");
+      if (error.message?.includes('CORS') || error.message?.includes('Failed to send a request')) {
+        toast.error("Edge function is deploying. Please wait a moment and try again.");
+      } else {
+        toast.error(`Failed to save package: ${error.message}`);
+      }
     }
   };
 
