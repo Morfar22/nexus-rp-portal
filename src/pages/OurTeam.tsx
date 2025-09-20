@@ -110,7 +110,7 @@ const OurTeam = () => {
       <Navbar />
       <main className="container mx-auto px-4 pt-20 pb-8">
         {/* Management Panel for Staff */}
-        {user && hasPermission('team.manage') && (
+        {user && (user.role === 'admin' || user.role === 'staff') && (
           <div className="mb-8 flex justify-end">
             <Dialog open={managementOpen} onOpenChange={setManagementOpen}>
               <DialogTrigger asChild>
