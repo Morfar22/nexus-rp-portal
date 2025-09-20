@@ -112,7 +112,7 @@ const OurTeam = () => {
         {/* Management Panel for Staff */}
         {user && (user.role === 'admin' || user.role === 'staff') ? (
           <div className="mb-8">
-            <p className="text-green-400 mb-2">✅ Management panel visible - User role: {user.role}</p>
+            
             <div className="flex justify-end">
               <Dialog open={managementOpen} onOpenChange={setManagementOpen}>
                 <DialogTrigger asChild>
