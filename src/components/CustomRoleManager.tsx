@@ -178,7 +178,7 @@ const CustomRoleManager = () => {
     if (!selectedRole) return;
     
     const { data, error } = await supabase.functions.invoke('custom-role-management', {
-      body: { action: 'get_role_permissions', roleId: selectedRole.id }
+      body: { action: 'get_role_permissions', data: { roleId: selectedRole.id } }
     });
     if (error) throw error;
     setRolePermissions(data || []);
@@ -246,6 +246,8 @@ const CustomRoleManager = () => {
       if (error) throw error;
 
       setStaffRoles(staffRoles.map(r => r.id === role.id ? role : r));
+      setIsEditingRole(false);
+      setSelectedRole(null);
       
       toast({
         title: "Rolle opdateret",
@@ -265,7 +267,7 @@ const CustomRoleManager = () => {
       const { error } = await supabase.functions.invoke('custom-role-management', {
         body: { 
           action: 'delete_role', 
-          roleId: roleId
+          data: { roleId: roleId }
         }
       });
 
@@ -291,8 +293,10 @@ const CustomRoleManager = () => {
       const { error } = await supabase.functions.invoke('custom-role-management', {
         body: { 
           action: 'update_role_permissions',
-          roleId: roleId,
-          permissionIds: permissionIds
+          data: {
+            roleId: roleId,
+            permissionIds: permissionIds
+          }
         }
       });
 
@@ -351,7 +355,7 @@ const CustomRoleManager = () => {
       const { error } = await supabase.functions.invoke('custom-role-management', {
         body: { 
           action: 'remove_user_role',
-          assignmentId: assignmentId
+          data: { assignmentId: assignmentId }
         }
       });
 
@@ -681,6 +685,84 @@ const CustomRoleManager = () => {
             </Button>
             <Button onClick={assignRoleToUser}>
               Tildel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Role Dialog */}
+      <Dialog open={isEditingRole} onOpenChange={setIsEditingRole}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rediger Rolle</DialogTitle>
+            <DialogDescription>
+              Opdater rolle information og indstillinger.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRole && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_display_name">Visningsnavn</Label>
+                <Input
+                  id="edit_display_name"
+                  value={selectedRole.display_name}
+                  onChange={(e) => setSelectedRole({ ...selectedRole, display_name: e.target.value })}
+                  placeholder="fx. Senior Moderator"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit_description">Beskrivelse</Label>
+                <Textarea
+                  id="edit_description"
+                  value={selectedRole.description}
+                  onChange={(e) => setSelectedRole({ ...selectedRole, description: e.target.value })}
+                  placeholder="Beskrivelse af rollens ansvar..."
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_color">Farve</Label>
+                  <Input
+                    id="edit_color"
+                    type="color"
+                    value={selectedRole.color}
+                    onChange={(e) => setSelectedRole({ ...selectedRole, color: e.target.value })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit_hierarchy_level">Hierarki Niveau</Label>
+                  <Input
+                    id="edit_hierarchy_level"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={selectedRole.hierarchy_level}
+                    onChange={(e) => setSelectedRole({ ...selectedRole, hierarchy_level: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={selectedRole.is_active}
+                  onCheckedChange={(checked) => setSelectedRole({ ...selectedRole, is_active: checked })}
+                />
+                <Label>Aktiv rolle</Label>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setIsEditingRole(false)}>
+              Annuller
+            </Button>
+            <Button onClick={() => selectedRole && updateRole(selectedRole)}>
+              <Save className="h-4 w-4 mr-2" />
+              Gem Ændringer
             </Button>
           </div>
         </DialogContent>
