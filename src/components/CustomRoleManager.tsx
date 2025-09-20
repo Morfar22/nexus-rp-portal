@@ -81,6 +81,7 @@ const CustomRoleManager = () => {
   const [staffRoles, setStaffRoles] = useState<StaffRole[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
+  const [allRolePermissions, setAllRolePermissions] = useState<RolePermission[]>([]); // Store all role permissions
   const [userRoleAssignments, setUserRoleAssignments] = useState<UserRoleAssignment[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -178,7 +179,7 @@ const CustomRoleManager = () => {
       await Promise.all([
         fetchStaffRoles(),
         fetchPermissions(),
-        fetchRolePermissions(),
+        fetchAllRolePermissions(), // Fetch all role permissions instead
         fetchUserRoleAssignments(),
         fetchUsers()
       ]);
@@ -218,6 +219,35 @@ const CustomRoleManager = () => {
     });
     if (error) throw error;
     setRolePermissions(data || []);
+  };
+
+  // Fetch ALL role permissions for display purposes
+  const fetchAllRolePermissions = async () => {
+    try {
+      // Get all role permissions with permission names using join
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select(`
+          *,
+          permissions!inner (
+            name
+          )
+        `);
+      
+      if (error) throw error;
+      
+      // Transform the data to match RolePermission interface
+      const transformedData = data?.map(item => ({
+        role_id: item.role_id,
+        permission_id: item.permission_id,
+        permission_name: (item.permissions as any).name
+      })) || [];
+      
+      setAllRolePermissions(transformedData);
+    } catch (error) {
+      console.error('Error fetching all role permissions:', error);
+      setAllRolePermissions([]);
+    }
   };
 
   const fetchUserRoleAssignments = async () => {
@@ -339,7 +369,10 @@ const CustomRoleManager = () => {
       if (error) throw error;
 
       // Refresh role permissions
-      await fetchRolePermissions();
+      await fetchAllRolePermissions(); // Also refresh the all permissions cache
+      if (selectedRole) {
+        await fetchRolePermissions(); // Only fetch specific role permissions if a role is selected
+      }
 
       toast({
         title: "Tilladelser opdateret",
@@ -413,7 +446,7 @@ const CustomRoleManager = () => {
   };
 
   const getRolePermissions = (roleId: string) => {
-    return rolePermissions.filter(rp => rp.role_id === roleId);
+    return allRolePermissions.filter(rp => rp.role_id === roleId);
   };
 
   const groupPermissionsByCategory = () => {
