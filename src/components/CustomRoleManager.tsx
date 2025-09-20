@@ -105,6 +105,42 @@ const CustomRoleManager = () => {
 
   const { toast } = useToast();
 
+  // Function to change user role
+  const changeUserRole = async (assignment: UserRoleAssignment, newRoleId: string) => {
+    try {
+      // First remove the old assignment
+      await removeUserRole(assignment.id);
+      
+      // Then create a new assignment with the new role
+      const { error } = await supabase.functions.invoke('custom-role-management', {
+        body: { 
+          action: 'assign_role_to_user',
+          data: {
+            user_id: assignment.user_id,
+            role_id: newRoleId,
+            expires_at: assignment.expires_at || null
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      await fetchUserRoleAssignments();
+      
+      const newRole = staffRoles.find(r => r.id === newRoleId);
+      toast({
+        title: "Rolle ændret",
+        description: `Brugeren er nu tildelt rollen "${newRole?.display_name}".`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: `Kunne ikke ændre rolle: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   // Permission categories for better organization
   const permissionCategories = {
     'users': { icon: Users, label: 'Brugeradministration', color: 'text-blue-500' },
@@ -532,6 +568,30 @@ const CustomRoleManager = () => {
                         <span className="text-xs text-muted-foreground">
                           Tildelt: {new Date(assignment.assigned_at).toLocaleDateString()}
                         </span>
+                        
+                        {/* Edit Role Dropdown */}
+                        <Select 
+                          value={assignment.role_id} 
+                          onValueChange={(newRoleId) => changeUserRole(assignment, newRoleId)}
+                        >
+                          <SelectTrigger className="w-40 h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {staffRoles.filter(role => role.is_active).map((role) => (
+                              <SelectItem key={role.id} value={role.id}>
+                                <div className="flex items-center space-x-2">
+                                  <div 
+                                    className="w-2 h-2 rounded-full" 
+                                    style={{ backgroundColor: role.color }}
+                                  />
+                                  <span>{role.display_name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
                         <Button 
                           variant="ghost" 
                           size="sm"
@@ -545,6 +605,12 @@ const CustomRoleManager = () => {
                   </Card>
                 );
               })}
+              
+              {userRoleAssignments.length === 0 && (
+                <Card className="p-6 text-center">
+                  <p className="text-muted-foreground">Ingen aktive rolle tildelinger</p>
+                </Card>
+              )}
             </div>
           </TabsContent>
         </Tabs>
