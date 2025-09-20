@@ -273,8 +273,8 @@ const ApplicationTypesManager = () => {
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{type.description}</p>
                     <ul className="text-xs text-muted-foreground mb-1">
-                      {type.form_fields?.map(field =>
-                        <li key={field.id || field.key}>
+                      {type.form_fields?.map((field, index) =>
+                        <li key={field.id || field.key || `field-${index}`}>
                           - {field.label}{field.id === "discord_name" &&
                             <span className="ml-1 text-neon-blue font-semibold">(required, automatic)</span>}
                         </li>
