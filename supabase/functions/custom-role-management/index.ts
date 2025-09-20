@@ -155,7 +155,7 @@ async function getUserRoleAssignments(supabaseClient: any) {
         color,
         hierarchy_level
       ),
-      custom_users!inner(
+      custom_users(
         id,
         username,
         email
@@ -180,8 +180,8 @@ async function getUserRoleAssignments(supabaseClient: any) {
     display_name: item.staff_roles.display_name,
     color: item.staff_roles.color,
     hierarchy_level: item.staff_roles.hierarchy_level,
-    username: item.custom_users?.username || 'Ukendt bruger',
-    email: item.custom_users?.email || 'Ukendt email'
+    username: item.custom_users?.username || item.user_id.substring(0, 8),
+    email: item.custom_users?.email || 'Ingen email'
   })) || [];
 
   return new Response(JSON.stringify(formattedData), {
