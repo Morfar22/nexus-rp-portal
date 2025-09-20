@@ -38,7 +38,7 @@ const TeamManager = () => {
     mods: 0,
     recent: 0
   });
-  const { user } = useCustomAuth();
+  const { user, session_token } = useCustomAuth();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -155,17 +155,16 @@ const TeamManager = () => {
 
   const createTeamMember = async () => {
     try {
-      const selectedRole = staffRoles.find(role => role.id === newMember.staff_role_id);
-      const roleDisplayName = selectedRole?.display_name || 'Staff';
-
-      const { error } = await supabase
-        .from('team_members')
-        .insert({
-          ...newMember,
-          role: roleDisplayName
-        });
+      const { data, error } = await supabase.functions.invoke('team-members-manager', {
+        body: {
+          action: 'create',
+          sessionToken: session_token,
+          data: newMember
+        }
+      });
 
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
       await fetchTeamMembers();
       setIsCreating(false);
@@ -194,29 +193,17 @@ const TeamManager = () => {
 
   const updateTeamMember = async (memberId: string, updates: any) => {
     try {
-      console.log('Updating team member:', memberId, 'with updates:', updates);
-      
-      const { staff_roles, created_at, updated_at, id, ...updateData } = updates;
-      
-      // If staff_role_id is being updated, also update the role field
-      if (updateData.staff_role_id) {
-        const selectedRole = staffRoles.find(role => role.id === updateData.staff_role_id);
-        if (selectedRole) {
-          updateData.role = selectedRole.display_name;
-          console.log('Setting role field to:', selectedRole.display_name);
+      const { data, error } = await supabase.functions.invoke('team-members-manager', {
+        body: {
+          action: 'update',
+          sessionToken: session_token,
+          memberId,
+          data: updates
         }
-      }
-      
-      console.log('Final update data:', updateData);
-
-      const { error } = await supabase
-        .from('team_members')
-        .update(updateData)
-        .eq('id', memberId);
-
-      console.log('Supabase update result:', { error });
+      });
 
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
       await fetchTeamMembers();
       setEditingMember(null);
@@ -236,12 +223,16 @@ const TeamManager = () => {
 
   const deleteTeamMember = async (memberId: string) => {
     try {
-      const { error } = await supabase
-        .from('team_members')
-        .delete()
-        .eq('id', memberId);
+      const { data, error } = await supabase.functions.invoke('team-members-manager', {
+        body: {
+          action: 'delete',
+          sessionToken: session_token,
+          memberId
+        }
+      });
 
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
       await fetchTeamMembers();
       toast({
