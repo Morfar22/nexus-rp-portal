@@ -56,13 +56,16 @@ serve(async (req) => {
       
       case "remove_user_role":
         return await removeUserRole(supabaseClient, data.assignmentId);
+      
+      case "get_user_data":
+        return await getUserData(supabaseClient);
 
       default:
         throw new Error(`Unknown action: ${action}`);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: errorMessage });
+    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+    logStep("ERROR", { message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
@@ -306,6 +309,23 @@ async function removeUserRole(supabaseClient: any, assignmentId: string) {
   if (error) throw error;
 
   return new Response(JSON.stringify({ success: true }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: 200,
+  });
+}
+
+async function getUserData(supabaseClient: any) {
+  logStep("Getting user data");
+  
+  const { data, error } = await supabaseClient
+    .from('custom_users')
+    .select('id, username, email, role, created_at')
+    .eq('banned', false)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
     status: 200,
   });
