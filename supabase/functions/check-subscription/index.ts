@@ -63,7 +63,37 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
-      logStep("No customer found, updating unsubscribed state");
+      logStep("No customer found, checking for existing manual subscription");
+      
+      // Check if there's already a valid subscription (manual or otherwise)
+      const { data: existingSubscription } = await supabaseClient
+        .from("subscribers")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (existingSubscription?.subscribed && existingSubscription.subscription_end) {
+        const endDate = new Date(existingSubscription.subscription_end);
+        const now = new Date();
+        
+        if (endDate > now) {
+          logStep("Found valid existing subscription, keeping it", { 
+            tier: existingSubscription.subscription_tier, 
+            endDate: existingSubscription.subscription_end 
+          });
+          return new Response(JSON.stringify({
+            subscribed: true,
+            subscription_tier: existingSubscription.subscription_tier,
+            subscription_end: existingSubscription.subscription_end,
+            package_id: existingSubscription.package_id
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+      }
+      
+      logStep("No valid subscription found, updating unsubscribed state");
       await supabaseClient.from("subscribers").upsert({
         email: user.email,
         user_id: user.id,
