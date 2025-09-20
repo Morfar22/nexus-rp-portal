@@ -34,6 +34,9 @@ serve(async (req) => {
         return await getPermissions(supabaseClient);
       
       case "get_role_permissions":
+        if (!data.roleId) {
+          throw new Error("Role ID is required for get_role_permissions");
+        }
         return await getRolePermissions(supabaseClient, data.roleId);
       
       case "get_user_role_assignments":
@@ -108,6 +111,10 @@ async function getPermissions(supabaseClient: any) {
 async function getRolePermissions(supabaseClient: any, roleId: string) {
   logStep("Getting role permissions", { roleId });
   
+  if (!roleId) {
+    throw new Error("Role ID is required");
+  }
+  
   const { data, error } = await supabaseClient
     .from('role_permissions')
     .select(`
@@ -117,7 +124,10 @@ async function getRolePermissions(supabaseClient: any, roleId: string) {
     `)
     .eq('role_id', roleId);
 
-  if (error) throw error;
+  if (error) {
+    logStep("Error in getRolePermissions", { error: error.message, roleId });
+    throw error;
+  }
 
   const formattedData = data?.map((item: any) => ({
     role_id: item.role_id,
@@ -144,12 +154,20 @@ async function getUserRoleAssignments(supabaseClient: any) {
         display_name,
         color,
         hierarchy_level
+      ),
+      custom_users!inner(
+        id,
+        username,
+        email
       )
     `)
     .eq('is_active', true)
     .order('assigned_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    logStep("Error in getUserRoleAssignments", { error: error.message });
+    throw error;
+  }
 
   const formattedData = data?.map((item: any) => ({
     id: item.id,
@@ -161,7 +179,9 @@ async function getUserRoleAssignments(supabaseClient: any) {
     is_active: item.is_active,
     display_name: item.staff_roles.display_name,
     color: item.staff_roles.color,
-    hierarchy_level: item.staff_roles.hierarchy_level
+    hierarchy_level: item.staff_roles.hierarchy_level,
+    username: item.custom_users?.username || 'Ukendt bruger',
+    email: item.custom_users?.email || 'Ukendt email'
   })) || [];
 
   return new Response(JSON.stringify(formattedData), {

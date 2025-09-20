@@ -73,6 +73,8 @@ interface UserRoleAssignment {
   display_name: string;
   color: string;
   hierarchy_level: number;
+  username?: string;
+  email?: string;
 }
 
 const CustomRoleManager = () => {
@@ -173,8 +175,10 @@ const CustomRoleManager = () => {
   };
 
   const fetchRolePermissions = async () => {
+    if (!selectedRole) return;
+    
     const { data, error } = await supabase.functions.invoke('custom-role-management', {
-      body: { action: 'get_role_permissions', data: {} }
+      body: { action: 'get_role_permissions', roleId: selectedRole.id }
     });
     if (error) throw error;
     setRolePermissions(data || []);
@@ -512,14 +516,13 @@ const CustomRoleManager = () => {
 
             <div className="space-y-2">
               {userRoleAssignments.map((assignment) => {
-                const user = users.find(u => u.id === assignment.user_id);
                 return (
                   <Card key={assignment.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div>
-                          <p className="font-medium">{user?.username || 'Ukendt bruger'}</p>
-                          <p className="text-sm text-muted-foreground">{user?.email}</p>
+                          <p className="font-medium">{assignment.username || 'Ukendt bruger'}</p>
+                          <p className="text-sm text-muted-foreground">{assignment.email || 'Ukendt email'}</p>
                         </div>
                         <Badge 
                           style={{ 
