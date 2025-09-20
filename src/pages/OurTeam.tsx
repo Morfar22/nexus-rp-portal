@@ -110,7 +110,7 @@ const OurTeam = () => {
       <Navbar />
       <main className="container mx-auto px-4 pt-20 pb-8">
         {/* Management Panel for Staff */}
-        {user && (user.role === 'admin' || user.role === 'staff') ? (
+        {user && (hasPermission('team.manage') || user.role === 'admin' || user.role === 'staff') ? (
           <div className="mb-8">
             
             <div className="flex justify-end">
@@ -138,9 +138,13 @@ const OurTeam = () => {
               </Dialog>
             </div>
           </div>
+        ) : user ? (
+          <div className="mb-8">
+            <p className="text-red-400">❌ Management panel hidden - User: {user.role || 'No role'} ({user.email}) - Missing team.manage permission</p>
+          </div>
         ) : (
           <div className="mb-8">
-            <p className="text-red-400">❌ Management panel hidden - User: {user ? `${user.role} (${user.email})` : 'Not logged in'}</p>
+            <p className="text-red-400">❌ Management panel hidden - User not logged in</p>
           </div>
         )}
 
