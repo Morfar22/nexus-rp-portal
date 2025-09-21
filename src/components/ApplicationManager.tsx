@@ -14,7 +14,6 @@ import { Eye, CheckCircle, XCircle, Clock, Trash2, Webhook, Settings, Shield } f
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import ApplicationTypesManager from "./ApplicationTypesManager";
 
 const ApplicationSettingsPanel = () => {
   const [applicationSettings, setApplicationSettings] = useState<any>({});
@@ -616,11 +615,10 @@ const ApplicationManager = () => {
 
   return (
     <Tabs defaultValue="applications" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-4 bg-gaming-card border-gaming-border">
+      <TabsList className="grid w-full grid-cols-3 bg-gaming-card border-gaming-border">
         <TabsTrigger value="applications">Applications</TabsTrigger>
         <TabsTrigger value="settings">Settings</TabsTrigger>
         <TabsTrigger value="discord">Discord Settings</TabsTrigger>
-        <TabsTrigger value="types">Application Types</TabsTrigger>
       </TabsList>
 
       <TabsContent value="applications">
@@ -643,10 +641,6 @@ const ApplicationManager = () => {
           settings={discordSettings}
           onUpdate={updateDiscordSettings}
         />
-      </TabsContent>
-
-      <TabsContent value="types">
-        <ApplicationTypesManager />
       </TabsContent>
     </Tabs>
   );
