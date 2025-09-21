@@ -26,15 +26,34 @@ export const RecentActivityTimeline = () => {
 
   const fetchRecentActivity = async () => {
     try {
-      // Fetch recent applications
+      // Fetch recent audit logs from backend
+      const { data, error } = await supabase.functions.invoke('staff-analytics', {
+        body: { action: 'getAuditLogs' }
+      });
+
+      if (error) throw error;
+
+      let activityItems: ActivityItem[] = [];
+
+      if (data?.success && data.data) {
+        // Convert audit logs to activity items
+        activityItems = data.data.map((log: any) => ({
+          id: log.id,
+          type: log.activity_type,
+          title: log.title,
+          description: log.description,
+          timestamp: new Date(log.created_at),
+          severity: log.severity,
+          actor: log.actor_name
+        }));
+      }
+
+      // Also fetch recent applications for activity
       const { data: applications } = await supabase
         .from('applications')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(5);
-
-      // Create activity items
-      const activityItems: ActivityItem[] = [];
 
       // Add application activities
       applications?.forEach(app => {
@@ -69,29 +88,6 @@ export const RecentActivityTimeline = () => {
           });
         }
       });
-
-      // Add some simulated system activities for demonstration
-      const now = new Date();
-      activityItems.push(
-        {
-          id: 'system-backup',
-          type: 'system',
-          title: 'Automatic Backup',
-          description: 'System backup completed successfully',
-          timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
-          severity: 'low',
-          actor: 'System'
-        },
-        {
-          id: 'security-login',
-          type: 'security',
-          title: 'Admin Login',
-          description: 'Staff member logged in from new location',
-          timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
-          severity: 'medium',
-          actor: 'Security System'
-        }
-      );
 
       // Sort by timestamp (newest first) and limit to 10
       const sortedActivities = activityItems

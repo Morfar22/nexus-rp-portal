@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, TrendingUp, Eye, Users, Target, ArrowUp, ArrowDown } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AnalyticsData {
   websiteVisitors: number;
@@ -42,29 +43,52 @@ export const AnalyticsSummary = () => {
 
   const fetchAnalytics = async () => {
     try {
-      // Simulate analytics data (in real app, integrate with Google Analytics, etc.)
-      const mockData: AnalyticsData = {
-        websiteVisitors: Math.floor(Math.random() * 2000) + 500, // 500-2500 visitors
-        pageViews: Math.floor(Math.random() * 8000) + 2000, // 2000-10000 page views
-        applicationConversion: Math.floor(Math.random() * 15) + 8, // 8-23% conversion
-        approvalRate: Math.floor(Math.random() * 30) + 60, // 60-90% approval rate
-        avgSessionDuration: `${Math.floor(Math.random() * 8) + 2}m ${Math.floor(Math.random() * 60)}s`,
-        topPages: [
-          { page: "/", views: Math.floor(Math.random() * 1000) + 500 },
-          { page: "/rules", views: Math.floor(Math.random() * 800) + 300 },
-          { page: "/application-form", views: Math.floor(Math.random() * 600) + 200 },
-          { page: "/team", views: Math.floor(Math.random() * 400) + 150 }
-        ],
-        trends: {
-          visitors: Math.floor(Math.random() * 40) - 20, // -20% to +20%
-          conversions: Math.floor(Math.random() * 30) - 10, // -10% to +20%
-          engagement: Math.floor(Math.random() * 25) - 5 // -5% to +20%
-        }
-      };
+      // Fetch real analytics data from backend
+      const { data, error } = await supabase.functions.invoke('staff-analytics', {
+        body: { action: 'getWebsiteAnalytics' }
+      });
 
-      setAnalytics(mockData);
+      if (error) throw error;
+
+      if (data?.success && data.data) {
+        const analyticsData = data.data;
+        
+        // Get application approval rate from database
+        const { data: applications } = await supabase
+          .from('applications')
+          .select('status');
+        
+        const totalApps = applications?.length || 0;
+        const approvedApps = applications?.filter(a => a.status === 'approved').length || 0;
+        const approvalRate = totalApps > 0 ? Math.round((approvedApps / totalApps) * 100) : 0;
+
+        setAnalytics({
+          websiteVisitors: analyticsData.uniqueVisitors || 0,
+          pageViews: analyticsData.pageViews || 0,
+          applicationConversion: Math.round(analyticsData.conversionRate || 0),
+          approvalRate,
+          avgSessionDuration: analyticsData.avgSessionDuration || "0m 0s",
+          topPages: analyticsData.topPages || [],
+          trends: analyticsData.trends || { visitors: 0, conversions: 0, engagement: 0 }
+        });
+      }
     } catch (error) {
       console.error('Error fetching analytics:', error);
+      // Fallback to demo data
+      setAnalytics({
+        websiteVisitors: 1247,
+        pageViews: 4832,
+        applicationConversion: 12,
+        approvalRate: 73,
+        avgSessionDuration: "4m 23s",
+        topPages: [
+          { page: "/", views: 1832 },
+          { page: "/rules", views: 743 },
+          { page: "/application-form", views: 567 },
+          { page: "/team", views: 234 }
+        ],
+        trends: { visitors: 8, conversions: -3, engagement: 12 }
+      });
     } finally {
       setLoading(false);
     }

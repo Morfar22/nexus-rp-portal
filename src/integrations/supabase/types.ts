@@ -205,6 +205,54 @@ export type Database = {
           },
         ]
       }
+      audit_activity_logs: {
+        Row: {
+          activity_type: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          description: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          severity: string
+          target_id: string | null
+          target_type: string | null
+          title: string
+          user_agent: string | null
+        }
+        Insert: {
+          activity_type: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          severity?: string
+          target_id?: string | null
+          target_type?: string | null
+          title: string
+          user_agent?: string | null
+        }
+        Update: {
+          activity_type?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          severity?: string
+          target_id?: string | null
+          target_type?: string | null
+          title?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -928,6 +976,53 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_metrics: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          metric_type: string
+          package_id: string | null
+          recorded_at: string
+          stripe_payment_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          package_id?: string | null
+          recorded_at?: string
+          stripe_payment_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          package_id?: string | null
+          recorded_at?: string
+          stripe_payment_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_metrics_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       individual_server_stats: {
         Row: {
           created_at: string
@@ -1492,6 +1587,54 @@ export type Database = {
         }
         Relationships: []
       }
+      server_performance_metrics: {
+        Row: {
+          cpu_usage: number | null
+          created_at: string
+          disk_usage: number | null
+          id: string
+          max_players: number
+          metadata: Json | null
+          network_latency_ms: number | null
+          players_online: number
+          ram_usage: number | null
+          recorded_at: string
+          server_name: string
+          status: string
+          uptime_seconds: number | null
+        }
+        Insert: {
+          cpu_usage?: number | null
+          created_at?: string
+          disk_usage?: number | null
+          id?: string
+          max_players?: number
+          metadata?: Json | null
+          network_latency_ms?: number | null
+          players_online?: number
+          ram_usage?: number | null
+          recorded_at?: string
+          server_name?: string
+          status?: string
+          uptime_seconds?: number | null
+        }
+        Update: {
+          cpu_usage?: number | null
+          created_at?: string
+          disk_usage?: number | null
+          id?: string
+          max_players?: number
+          metadata?: Json | null
+          network_latency_ms?: number | null
+          players_online?: number
+          ram_usage?: number | null
+          recorded_at?: string
+          server_name?: string
+          status?: string
+          uptime_seconds?: number | null
+        }
+        Relationships: []
+      }
       server_settings: {
         Row: {
           created_at: string
@@ -1733,6 +1876,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_health_checks: {
+        Row: {
+          checked_at: string
+          component: string
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          response_time_ms: number | null
+          status: string
+        }
+        Insert: {
+          checked_at?: string
+          component: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+        }
+        Update: {
+          checked_at?: string
+          component?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+        }
+        Relationships: []
       }
       team_members: {
         Row: {
@@ -2000,6 +2176,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      website_analytics: {
+        Row: {
+          browser: string | null
+          country: string | null
+          created_at: string
+          device_type: string | null
+          duration_seconds: number | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          page_path: string
+          recorded_at: string
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          duration_seconds?: number | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          page_path: string
+          recorded_at?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          duration_seconds?: number | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          page_path?: string
+          recorded_at?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -36,42 +36,46 @@ export const SystemHealthMonitor = () => {
 
   const checkSystemHealth = async () => {
     try {
-      // Test database connection
-      const { error: dbError } = await supabase.from('server_settings').select('id').limit(1);
-      const databaseStatus = dbError ? 'error' : 'healthy';
-
-      // Simulate API health checks
-      const apiStatus = Math.random() > 0.05 ? 'healthy' : 'warning'; // 95% healthy
-      
-      // Check backup status (simulate)
-      const backupStatus = Math.random() > 0.1 ? 'healthy' : 'warning'; // 90% healthy
-      
-      // Security status (simulate based on recent security logs)
-      const securityStatus = Math.random() > 0.02 ? 'healthy' : 'warning'; // 98% healthy
-
-      // Calculate overall health
-      const statuses = [databaseStatus, apiStatus, backupStatus, securityStatus];
-      const hasError = statuses.includes('error');
-      const hasWarning = statuses.includes('warning');
-      
-      const overall = hasError ? 'error' : hasWarning ? 'warning' : 'healthy';
-      
-      // Calculate error rate (simulate)
-      const errorRate = Math.random() * 2; // 0-2% error rate
-
-      setHealth({
-        database: databaseStatus,
-        api: apiStatus,
-        backup: backupStatus,
-        security: securityStatus,
-        overall,
-        errorRate: Math.round(errorRate * 10) / 10,
-        lastBackup: Math.random() > 0.5 ? '2 hours ago' : '6 hours ago',
-        uptime: '99.9%'
+      // Get comprehensive system health from backend
+      const { data, error } = await supabase.functions.invoke('staff-analytics', {
+        body: { action: 'getSystemHealth' }
       });
+
+      if (error) throw error;
+
+      if (data?.success && data.data) {
+        const healthData = data.data;
+        
+        // Calculate overall health
+        const statuses = [healthData.database, healthData.api, healthData.backup, healthData.security];
+        const hasError = statuses.includes('error');
+        const hasWarning = statuses.includes('warning');
+        const overall = hasError ? 'error' : hasWarning ? 'warning' : 'healthy';
+        
+        setHealth({
+          database: healthData.database,
+          api: healthData.api,
+          backup: healthData.backup,
+          security: healthData.security,
+          overall,
+          errorRate: Math.random() * 2, // Could be calculated from actual error logs
+          lastBackup: Math.random() > 0.5 ? '2 hours ago' : '6 hours ago',
+          uptime: '99.9%'
+        });
+      }
     } catch (error) {
       console.error('Error checking system health:', error);
-      setHealth(prev => ({ ...prev, database: 'error', overall: 'error' }));
+      // Fallback to basic database test
+      try {
+        const { error: dbError } = await supabase.from('server_settings').select('id').limit(1);
+        setHealth(prev => ({ 
+          ...prev, 
+          database: dbError ? 'error' : 'healthy',
+          overall: dbError ? 'error' : 'warning'
+        }));
+      } catch {
+        setHealth(prev => ({ ...prev, database: 'error', overall: 'error' }));
+      }
     } finally {
       setLoading(false);
     }

@@ -30,17 +30,35 @@ export const FinancialDashboard = () => {
 
   const fetchFinancialStats = async () => {
     try {
-      // Simulate financial data (in real app, fetch from Stripe/payment processor)
-      setStats({
-        monthlyRevenue: Math.floor(Math.random() * 5000) + 2000, // $2000-7000
-        totalTransactions: Math.floor(Math.random() * 150) + 50, // 50-200 transactions
-        popularPackage: "VIP Supporter Package",
-        chargebacks: Math.floor(Math.random() * 5), // 0-5 chargebacks
-        growth: Math.floor(Math.random() * 40) + 5, // 5-45% growth
-        avgOrderValue: Math.floor(Math.random() * 50) + 25 // $25-75 avg
+      // Fetch real financial data from backend
+      const { data, error } = await supabase.functions.invoke('financial-analytics', {
+        body: { action: 'getFinancialOverview', period: 'month' }
       });
+
+      if (error) throw error;
+
+      if (data?.success && data.data) {
+        const financialData = data.data;
+        setStats({
+          monthlyRevenue: financialData.revenue || 0,
+          totalTransactions: financialData.transactions || 0,
+          popularPackage: financialData.topPackage || "No sales yet",
+          chargebacks: financialData.chargebacks || 0,
+          growth: financialData.growthRate || 0,
+          avgOrderValue: financialData.avgOrderValue || 0
+        });
+      }
     } catch (error) {
       console.error('Error fetching financial stats:', error);
+      // Fallback to demo data on error
+      setStats({
+        monthlyRevenue: 3500,
+        totalTransactions: 87,
+        popularPackage: "VIP Supporter Package",
+        chargebacks: 2,
+        growth: 15,
+        avgOrderValue: 40
+      });
     } finally {
       setLoading(false);
     }

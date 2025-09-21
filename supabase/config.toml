@@ -38,3 +38,12 @@ verify_jwt = false
 
 [functions.package-manager]
 verify_jwt = false
+
+[functions.staff-analytics]
+verify_jwt = false
+
+[functions.enhanced-server-stats]
+verify_jwt = false
+
+[functions.financial-analytics]
+verify_jwt = false

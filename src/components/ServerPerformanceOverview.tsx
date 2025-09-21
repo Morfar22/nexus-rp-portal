@@ -35,24 +35,29 @@ export const ServerPerformanceOverview = () => {
 
   const fetchServerStats = async () => {
     try {
-      // Fetch server stats from edge function or simulate data
-      const { data } = await supabase.functions.invoke('fetch-individual-server-stats', {
+      // Fetch server stats from enhanced server stats edge function
+      const { data, error } = await supabase.functions.invoke('enhanced-server-stats', {
         body: { server_id: 'main' }
       });
 
-      if (data) {
+      if (error) throw error;
+
+      if (data?.success && data.data) {
+        const serverData = data.data;
         setStats({
-          onlineUsers: data.players || Math.floor(Math.random() * 45),
-          maxUsers: data.max_players || 64,
-          cpuUsage: data.cpu_usage || Math.floor(Math.random() * 80) + 10,
-          ramUsage: data.ram_usage || Math.floor(Math.random() * 70) + 20,
-          uptime: data.uptime || `${Math.floor(Math.random() * 24)}h ${Math.floor(Math.random() * 60)}m`,
-          serverStatus: data.status || (Math.random() > 0.2 ? 'online' : 'maintenance'),
-          responseTime: data.response_time || Math.floor(Math.random() * 50) + 10
+          onlineUsers: serverData.players_online || 0,
+          maxUsers: serverData.max_players || 64,
+          cpuUsage: serverData.cpu_usage || 0,
+          ramUsage: serverData.ram_usage || 0,
+          uptime: serverData.uptime_formatted || "Unknown",
+          serverStatus: serverData.status === 'online' ? 'online' : 
+                       serverData.status === 'maintenance' ? 'maintenance' : 'offline',
+          responseTime: serverData.response_time || 0
         });
       }
     } catch (error) {
       console.error('Error fetching server stats:', error);
+      // Keep existing fallback data on error
     } finally {
       setLoading(false);
     }
