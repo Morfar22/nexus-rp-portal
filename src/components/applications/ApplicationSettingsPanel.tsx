@@ -26,7 +26,7 @@ export const ApplicationSettingsPanel = () => {
         .maybeSingle();
 
       if (error) throw error;
-      setSettings(data?.setting_value || {});
+      setSettings((data?.setting_value as any) || {});
     } catch (error) {
       console.error('Error fetching settings:', error);
     }
@@ -45,7 +45,7 @@ export const ApplicationSettingsPanel = () => {
         const { error } = await supabase
           .from('server_settings')
           .update({
-            setting_value: newSettings,
+            setting_value: JSON.stringify(newSettings) as any,
             updated_at: new Date().toISOString()
           })
           .eq('setting_key', 'application_settings');
@@ -53,11 +53,11 @@ export const ApplicationSettingsPanel = () => {
       } else {
         const { error } = await supabase
           .from('server_settings')
-          .insert({
+          .insert([{
             setting_key: 'application_settings',
-            setting_value: newSettings,
+            setting_value: JSON.stringify(newSettings) as any,
             created_by: (await supabase.auth.getUser()).data.user?.id
-          });
+          }]);
         if (error) throw error;
       }
       

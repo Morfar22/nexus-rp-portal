@@ -51,19 +51,19 @@ export const ApplicationsOverview = ({ applications }: ApplicationsOverviewProps
             
             <div className="space-y-2">
               {[
-                { status: 'pending', count: stats.pending, label: 'Pending Review' },
-                { status: 'under_review', count: stats.underReview, label: 'Under Review' },
-                { status: 'approved', count: stats.approved, label: 'Approved' },
-                { status: 'rejected', count: stats.rejected, label: 'Rejected' }
+                 { status: 'pending', count: stats.pending, label: 'Pending Review' },
+                 { status: 'under_review', count: stats.underReview, label: 'Under Review' },
+                 { status: 'approved', count: stats.approved, label: 'Approved' },
+                 { status: 'rejected', count: stats.rejected, label: 'Rejected' }
               ].map(({ status, count, label }) => {
                 const StatusIcon = getStatusIcon(status);
                 return (
                   <div key={status} className="flex items-center justify-between text-sm">
                     <div className="flex items-center space-x-2">
-                      <StatusIcon className={`h-3 w-3 ${getStatusColor(status)}`} />
+                      <StatusIcon className={`h-3 w-3 ${getStatusColor(status as any)}`} />
                       <span className="text-muted-foreground">{label}</span>
                     </div>
-                    <span className={`font-medium ${getStatusColor(status)}`}>{count}</span>
+                    <span className={`font-medium ${getStatusColor(status as any)}`}>{count}</span>
                   </div>
                 );
               })}

@@ -6,8 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ApplicationsOverview } from "./ApplicationsOverview";
 import { ApplicationsList } from "./ApplicationsList";
 import { ApplicationSettingsPanel } from "./ApplicationSettingsPanel";
-import ApplicationTypesManager from "./ApplicationTypesManager";
-import ClosedApplications from "./ClosedApplications";
+import ApplicationTypesManager from "../ApplicationTypesManager";
+import ClosedApplications from "../ClosedApplications";
 import { Application } from "./types";
 
 const ApplicationManager = () => {
@@ -111,7 +111,7 @@ const ApplicationManager = () => {
       // Update local state
       setApplications(prev => prev.map(app => 
         app.id === applicationId 
-          ? { ...app, status, notes, reviewed_by: reviewerId, reviewed_at: new Date().toISOString() }
+          ? { ...app, status: status as any, notes, reviewed_by: reviewerId || '', reviewed_at: new Date().toISOString() }
           : app
       ));
 
@@ -184,7 +184,7 @@ const ApplicationManager = () => {
         </TabsContent>
 
         <TabsContent value="closed">
-          <ClosedApplications onApplicationReopen={fetchApplications} />
+          <ClosedApplications />
         </TabsContent>
 
         <TabsContent value="settings">

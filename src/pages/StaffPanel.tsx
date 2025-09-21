@@ -65,7 +65,7 @@ import NavbarManager from "@/components/NavbarManager";
 import { SecurityOverview } from "@/components/SecurityOverview";
 import { SecuritySettings } from "@/components/SecuritySettings";
 import { SecurityDashboard } from "@/components/SecurityDashboard";
-import { ApplicationsOverview } from "@/components/ApplicationsOverview";
+import { ApplicationsOverview } from "@/components/applications/ApplicationsOverview";
 import { StaffOverview } from "@/components/StaffOverview";
 import { RulesOverview } from "@/components/RulesOverview";
 import { PartnersOverview } from "@/components/PartnersOverview";
