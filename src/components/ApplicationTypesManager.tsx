@@ -357,16 +357,33 @@ const ApplicationTypesManager = () => {
                     <p className="text-sm text-muted-foreground mb-2">{type.description}</p>
                     
                     <div className="text-xs text-muted-foreground mb-2">
-                      <p className="font-medium mb-1">Form Fields:</p>
+                      <p className="font-medium mb-1">
+                        Form Fields: 
+                        <span className="ml-2 text-amber-400">
+                          (Debug: {type.form_fields?.length || 0} fields, type: {typeof type.form_fields})
+                        </span>
+                      </p>
                       <ul className="space-y-1">
-                        {type.form_fields?.map((field, index) => (
-                          <li key={`${type.id}-field-${index}`}>
-                            - {field.label}
-                            {field.id === "discord_name" && (
-                              <span className="ml-1 text-neon-blue font-semibold">(required, automatic)</span>
-                            )}
+                        {Array.isArray(type.form_fields) && type.form_fields.length > 0 ? (
+                          type.form_fields.map((field, index) => {
+                            console.log(`Field ${index} for ${type.name}:`, field);
+                            return (
+                              <li key={`${type.id}-field-${index}`}>
+                                - {field.label || field.key || 'Unnamed field'}
+                                {field.id === "discord_name" && (
+                                  <span className="ml-1 text-neon-blue font-semibold">(required, automatic)</span>
+                                )}
+                                {field.required && (
+                                  <span className="ml-1 text-red-400 text-xs">*</span>
+                                )}
+                              </li>
+                            );
+                          })
+                        ) : (
+                          <li className="text-amber-400">
+                            No fields found or invalid format. Raw data: {JSON.stringify(type.form_fields)}
                           </li>
-                        ))}
+                        )}
                       </ul>
                     </div>
                     
