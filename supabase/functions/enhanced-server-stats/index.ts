@@ -26,21 +26,72 @@ serve(async (req) => {
     
     logStep("Fetching server stats", { serverName });
 
+    // Get server connection settings from database
+    const { data: connectInfo } = await supabaseClient
+      .from('server_settings')
+      .select('setting_value')
+      .eq('setting_key', 'connect_info')
+      .single();
+
     // Try to get real FiveM server data if available
     let serverData = null;
-    const fivemToken = Deno.env.get("FIVEM_API_TOKEN");
     
-    if (fivemToken) {
+    if (connectInfo?.setting_value) {
       try {
-        // This would be the actual FiveM server endpoint
-        // const response = await fetch(`https://servers-frontend.fivem.net/api/servers/single/${serverName}`, {
-        //   headers: { Authorization: `Bearer ${fivemToken}` }
-        // });
-        // serverData = await response.json();
-        logStep("FiveM API not implemented, using mock data");
+        const settings = typeof connectInfo.setting_value === 'string' 
+          ? JSON.parse(connectInfo.setting_value) 
+          : connectInfo.setting_value;
+        
+        if (settings.connect_ip && settings.connect_port && settings.connect_enabled) {
+          const serverIp = settings.connect_ip;
+          const serverPort = settings.connect_port;
+          
+          logStep("Fetching real server data", { ip: serverIp, port: serverPort });
+          
+          // Fetch real server info from FiveM server endpoints
+          const [playersResponse, infoResponse, dynamicResponse] = await Promise.allSettled([
+            fetch(`http://${serverIp}:${serverPort}/players.json`, { 
+              signal: AbortSignal.timeout(5000) 
+            }),
+            fetch(`http://${serverIp}:${serverPort}/info.json`, { 
+              signal: AbortSignal.timeout(5000) 
+            }),
+            fetch(`http://${serverIp}:${serverPort}/dynamic.json`, { 
+              signal: AbortSignal.timeout(5000) 
+            })
+          ]);
+
+          const playersData = playersResponse.status === 'fulfilled' && playersResponse.value.ok
+            ? await playersResponse.value.json() : [];
+          
+          const infoData = infoResponse.status === 'fulfilled' && infoResponse.value.ok
+            ? await infoResponse.value.json() : {};
+          
+          const dynamicData = dynamicResponse.status === 'fulfilled' && dynamicResponse.value.ok
+            ? await dynamicResponse.value.json() : {};
+
+          serverData = {
+            players: Array.isArray(playersData) ? playersData.length : 0,
+            maxPlayers: infoData.vars?.sv_maxClients ? parseInt(infoData.vars.sv_maxClients) : 64,
+            serverName: infoData.vars?.sv_hostname || 'Adventure RP',
+            status: 'online',
+            uptime: Date.now() - (infoData.server?.uptime || 0),
+            version: infoData.server?.version || '1.0.0'
+          };
+          
+          logStep("Real server data fetched", { 
+            players: serverData.players, 
+            maxPlayers: serverData.maxPlayers,
+            status: serverData.status
+          });
+        }
       } catch (error) {
-        logStep("FiveM API error, falling back to mock data", { error: error.message });
+        logStep("FiveM server connection error, using mock data", { error: error.message });
       }
+    }
+    
+    if (!serverData) {
+      logStep("No server connection configured, using mock data");
     }
 
     // Get historical data from our database
@@ -54,18 +105,19 @@ serve(async (req) => {
     // Generate or use real server stats
     const currentStats = {
       server_name: serverName,
-      players_online: serverData?.players || Math.floor(Math.random() * 45),
+      players_online: serverData?.players !== undefined ? serverData.players : Math.floor(Math.random() * 45),
       max_players: serverData?.maxPlayers || 64,
-      cpu_usage: Math.floor(Math.random() * 80) + 10,
-      ram_usage: Math.floor(Math.random() * 70) + 20,
-      disk_usage: Math.floor(Math.random() * 60) + 30,
+      cpu_usage: Math.floor(Math.random() * 80) + 10, // Still mock - would need server monitoring
+      ram_usage: Math.floor(Math.random() * 70) + 20, // Still mock - would need server monitoring  
+      disk_usage: Math.floor(Math.random() * 60) + 30, // Still mock - would need server monitoring
       network_latency_ms: Math.floor(Math.random() * 50) + 10,
-      uptime_seconds: historicalStats?.[0]?.uptime_seconds ? 
-        historicalStats[0].uptime_seconds + 300 : 86400,
-      status: Math.random() > 0.05 ? 'online' : 'maintenance',
+      uptime_seconds: serverData?.uptime ? Math.floor(serverData.uptime / 1000) : 
+        (historicalStats?.[0]?.uptime_seconds ? historicalStats[0].uptime_seconds + 300 : 86400),
+      status: serverData?.status || (Math.random() > 0.05 ? 'online' : 'maintenance'),
       metadata: {
         location: 'EU-West',
-        version: '1.0.0',
+        version: serverData?.version || '1.0.0',
+        server_name: serverData?.serverName || 'Adventure RP',
         last_restart: new Date(Date.now() - Math.floor(Math.random() * 24 * 60 * 60 * 1000)).toISOString()
       }
     };
