@@ -58,11 +58,9 @@ import ApplicationManager from "@/components/ApplicationManager";
 import RulesManager from "@/components/RulesManager";
 import UserManagementSection from "@/components/UserManagementSection";
 
-import ServerManager from "@/components/ServerManager";
 import EmailTest from "@/components/EmailTest";
 import PartnerManager from "@/components/PartnerManager";
 import NavbarManager from "@/components/NavbarManager";
-import ServerStatsManager from "@/components/ServerStatsManager";
 import { SecurityOverview } from "@/components/SecurityOverview";
 import { SecuritySettings } from "@/components/SecuritySettings";
 import { SecurityDashboard } from "@/components/SecurityDashboard";
@@ -76,13 +74,12 @@ import { DeploymentSettings } from "@/components/DeploymentSettings";
 import { PermissionGate } from "@/components/PermissionGate";
 import LiveChatManager from "@/components/LiveChatManager";
 import DesignManager from "@/components/DesignManager";
-import ServerInfoCard from "@/components/ServerInfoCard";
 import { PackageManager } from "@/components/PackageManager";
 import { SubscriptionOverview } from "@/components/SubscriptionOverview";
 import LawsManager from "@/components/LawsManager";
 import SocialMediaManager from "@/components/SocialMediaManager";
 import CustomRoleManager from "@/components/CustomRoleManager";
-import LiveServerManager from "@/components/LiveServerManager";
+import ConsolidatedServerManager from "@/components/ConsolidatedServerManager";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -906,8 +903,7 @@ const StaffPanel = () => {
                     {activeTab === "packages" && "Package Management"}
                     {activeTab === "settings" && "System Settings"}
                     {activeTab === "content" && "Homepage Content"}
-                    {activeTab === "server-management" && "Live Server Management"}
-                    {activeTab === "server-stats" && "Server Statistics"}
+                    {activeTab === "server-management" && "Server Management"}
                     {activeTab === "deployment" && "Deployment Settings"}
                     {activeTab === "logs" && "System Logs"}
                     {activeTab === "emails" && "Email Templates"}
@@ -1009,14 +1005,7 @@ const StaffPanel = () => {
 
               {activeTab === "server-management" && (
                 <div className="space-y-6">
-                  <LiveServerManager />
-                </div>
-              )}
-
-              {activeTab === "server-stats" && (
-                <div className="space-y-6">
-                  <ServerManager />
-                  <ServerInfoCard />
+                  <ConsolidatedServerManager />
                 </div>
               )}
 
@@ -1065,7 +1054,6 @@ const StaffPanel = () => {
                     setServerSettings={setServerSettings}
                     handleSettingUpdate={handleSettingUpdate}
                   />
-                  <UserManagementSection />
                   <IPWhitelistManager 
                     serverSettings={serverSettings}
                     setServerSettings={setServerSettings}

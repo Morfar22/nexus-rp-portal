@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
-import ServerStats from "@/components/ServerStats";
+
 import ServerDashboard from "@/components/ServerDashboard";
 import ParticleBackground from "@/components/ParticleBackground";
 import { Link } from "react-router-dom";

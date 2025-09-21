@@ -77,7 +77,6 @@ const navigationItems = [
     group: "System",
     items: [
       { id: "server-management", label: "Server Management", icon: Activity },
-      { id: "server-stats", label: "Server Stats", icon: BarChart3 },
       { id: "navbar", label: "Navigation", icon: Layout },
       { id: "emails", label: "Email Templates", icon: Mail },
       { id: "logs", label: "System Logs", icon: Activity },

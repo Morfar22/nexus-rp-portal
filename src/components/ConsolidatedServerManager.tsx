@@ -22,7 +22,9 @@ import {
   AlertCircle,
   CheckCircle,
   WifiOff,
-  MonitorSpeaker
+  MonitorSpeaker,
+  Settings,
+  BarChart3
 } from "lucide-react";
 
 interface ServerData {
@@ -47,9 +49,24 @@ interface ServerStats {
   recorded_at: string;
 }
 
-export default function LiveServerManager() {
+interface ServerInfo {
+  server_ip: string;
+  auto_fetch_enabled: boolean;
+  displayIp: string;
+  discordUrl: string;
+  status: string;
+}
+
+export default function ConsolidatedServerManager() {
   const [servers, setServers] = useState<ServerData[]>([]);
   const [serverStats, setServerStats] = useState<Record<string, ServerStats>>({});
+  const [serverInfo, setServerInfo] = useState<ServerInfo>({
+    server_ip: '',
+    auto_fetch_enabled: false,
+    displayIp: '',
+    discordUrl: '',
+    status: 'online'
+  });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -59,6 +76,7 @@ export default function LiveServerManager() {
 
   useEffect(() => {
     fetchServers();
+    fetchServerInfo();
     
     // Set up real-time subscriptions
     const serverChannel = supabase
@@ -71,10 +89,10 @@ export default function LiveServerManager() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'individual_server_stats' }, fetchServerStats)
       .subscribe();
 
-    // Set up interval for live updates every second
+    // Set up interval for live updates every 5 seconds
     const interval = setInterval(() => {
       fetchServerStats();
-    }, 1000);
+    }, 5000);
 
     return () => {
       supabase.removeChannel(serverChannel);
@@ -93,7 +111,6 @@ export default function LiveServerManager() {
       if (error) throw error;
       setServers(data || []);
       
-      // Fetch stats for each server
       if (data && data.length > 0) {
         fetchServerStats();
       }
@@ -129,6 +146,28 @@ export default function LiveServerManager() {
       setServerStats(latestStats);
     } catch (error) {
       console.error('Error fetching server stats:', error);
+    }
+  };
+
+  const fetchServerInfo = async () => {
+    try {
+      const [serverIpResult, autoFetchResult, displayIpResult, discordUrlResult, statusResult] = await Promise.all([
+        supabase.from('server_settings').select('setting_value').eq('setting_key', 'server_ip').maybeSingle(),
+        supabase.from('server_settings').select('setting_value').eq('setting_key', 'auto_fetch_enabled').maybeSingle(),
+        supabase.from('server_settings').select('setting_value').eq('setting_key', 'display_ip').maybeSingle(),
+        supabase.from('server_settings').select('setting_value').eq('setting_key', 'discord_url').maybeSingle(),
+        supabase.from('server_settings').select('setting_value').eq('setting_key', 'server_status').maybeSingle()
+      ]);
+
+      setServerInfo({
+        server_ip: (serverIpResult.data?.setting_value as string) || '',
+        auto_fetch_enabled: (autoFetchResult.data?.setting_value as boolean) || false,
+        displayIp: (displayIpResult.data?.setting_value as string) || '',
+        discordUrl: (discordUrlResult.data?.setting_value as string) || '',
+        status: (statusResult.data?.setting_value as string) || 'online'
+      });
+    } catch (error) {
+      console.error('Error fetching server info:', error);
     }
   };
 
@@ -237,7 +276,6 @@ export default function LiveServerManager() {
         description: "Server stats refreshed successfully",
       });
       
-      // Wait a moment then fetch the updated stats
       setTimeout(fetchServerStats, 2000);
     } catch (error) {
       console.error('Error refreshing stats:', error);
@@ -248,6 +286,53 @@ export default function LiveServerManager() {
       });
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const saveServerSettings = async () => {
+    try {
+      const updates = [
+        { key: 'server_ip', value: serverInfo.server_ip },
+        { key: 'auto_fetch_enabled', value: serverInfo.auto_fetch_enabled },
+        { key: 'display_ip', value: serverInfo.displayIp },
+        { key: 'discord_url', value: serverInfo.discordUrl },
+        { key: 'server_status', value: serverInfo.status }
+      ];
+
+      for (const update of updates) {
+        const { data: existing } = await supabase
+          .from('server_settings')
+          .select('id')
+          .eq('setting_key', update.key)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('server_settings')
+            .update({ setting_value: update.value, updated_at: new Date().toISOString() })
+            .eq('setting_key', update.key);
+        } else {
+          await supabase
+            .from('server_settings')
+            .insert({
+              setting_key: update.key,
+              setting_value: update.value,
+              created_by: (await supabase.auth.getUser()).data.user?.id
+            });
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: "Server settings saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving server settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save server settings",
+        variant: "destructive",
+      });
     }
   };
 
@@ -298,6 +383,57 @@ export default function LiveServerManager() {
 
   return (
     <div className="space-y-6">
+      {/* Server Configuration */}
+      <Card className="bg-gaming-card border-gaming-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Server Configuration
+          </CardTitle>
+          <CardDescription>Configure your main server settings and information</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="server_ip">Server IP</Label>
+              <Input
+                id="server_ip"
+                value={serverInfo.server_ip}
+                onChange={(e) => setServerInfo({ ...serverInfo, server_ip: e.target.value })}
+                placeholder="192.168.1.100"
+              />
+            </div>
+            <div>
+              <Label htmlFor="display_ip">Display IP</Label>
+              <Input
+                id="display_ip"
+                value={serverInfo.displayIp}
+                onChange={(e) => setServerInfo({ ...serverInfo, displayIp: e.target.value })}
+                placeholder="connect server.example.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="discord_url">Discord URL</Label>
+              <Input
+                id="discord_url"
+                value={serverInfo.discordUrl}
+                onChange={(e) => setServerInfo({ ...serverInfo, discordUrl: e.target.value })}
+                placeholder="https://discord.gg/your-server"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={serverInfo.auto_fetch_enabled}
+                onCheckedChange={(checked) => setServerInfo({ ...serverInfo, auto_fetch_enabled: checked })}
+              />
+              <Label>Auto-fetch Stats</Label>
+            </div>
+          </div>
+          <Button onClick={saveServerSettings}>Save Configuration</Button>
+        </CardContent>
+      </Card>
+
+      {/* Live Server Management */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Live Server Management</h2>
