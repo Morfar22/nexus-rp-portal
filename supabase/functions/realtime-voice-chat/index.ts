@@ -78,13 +78,12 @@ serve(async (req) => {
         return;
       }
 
-      // Connect to OpenAI WebSocket using ephemeral token as subprotocol
+      // Connect to OpenAI WebSocket using ephemeral token in URL
       const ephemeralToken = tokenData.client_secret.value;
-      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
+      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01&access_token=${ephemeralToken}`;
       
-      console.log('Connecting to OpenAI with ephemeral token as subprotocol...');
-      // Try using the ephemeral token as a subprotocol (similar to Kubernetes approach)
-      openAISocket = new WebSocket(wsUrl, [`realtime`, `Bearer.${ephemeralToken}`]);
+      console.log('Connecting to OpenAI with ephemeral token in URL...');
+      openAISocket = new WebSocket(wsUrl);
 
       openAISocket.onopen = () => {
         console.log('Successfully connected to OpenAI Realtime API');
