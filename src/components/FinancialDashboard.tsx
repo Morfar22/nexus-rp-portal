@@ -50,14 +50,14 @@ export const FinancialDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching financial stats:', error);
-      // Fallback to demo data on error
+      // Keep loading state to show user there's an issue
       setStats({
-        monthlyRevenue: 3500,
-        totalTransactions: 87,
-        popularPackage: "VIP Supporter Package",
-        chargebacks: 2,
-        growth: 15,
-        avgOrderValue: 40
+        monthlyRevenue: 0,
+        totalTransactions: 0,
+        popularPackage: "Error loading data",
+        chargebacks: 0,
+        growth: 0,
+        avgOrderValue: 0
       });
     } finally {
       setLoading(false);
