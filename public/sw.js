@@ -1,7 +1,8 @@
-// Performance optimized service worker with push notifications
-const CACHE_NAME = 'app-performance-v1';
-const STATIC_CACHE = 'static-cache-v1';
+// Enhanced Performance optimized service worker with push notifications
+const CACHE_NAME = 'app-performance-v2';
+const STATIC_CACHE = 'static-cache-v2';
 const NOTIFICATION_CACHE = 'chat-notifications-v1';
+const DYNAMIC_CACHE = 'dynamic-cache-v1';
 
 // Resources to cache immediately for better LCP
 const PRECACHE_RESOURCES = [
@@ -12,18 +13,20 @@ const PRECACHE_RESOURCES = [
   '/src/assets/hero-image.png'
 ];
 
-// Cache-first strategy for static assets
+// Cache-first strategy for static assets - includes WebP optimization
 const CACHE_FIRST_RESOURCES = [
-  /\.(?:js|css|woff2?|ttf|eot)$/,
+  /\.(?:js|css|woff2?|ttf|eot|webp|avif)$/,
   /\/src\/assets\//,
-  /\/public\//
+  /\/public\//,
+  /\.(png|jpg|jpeg|gif|svg)$/
 ];
 
 // Network-first strategy for API calls
 const NETWORK_FIRST_RESOURCES = [
   /\/api\//,
   /supabase\.co/,
-  /functions\/v1\//
+  /functions\/v1\//,
+  /performance-/
 ];
 
 self.addEventListener('install', (event) => {
@@ -46,7 +49,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (![CACHE_NAME, STATIC_CACHE, NOTIFICATION_CACHE].includes(cacheName)) {
+          if (![CACHE_NAME, STATIC_CACHE, NOTIFICATION_CACHE, DYNAMIC_CACHE].includes(cacheName)) {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -205,18 +208,37 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-self.addEventListener('notificationclose', (event) => {
-  console.log('Notification closed:', event);
-});
-
-// Handle background sync for offline notifications
+// Enhanced background sync for performance metrics and offline notifications
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync') {
     event.waitUntil(handleBackgroundSync());
+  } else if (event.tag === 'performance-metrics') {
+    event.waitUntil(uploadPendingMetrics());
   }
 });
 
 async function handleBackgroundSync() {
   console.log('Handling background sync...');
   // Handle any queued notifications or messages
+}
+
+async function uploadPendingMetrics() {
+  console.log('Uploading pending performance metrics...');
+  // Upload any cached performance metrics when connection is restored
+  try {
+    const cache = await caches.open(DYNAMIC_CACHE);
+    const requests = await cache.keys();
+    const metricsRequests = requests.filter(req => req.url.includes('performance-metrics'));
+    
+    for (const request of metricsRequests) {
+      const response = await cache.match(request);
+      if (response) {
+        // Retry the original request
+        await fetch(request);
+        await cache.delete(request);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to upload pending metrics:', error);
+  }
 }
