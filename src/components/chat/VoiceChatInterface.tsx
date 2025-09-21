@@ -139,33 +139,37 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
       ws.onopen = () => {
         console.log('Voice chat connected');
         setIsConnected(true);
-        
-        // Send session configuration
-        ws.send(JSON.stringify({
-          type: 'session.update',
-          session: {
-            modalities: ['text', 'audio'],
-            voice: voiceSettings.voice_model,
-            input_audio_format: 'pcm16',
-            output_audio_format: 'pcm16',
-            input_audio_transcription: voiceSettings.auto_transcription ? {
-              model: 'whisper-1'
-            } : null,
-            turn_detection: {
-              type: 'server_vad',
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 1000
-            },
-            temperature: 0.8
-          }
-        }));
       };
 
       ws.onmessage = async (event) => {
         const data = JSON.parse(event.data);
+        console.log('Voice chat message:', data.type);
         
         switch (data.type) {
+          case 'session.created':
+            // Now send session configuration after session is created
+            console.log('Session created, sending configuration');
+            ws.send(JSON.stringify({
+              type: 'session.update',
+              session: {
+                modalities: ['text', 'audio'],
+                voice: voiceSettings.voice_model,
+                input_audio_format: 'pcm16',
+                output_audio_format: 'pcm16',
+                input_audio_transcription: voiceSettings.auto_transcription ? {
+                  model: 'whisper-1'
+                } : null,
+                turn_detection: {
+                  type: 'server_vad',
+                  threshold: 0.5,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 1000
+                },
+                temperature: 0.8
+              }
+            }));
+            break;
+            
           case 'response.audio.delta':
             await playAudioChunk(data.delta);
             setIsSpeaking(true);
@@ -189,6 +193,15 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
             
           case 'input_audio_buffer.speech_stopped':
             setIsListening(false);
+            break;
+            
+          case 'error':
+            console.error('Voice chat error:', data.error);
+            toast({
+              title: "Voice Chat Error",
+              description: data.error || "Unknown error occurred",
+              variant: "destructive"
+            });
             break;
         }
       };
