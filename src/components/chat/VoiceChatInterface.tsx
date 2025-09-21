@@ -105,7 +105,10 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
   };
 
   const connectVoiceChat = async () => {
+    console.log('Starting voice chat connection...');
+    
     if (!selectedSession) {
+      console.log('No session selected');
       toast({
         title: "No Session Selected",
         description: "Please select a chat session first.",
@@ -114,7 +117,10 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
       return;
     }
 
+    console.log('Selected session:', selectedSession);
+
     try {
+      console.log('Setting connected state to true...');
       setIsConnected(true);
       
       // Initialize audio context
@@ -134,10 +140,13 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
 
       // Connect to voice chat edge function
       const projectRef = 'vqvluqwadoaerghwyohk'; // Your project ref
-      const ws = new WebSocket(`wss://${projectRef}.functions.supabase.co/functions/v1/realtime-voice-chat`);
+      const wsUrl = `wss://${projectRef}.functions.supabase.co/functions/v1/realtime-voice-chat`;
+      console.log('Connecting to WebSocket URL:', wsUrl);
+      
+      const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
-        console.log('Voice chat connected');
+        console.log('Voice chat WebSocket connected successfully');
         setIsConnected(true);
       };
 
@@ -207,10 +216,11 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
       };
 
       ws.onerror = (error) => {
-        console.error('Voice chat error:', error);
+        console.error('Voice chat WebSocket error:', error);
+        console.error('WebSocket URL was:', wsUrl);
         toast({
           title: "Voice Chat Error",
-          description: "Failed to connect to voice chat service.",
+          description: "Failed to connect to voice chat service. Check console for details.",
           variant: "destructive"
         });
         setIsConnected(false);
@@ -235,9 +245,10 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
       
     } catch (error) {
       console.error('Error connecting voice chat:', error);
+      console.error('Error details:', error.message, error.stack);
       toast({
         title: "Connection Failed",
-        description: "Failed to connect to voice chat. Please check microphone permissions.",
+        description: `Failed to connect to voice chat: ${error.message}`,
         variant: "destructive"
       });
       setIsConnected(false);
