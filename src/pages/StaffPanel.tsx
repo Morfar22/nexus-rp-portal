@@ -55,6 +55,7 @@ import LogsViewer from "@/components/LogsViewer";
 import DiscordBotManager from "@/components/DiscordBotManager";
 import IPWhitelistManager from "@/components/IPWhitelistManager";
 import ApplicationManager from "@/components/ApplicationManager";
+import ApplicationTypesManager from "@/components/ApplicationTypesManager";
 import RulesManager from "@/components/RulesManager";
 import UserManagementSection from "@/components/UserManagementSection";
 
@@ -892,26 +893,27 @@ const StaffPanel = () => {
                   <h1 className="text-xl font-bold text-foreground">
                     {activeTab === "overview" && "Dashboard Overview"}
                     {activeTab === "applications" && "Application Management"}
+                    {activeTab === "application-types" && "Application Types"}
+                    {activeTab === "application-settings" && "Application Settings"}
                     {activeTab === "rules" && "Rules Management"}
                     {activeTab === "laws" && "Laws Management"}
                     {activeTab === "custom-roles" && "Roller & Staff Management"}
                     {activeTab === "users" && "User Management"}
-                    
                     {activeTab === "partners" && "Partners Management"}
                     {activeTab === "navbar" && "Navigation Management"}
                     {activeTab === "live-streamers" && "Live Streamers"}
                     {activeTab === "packages" && "Package Management"}
-                    {activeTab === "settings" && "System Settings"}
+                    {activeTab === "settings" && "General Settings"}
                     {activeTab === "content" && "Homepage Content"}
                     {activeTab === "server-management" && "Server Management"}
                     {activeTab === "deployment" && "Deployment Settings"}
                     {activeTab === "logs" && "System Logs"}
                     {activeTab === "emails" && "Email Templates"}
-                     {activeTab === "design" && "Design & Appearance"}
-                     {activeTab === "social-media" && "Social Media Management"}
-                     {activeTab === "chat" && "Live Chat Management"}
-                     {activeTab === "security" && "Security Management"}
-                     {activeTab === "performance" && "Performance Optimization"}
+                    {activeTab === "design" && "Design & Appearance"}
+                    {activeTab === "social-media" && "Social Media Management"}
+                    {activeTab === "chat" && "Live Chat Management"}
+                    {activeTab === "security" && "Security Management"}
+                    {activeTab === "performance" && "Performance Optimization"}
                   </h1>
                 <div className="flex items-center space-x-2 mt-1">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
@@ -939,6 +941,58 @@ const StaffPanel = () => {
               {activeTab === "applications" && (
                 <div className="space-y-6">
                   <ApplicationManager />
+                </div>
+              )}
+
+              {activeTab === "application-types" && (
+                <div className="space-y-6">
+                  <ApplicationTypesManager />
+                </div>
+              )}
+
+              {activeTab === "application-settings" && (
+                <div className="space-y-6">
+                  {/* Application Settings */}
+                  <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
+                    <div className="flex items-center space-x-2 mb-4 sm:mb-6">
+                      <FileText className="h-5 w-5 text-neon-green" />
+                      <h2 className="text-lg sm:text-xl font-semibold text-foreground">Application Settings</h2>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 pr-4">
+                          <Label className="text-foreground text-sm sm:text-base">Accept Applications</Label>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            Toggle whether new applications can be submitted
+                          </p>
+                        </div>
+                        <Switch
+                          checked={serverSettings.application_settings?.accept_applications || false}
+                          onCheckedChange={(checked) => {
+                            const newSettings = {
+                              ...serverSettings.application_settings,
+                              accept_applications: checked
+                            };
+                            setServerSettings({
+                              ...serverSettings,
+                              application_settings: newSettings
+                            });
+                            handleSettingUpdate('application_settings', newSettings);
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="p-3 sm:p-4 bg-gaming-dark rounded border">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          <strong>Status:</strong> Applications are currently{' '}
+                          <span className={serverSettings.application_settings?.accept_applications ? 'text-green-400' : 'text-red-400'}>
+                            {serverSettings.application_settings?.accept_applications ? 'OPEN' : 'CLOSED'}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
               )}
 
@@ -1017,7 +1071,6 @@ const StaffPanel = () => {
 
               {activeTab === "logs" && (
                 <div className="space-y-6">
-                  <DiscordLogsManager />
                   <LogsViewer />
                 </div>
               )}
@@ -1043,6 +1096,7 @@ const StaffPanel = () => {
               {activeTab === "social-media" && (
                 <div className="space-y-6">
                   <SocialMediaManager />
+                  <DiscordLogsManager />
                 </div>
               )}
 
@@ -1246,47 +1300,6 @@ const StaffPanel = () => {
                     </div>
                   </Card>
 
-                  {/* Application Settings */}
-                  <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
-                    <div className="flex items-center space-x-2 mb-4 sm:mb-6">
-                      <FileText className="h-5 w-5 text-neon-green" />
-                      <h2 className="text-lg sm:text-xl font-semibold text-foreground">Application Settings</h2>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 pr-4">
-                          <Label className="text-foreground text-sm sm:text-base">Accept Applications</Label>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            Toggle whether new applications can be submitted
-                          </p>
-                        </div>
-                        <Switch
-                          checked={serverSettings.application_settings?.accept_applications || false}
-                          onCheckedChange={(checked) => {
-                            const newSettings = {
-                              ...serverSettings.application_settings,
-                              accept_applications: checked
-                            };
-                            setServerSettings({
-                              ...serverSettings,
-                              application_settings: newSettings
-                            });
-                            handleSettingUpdate('application_settings', newSettings);
-                          }}
-                        />
-                      </div>
-                      
-                      <div className="p-3 sm:p-4 bg-gaming-dark rounded border">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          <strong>Status:</strong> Applications are currently{' '}
-                          <span className={serverSettings.application_settings?.accept_applications ? 'text-green-400' : 'text-red-400'}>
-                            {serverSettings.application_settings?.accept_applications ? 'OPEN' : 'CLOSED'}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
 
                   {/* Discord Settings */}
                   <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">

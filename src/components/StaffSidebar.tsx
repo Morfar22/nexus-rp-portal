@@ -47,9 +47,17 @@ const navigationItems = [
     group: "Dashboard",
     items: [
       { id: "overview", label: "Overview", icon: Home },
-      { id: "applications", label: "Applications", icon: FileText },
       { id: "security", label: "Security", icon: Shield },
       { id: "performance", label: "Performance", icon: Zap },
+      { id: "logs", label: "System Logs", icon: Activity },
+    ]
+  },
+  {
+    group: "Applications",
+    items: [
+      { id: "applications", label: "Applications", icon: FileText },
+      { id: "application-types", label: "Application Types", icon: UserPlus },
+      { id: "application-settings", label: "Application Settings", icon: Settings },
     ]
   },
   {
@@ -59,8 +67,6 @@ const navigationItems = [
       { id: "laws", label: "Laws", icon: Scale },
       { id: "content", label: "Homepage", icon: Layout },
       { id: "design", label: "Design & Appearance", icon: Palette },
-      { id: "social-media", label: "Social Media", icon: Instagram },
-      { id: "live-streamers", label: "Live Streamers", icon: Tv },
       { id: "packages", label: "Packages", icon: CreditCard },
     ]
   },
@@ -69,8 +75,16 @@ const navigationItems = [
     items: [
       { id: "custom-roles", label: "Roller & Staff", icon: Crown },
       { id: "users", label: "Users", icon: Users },
-      { id: "chat", label: "Live Chat", icon: MessageSquare },
       { id: "partners", label: "Partners", icon: Globe },
+    ]
+  },
+  {
+    group: "Communications",
+    items: [
+      { id: "chat", label: "Live Chat", icon: MessageSquare },
+      { id: "emails", label: "Email Templates", icon: Mail },
+      { id: "social-media", label: "Social Media", icon: Instagram },
+      { id: "live-streamers", label: "Live Streamers", icon: Tv },
     ]
   },
   {
@@ -78,10 +92,8 @@ const navigationItems = [
     items: [
       { id: "server-management", label: "Server Management", icon: Activity },
       { id: "navbar", label: "Navigation", icon: Layout },
-      { id: "emails", label: "Email Templates", icon: Mail },
-      { id: "logs", label: "System Logs", icon: Activity },
       { id: "deployment", label: "Deployment", icon: Rocket },
-      { id: "settings", label: "Settings", icon: Settings },
+      { id: "settings", label: "General Settings", icon: Settings },
     ]
   }
 ];
