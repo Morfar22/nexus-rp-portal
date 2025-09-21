@@ -426,7 +426,8 @@ const ApplicationTypesManager = () => {
                           </DialogDescription>
                         </DialogHeader>
                         <FormFieldEditor
-                          fields={type.form_fields || []}
+                          applicationTypeId={type.id}
+                          initialFields={type.form_fields || []}
                           onSave={(fields) => updateApplicationType(type.id, { form_fields: fields })}
                         />
                       </DialogContent>
