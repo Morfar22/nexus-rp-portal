@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ interface ChatAnalytics {
   agentPerformance: any[];
 }
 
-export const EnhancedChatAnalytics = () => {
+const EnhancedChatAnalytics: React.FC = () => {
   const [analytics, setAnalytics] = useState<ChatAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d');
@@ -334,3 +334,5 @@ export const EnhancedChatAnalytics = () => {
     </div>
   );
 };
+
+export { EnhancedChatAnalytics };
