@@ -336,8 +336,16 @@ export const PerformanceOptimizer = () => {
 
       if (error) throw error;
 
+      // Check if data and report exist
+      const reportData = data?.data?.report || data?.report || {
+        metrics,
+        backendAnalysis,
+        optimizations,
+        timestamp: new Date().toISOString()
+      };
+
       // Download report as JSON
-      const blob = new Blob([JSON.stringify(data.data.report, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -351,6 +359,11 @@ export const PerformanceOptimizer = () => {
       });
     } catch (error) {
       console.error('Error generating report:', error);
+      toast({
+        title: "Report Generation Failed",
+        description: "Could not generate performance report",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
