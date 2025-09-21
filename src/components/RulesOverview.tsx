@@ -37,7 +37,7 @@ export const RulesOverview = ({ rules }: RulesOverviewProps) => {
   const coveragePercentage = totalRules > 0 ? Math.round((activeRules / totalRules) * 100) : 0;
 
   const getCategoryColor = (index: number) => {
-    const colors = ['text-blue-400', 'text-green-400', 'text-purple-400', 'text-yellow-400', 'text-pink-400'];
+    const colors = ['text-blue-400', 'text-emerald-400', 'text-violet-400', 'text-amber-400', 'text-pink-400'];
     return colors[index % colors.length];
   };
 
@@ -72,19 +72,19 @@ export const RulesOverview = ({ rules }: RulesOverviewProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-3 w-3 text-green-400" />
+                <CheckCircle className="h-3 w-3 text-emerald-400" />
                 <span className="text-muted-foreground">Active Rules</span>
               </div>
-              <span className="font-medium text-green-400">{activeRules}</span>
+              <span className="font-medium text-emerald-400">{activeRules}</span>
             </div>
             
             {inactiveRules > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-3 w-3 text-yellow-400" />
+                  <AlertTriangle className="h-3 w-3 text-amber-400" />
                   <span className="text-muted-foreground">Inactive Rules</span>
                 </div>
-                <span className="font-medium text-yellow-400">{inactiveRules}</span>
+                <span className="font-medium text-amber-400">{inactiveRules}</span>
               </div>
             )}
           </div>
@@ -142,13 +142,13 @@ export const RulesOverview = ({ rules }: RulesOverviewProps) => {
           <div className="flex items-center space-x-2">
             {totalRules >= 10 ? (
               <>
-                <CheckCircle className="h-4 w-4 text-green-400" />
-                <span className="text-xs text-green-400">Comprehensive rule coverage</span>
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs text-emerald-400">Comprehensive rule coverage</span>
               </>
             ) : (
               <>
-                <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                <span className="text-xs text-yellow-400">Consider adding more rules for better coverage</span>
+                <AlertTriangle className="h-4 w-4 text-amber-400" />
+                <span className="text-xs text-amber-400">Consider adding more rules for better coverage</span>
               </>
             )}
           </div>

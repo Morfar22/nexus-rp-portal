@@ -27,9 +27,9 @@ export const SecurityOverview = ({ serverSettings, staffCount, userCount = 0 }: 
   const securityScore = enabledChecks.reduce((total, check) => total + check.weight, 0);
   
   const getSecurityLevel = () => {
-    if (securityScore >= 80) return { level: "High", color: "text-green-400", icon: ShieldCheck };
-    if (securityScore >= 50) return { level: "Medium", color: "text-yellow-400", icon: Shield };
-    return { level: "Low", color: "text-red-400", icon: ShieldAlert };
+    if (securityScore >= 80) return { level: "High", color: "text-emerald-400", icon: ShieldCheck };
+    if (securityScore >= 50) return { level: "Medium", color: "text-amber-400", icon: Shield };
+    return { level: "Low", color: "text-rose-400", icon: ShieldAlert };
   };
   
   const security = getSecurityLevel();
@@ -65,25 +65,25 @@ export const SecurityOverview = ({ serverSettings, staffCount, userCount = 0 }: 
           <div className="grid grid-cols-2 gap-2 text-xs">
             {/* IP Whitelist */}
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${securitySettings.ip_whitelist ? 'bg-green-400' : 'bg-gray-400'}`} />
+              <div className={`w-2 h-2 rounded-full ${securitySettings.ip_whitelist ? 'bg-emerald-400' : 'bg-muted-foreground/50'}`} />
               <span className="text-muted-foreground">IP Whitelist</span>
             </div>
             
             {/* Maintenance Mode */}
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${generalSettings.maintenance_mode ? 'bg-yellow-400' : 'bg-gray-400'}`} />
+              <div className={`w-2 h-2 rounded-full ${generalSettings.maintenance_mode ? 'bg-amber-400' : 'bg-muted-foreground/50'}`} />
               <span className="text-muted-foreground">Maintenance</span>
             </div>
             
             {/* Discord Integration */}
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${discordSettings.bot_token ? 'bg-blue-400' : 'bg-gray-400'}`} />
+              <div className={`w-2 h-2 rounded-full ${discordSettings.bot_token ? 'bg-blue-400' : 'bg-muted-foreground/50'}`} />
               <span className="text-muted-foreground">Discord Bot</span>
             </div>
             
             {/* Staff Control */}
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${staffCount > 0 ? 'bg-purple-400' : 'bg-gray-400'}`} />
+              <div className={`w-2 h-2 rounded-full ${staffCount > 0 ? 'bg-violet-400' : 'bg-muted-foreground/50'}`} />
               <span className="text-muted-foreground">Staff Control</span>
             </div>
           </div>
@@ -118,8 +118,8 @@ export const SecurityOverview = ({ serverSettings, staffCount, userCount = 0 }: 
         {securityScore < 80 && (
           <div className="pt-3 border-t border-gaming-border">
             <div className="flex items-center space-x-2 mb-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-400" />
-              <span className="text-xs font-medium text-yellow-400">Security Recommendations</span>
+              <AlertTriangle className="h-4 w-4 text-amber-400" />
+              <span className="text-xs font-medium text-amber-400">Security Recommendations</span>
             </div>
             <div className="space-y-1">
               {!securitySettings.ip_whitelist && (

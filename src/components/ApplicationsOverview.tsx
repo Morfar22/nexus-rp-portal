@@ -28,11 +28,11 @@ export const ApplicationsOverview = ({ applications }: ApplicationsOverviewProps
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'text-yellow-400';
-      case 'approved': return 'text-green-400';
-      case 'rejected': return 'text-red-400';
+      case 'pending': return 'text-amber-400';
+      case 'approved': return 'text-emerald-400';
+      case 'rejected': return 'text-rose-400';
       case 'under_review': return 'text-blue-400';
-      default: return 'text-gray-400';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -121,8 +121,8 @@ export const ApplicationsOverview = ({ applications }: ApplicationsOverviewProps
         {(pendingApps + underReviewApps) > 0 && (
           <div className="pt-3 border-t border-gaming-border">
             <div className="flex items-center space-x-2">
-              <AlertCircle className="h-4 w-4 text-yellow-400" />
-              <span className="text-xs text-yellow-400">
+              <AlertCircle className="h-4 w-4 text-amber-400" />
+              <span className="text-xs text-amber-400">
                 {pendingApps + underReviewApps} application{(pendingApps + underReviewApps) !== 1 ? 's' : ''} waiting for review
               </span>
             </div>

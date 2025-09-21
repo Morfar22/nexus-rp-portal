@@ -157,7 +157,7 @@ export const StaffOverview = ({ staffMembers }: StaffOverviewProps) => {
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">High Authority</span>
-              <span className="text-red-400">{totalStaff > 0 ? Math.round((highLevelRoles / totalStaff) * 100) : 0}%</span>
+              <span className="text-rose-400">{totalStaff > 0 ? Math.round((highLevelRoles / totalStaff) * 100) : 0}%</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Mid Authority</span>
@@ -169,8 +169,8 @@ export const StaffOverview = ({ staffMembers }: StaffOverviewProps) => {
         {/* Staff Health Indicator */}
         <div className="pt-3 border-t border-gaming-border">
           <div className="flex items-center space-x-2">
-            <Activity className={`h-4 w-4 ${totalStaff >= 3 ? 'text-green-400' : 'text-yellow-400'}`} />
-            <span className={`text-xs ${totalStaff >= 3 ? 'text-green-400' : 'text-yellow-400'}`}>
+            <Activity className={`h-4 w-4 ${totalStaff >= 3 ? 'text-emerald-400' : 'text-amber-400'}`} />
+            <span className={`text-xs ${totalStaff >= 3 ? 'text-emerald-400' : 'text-amber-400'}`}>
               {totalStaff >= 3 ? 'Staff levels optimal' : 'Consider recruiting more staff'}
             </span>
           </div>
