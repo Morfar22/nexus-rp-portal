@@ -537,13 +537,61 @@ export const PerformanceOptimizer = () => {
                     <CardTitle>Performance Recommendations</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      {backendAnalysis.recommendations.map((rec, index) => (
-                        <div key={index} className="flex items-center space-x-2 text-sm">
-                          <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                          <span className="text-muted-foreground">{rec}</span>
+                    <div className="space-y-3">
+                      {metrics.lcp > 2500 && (
+                        <div className="flex items-start space-x-2 text-sm">
+                          <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-red-400 font-medium">Poor LCP ({metrics.lcp}ms)</p>
+                            <p className="text-muted-foreground text-xs">Optimize largest contentful paint - consider image compression and lazy loading</p>
+                          </div>
                         </div>
-                      ))}
+                      )}
+                      {metrics.cls > 0.25 && (
+                        <div className="flex items-start space-x-2 text-sm">
+                          <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-red-400 font-medium">Poor CLS ({metrics.cls})</p>
+                            <p className="text-muted-foreground text-xs">Reduce layout shifts - add dimensions to images and reserve space</p>
+                          </div>
+                        </div>
+                      )}
+                      {metrics.fcp > 1800 && (
+                        <div className="flex items-start space-x-2 text-sm">
+                          <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-amber-400 font-medium">Slow FCP ({metrics.fcp}ms)</p>
+                            <p className="text-muted-foreground text-xs">Improve first contentful paint - minimize render-blocking resources</p>
+                          </div>
+                        </div>
+                      )}
+                      {!optimizations.imageOptimization && (
+                        <div className="flex items-start space-x-2 text-sm">
+                          <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-amber-400 font-medium">Image Optimization Disabled</p>
+                            <p className="text-muted-foreground text-xs">Enable WebP format and lazy loading for better performance</p>
+                          </div>
+                        </div>
+                      )}
+                      {!optimizations.codesplitting && (
+                        <div className="flex items-start space-x-2 text-sm">
+                          <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-amber-400 font-medium">Code Splitting Disabled</p>
+                            <p className="text-muted-foreground text-xs">Enable code splitting to reduce initial bundle size</p>
+                          </div>
+                        </div>
+                      )}
+                      {metrics.lcp <= 2500 && metrics.cls <= 0.1 && metrics.fcp <= 1800 && (
+                        <div className="flex items-start space-x-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-emerald-400 font-medium">Good Performance</p>
+                            <p className="text-muted-foreground text-xs">Your Core Web Vitals are within good thresholds</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
