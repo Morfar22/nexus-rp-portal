@@ -121,7 +121,7 @@ const EnhancedChatAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Sessions</p>
-              <p className="text-2xl font-bold text-foreground">{analytics.totalSessions}</p>
+              <p className="text-2xl font-bold text-foreground">{analytics.totalSessions || 0}</p>
             </div>
             <Users className="h-8 w-8 text-blue-500" />
           </div>
@@ -135,7 +135,7 @@ const EnhancedChatAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Active Now</p>
-              <p className="text-2xl font-bold text-foreground">{analytics.activeSessions}</p>
+              <p className="text-2xl font-bold text-foreground">{analytics.activeSessions || 0}</p>
             </div>
             <Activity className="h-8 w-8 text-green-500" />
           </div>
@@ -150,7 +150,7 @@ const EnhancedChatAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Avg Response Time</p>
-              <p className="text-2xl font-bold text-foreground">{analytics.avgResponseTime}s</p>
+              <p className="text-2xl font-bold text-foreground">{analytics.avgResponseTime || 0}s</p>
             </div>
             <Clock className="h-8 w-8 text-yellow-500" />
           </div>
@@ -164,14 +164,14 @@ const EnhancedChatAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Satisfaction</p>
-              <p className="text-2xl font-bold text-foreground">{analytics.satisfactionScore}/5</p>
+              <p className="text-2xl font-bold text-foreground">{analytics.satisfactionScore || 0}/5</p>
             </div>
             <Star className="h-8 w-8 text-yellow-500" />
           </div>
           <div className="flex items-center mt-2">
-            <Progress value={analytics.satisfactionScore * 20} className="w-16 h-2" />
+            <Progress value={(analytics.satisfactionScore || 0) * 20} className="w-16 h-2" />
             <span className="text-sm text-muted-foreground ml-2">
-              {Math.round(analytics.satisfactionScore * 20)}%
+              {Math.round((analytics.satisfactionScore || 0) * 20)}%
             </span>
           </div>
         </Card>
@@ -186,7 +186,7 @@ const EnhancedChatAnalytics: React.FC = () => {
             <MessageSquare className="h-5 w-5 text-blue-500" />
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={analytics.dailyStats}>
+            <BarChart data={analytics.dailyStats || []}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis dataKey="date" className="text-xs" />
               <YAxis className="text-xs" />
@@ -209,7 +209,7 @@ const EnhancedChatAnalytics: React.FC = () => {
             <Clock className="h-5 w-5 text-yellow-500" />
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={analytics.responseTimeStats}>
+            <LineChart data={analytics.responseTimeStats || []}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis dataKey="hour" className="text-xs" />
               <YAxis className="text-xs" />
@@ -240,7 +240,7 @@ const EnhancedChatAnalytics: React.FC = () => {
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
-                data={analytics.satisfactionBreakdown}
+                data={analytics.satisfactionBreakdown || []}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -249,7 +249,7 @@ const EnhancedChatAnalytics: React.FC = () => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {analytics.satisfactionBreakdown.map((entry: any, index: number) => (
+                {(analytics.satisfactionBreakdown || []).map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -265,7 +265,7 @@ const EnhancedChatAnalytics: React.FC = () => {
             <Target className="h-5 w-5 text-green-500" />
           </div>
           <div className="space-y-3">
-            {analytics.agentPerformance.map((agent: any, index: number) => (
+            {(analytics.agentPerformance || []).map((agent: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gaming-darker rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
@@ -305,31 +305,31 @@ const EnhancedChatAnalytics: React.FC = () => {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-3xl font-bold text-foreground">{analytics.resolutionRate}%</p>
+            <p className="text-3xl font-bold text-foreground">{analytics.resolutionRate || 0}%</p>
             <p className="text-sm text-muted-foreground">Chats resolved on first contact</p>
           </div>
-          <Progress value={analytics.resolutionRate} className="w-32 h-4" />
+          <Progress value={analytics.resolutionRate || 0} className="w-32 h-4" />
         </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-3 bg-gaming-darker rounded-lg">
-            <p className="text-lg font-bold text-green-500">
-              {Math.round(analytics.totalSessions * (analytics.resolutionRate / 100))}
-            </p>
-            <p className="text-xs text-muted-foreground">Resolved</p>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-3 bg-gaming-darker rounded-lg">
+              <p className="text-lg font-bold text-green-500">
+                {Math.round((analytics.totalSessions || 0) * ((analytics.resolutionRate || 0) / 100))}
+              </p>
+              <p className="text-xs text-muted-foreground">Resolved</p>
+            </div>
+            <div className="text-center p-3 bg-gaming-darker rounded-lg">
+              <p className="text-lg font-bold text-yellow-500">
+                {Math.round((analytics.totalSessions || 0) * ((100 - (analytics.resolutionRate || 0)) / 100) * 0.6)}
+              </p>
+              <p className="text-xs text-muted-foreground">Escalated</p>
+            </div>
+            <div className="text-center p-3 bg-gaming-darker rounded-lg">
+              <p className="text-lg font-bold text-red-500">
+                {Math.round((analytics.totalSessions || 0) * ((100 - (analytics.resolutionRate || 0)) / 100) * 0.4)}
+              </p>
+              <p className="text-xs text-muted-foreground">Unresolved</p>
+            </div>
           </div>
-          <div className="text-center p-3 bg-gaming-darker rounded-lg">
-            <p className="text-lg font-bold text-yellow-500">
-              {Math.round(analytics.totalSessions * ((100 - analytics.resolutionRate) / 100) * 0.6)}
-            </p>
-            <p className="text-xs text-muted-foreground">Escalated</p>
-          </div>
-          <div className="text-center p-3 bg-gaming-darker rounded-lg">
-            <p className="text-lg font-bold text-red-500">
-              {Math.round(analytics.totalSessions * ((100 - analytics.resolutionRate) / 100) * 0.4)}
-            </p>
-            <p className="text-xs text-muted-foreground">Unresolved</p>
-          </div>
-        </div>
       </Card>
     </div>
   );
