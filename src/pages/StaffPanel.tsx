@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Navbar from "@/components/Navbar";
 import { StaffSidebar } from "@/components/StaffSidebar";
 
-import { useState, useEffect } from "react";
+
 import { useToast } from "@/hooks/use-toast";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { useServerSettings } from "@/hooks/useServerSettings";
