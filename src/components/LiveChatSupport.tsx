@@ -9,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSimpleNotifications } from "@/hooks/useSimpleNotifications";
-import { VoiceChatInterface } from "@/components/chat/VoiceChatInterface";
 import { MessageCircle, User, Clock, Send, Ban, Shield, Bell, BellOff, Volume2, VolumeX } from "lucide-react";
 
 interface ChatSession {
@@ -47,7 +46,11 @@ interface VisitorProfile {
   created_at?: string;
 }
 
-const LiveChatSupport = () => {
+interface LiveChatSupportProps {
+  onSelectedSessionChange?: (session: ChatSession | null) => void;
+}
+
+const LiveChatSupport = ({ onSelectedSessionChange }: LiveChatSupportProps = {}) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -298,6 +301,7 @@ const LiveChatSupport = () => {
       if (error) throw error;
 
       setSelectedSession({ ...session, status: 'active', assigned_to: currentUserId });
+      onSelectedSessionChange?.({ ...session, status: 'active', assigned_to: currentUserId });
       
       // Log to Discord
       try {
@@ -465,6 +469,7 @@ const LiveChatSupport = () => {
       }
 
       setSelectedSession(null);
+      onSelectedSessionChange?.(null);
       setMessages([]);
       setVisitorProfile(null);
       
@@ -512,6 +517,7 @@ const LiveChatSupport = () => {
       }
 
       setSelectedSession(null);
+      onSelectedSessionChange?.(null);
       setMessages([]);
       setVisitorProfile(null);
       
@@ -570,7 +576,10 @@ const LiveChatSupport = () => {
               sessions.map((session) => (
                 <div
                   key={session.id}
-                  onClick={() => setSelectedSession(session)}
+                  onClick={() => {
+                    setSelectedSession(session);
+                    onSelectedSessionChange?.(session);
+                  }}
                   className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                     selectedSession?.id === session.id
                       ? 'bg-neon-teal/20 border-neon-teal'
@@ -748,11 +757,6 @@ const LiveChatSupport = () => {
                 >
                   <Send className="h-4 w-4" />
                 </Button>
-              </div>
-              
-              {/* Voice Chat Interface */}
-              <div className="mt-4">
-                <VoiceChatInterface selectedSession={selectedSession} />
               </div>
             </div>
           </Card>

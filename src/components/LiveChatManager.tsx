@@ -22,6 +22,16 @@ interface ChatSettings {
   discord_webhook_url?: string;
 }
 
+interface ChatSession {
+  id: string;
+  visitor_name: string;
+  visitor_email?: string;
+  status: string;
+  created_at: string;
+  assigned_to?: string;
+  user_id?: string;
+}
+
 interface BannedUser {
   id: string;
   visitor_name?: string;
@@ -38,6 +48,7 @@ const LiveChatManager = () => {
     auto_assign: true,
     max_concurrent_chats: 5
   });
+  const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [waitingChats, setWaitingChats] = useState(0);
   const [activeChats, setActiveChats] = useState(0);
@@ -254,10 +265,10 @@ const LiveChatManager = () => {
           <TabsContent value="voice-chat">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <LiveChatSupport />
+                <LiveChatSupport onSelectedSessionChange={setSelectedSession} />
               </div>
               <div>
-                <VoiceChatInterface selectedSession={null} />
+                <VoiceChatInterface selectedSession={selectedSession} />
               </div>
             </div>
           </TabsContent>
