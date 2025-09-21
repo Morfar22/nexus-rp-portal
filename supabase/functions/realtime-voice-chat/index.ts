@@ -18,9 +18,7 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  const { socket, response } = Deno.upgradeWebSocket(req, {
-    protocol: "",
-  });
+  const { socket, response } = Deno.upgradeWebSocket(req);
   
   let openAISocket: WebSocket | null = null;
   let sessionCreated = false;
@@ -28,27 +26,59 @@ serve(async (req) => {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   if (!OPENAI_API_KEY) {
     console.error('OPENAI_API_KEY is not set');
-    socket.send(JSON.stringify({
-      type: 'error',
-      error: 'Server configuration error - API key not found'
-    }));
     socket.close(1000, 'Server configuration error');
     return response;
   }
 
-  socket.onopen = () => {
+  socket.onopen = async () => {
     console.log('Client WebSocket connected');
     
-    // Connect to OpenAI Realtime API
     try {
-      console.log('Creating OpenAI WebSocket connection...');
+      console.log('Getting ephemeral token from OpenAI...');
       
-      // Use the correct OpenAI Realtime WebSocket URL 
+      // First, get an ephemeral token for WebSocket authentication
+      const tokenResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-realtime-preview-2024-10-01',
+          voice: 'alloy'
+        })
+      });
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error('Failed to get ephemeral token:', errorText);
+        socket.send(JSON.stringify({
+          type: 'error',
+          error: `Failed to authenticate: ${tokenResponse.status}`,
+          details: errorText
+        }));
+        socket.close(1000, 'Authentication failed');
+        return;
+      }
+
+      const tokenData = await tokenResponse.json();
+      console.log('Got ephemeral token, connecting to WebSocket...');
+
+      if (!tokenData.client_secret?.value) {
+        console.error('No client secret in token response');
+        socket.send(JSON.stringify({
+          type: 'error',
+          error: 'Failed to get authentication token',
+        }));
+        socket.close(1000, 'Authentication failed');
+        return;
+      }
+
+      // Now connect to WebSocket with the ephemeral token
       const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
       
-      // For Deno, we need to create the WebSocket without custom headers 
-      // and handle authentication through the subprotocol or connection upgrade
-      openAISocket = new WebSocket(wsUrl, [`Bearer.${OPENAI_API_KEY}`, 'realtime-v1']);
+      // Create WebSocket connection with ephemeral token as authorization
+      openAISocket = new WebSocket(wsUrl, [`Bearer.${tokenData.client_secret.value}`]);
 
       openAISocket.onopen = () => {
         console.log('Successfully connected to OpenAI Realtime API');
@@ -105,7 +135,8 @@ serve(async (req) => {
           console.error('Error parsing OpenAI message:', error);
           socket.send(JSON.stringify({
             type: 'error',
-            error: 'Failed to parse OpenAI response'
+            error: 'Failed to parse OpenAI response',
+            details: error.message
           }));
         }
       };
@@ -130,7 +161,7 @@ serve(async (req) => {
       };
 
     } catch (error) {
-      console.error('Error creating OpenAI WebSocket connection:', error);
+      console.error('Error setting up OpenAI connection:', error);
       socket.send(JSON.stringify({
         type: 'error',
         error: 'Failed to connect to OpenAI',

@@ -208,7 +208,9 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
             console.error('Voice chat error:', data.error);
             toast({
               title: "Voice Chat Error",
-              description: data.error || "Unknown error occurred",
+              description: typeof data.error === 'object' 
+                ? data.error.message || JSON.stringify(data.error) 
+                : data.error || "Unknown error occurred",
               variant: "destructive"
             });
             break;
