@@ -36,8 +36,8 @@ serve(async (req) => {
     // Try to get real FiveM server data if available
     let serverData = null;
     
-    // Use the correct server IP - panel.adventurerp.dk:30120
-    const serverIp = "panel.adventurerp.dk";
+    // Use the correct server IP - 95.216.29.189:30120
+    const serverIp = "95.216.29.189";
     const serverPort = 30120;
     
     try {
