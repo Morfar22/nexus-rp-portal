@@ -83,6 +83,8 @@ import LawsManager from "@/components/LawsManager";
 import SocialMediaManager from "@/components/SocialMediaManager";
 import CustomRoleManager from "@/components/CustomRoleManager";
 import ConsolidatedServerManager from "@/components/ConsolidatedServerManager";
+import TeamManager from "@/components/TeamManager";
+import RoleManager from "@/components/RoleManager";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -894,6 +896,7 @@ const StaffPanel = () => {
               <div className="animate-slide-up">
                   <h1 className="text-xl font-bold text-foreground">
                     {activeTab === "overview" && "Dashboard Overview"}
+                    {activeTab === "team" && "Team Management"}
                     {activeTab === "applications" && "Application Management"}
                     {activeTab === "application-types" && "Application Types"}
                     {activeTab === "application-settings" && "Application Settings"}
@@ -1010,6 +1013,25 @@ const StaffPanel = () => {
                 <div className="space-y-6">
                   <LawsManager />
                 </div>
+              )}
+
+              {activeTab === "team" && (
+                <PermissionGate permissions={["team.manage"]} showFallback={true}>
+                  <div className="space-y-6">
+                    <Tabs defaultValue="members" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="members">Team Medlemmer</TabsTrigger>
+                        <TabsTrigger value="roles">Roller</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="members" className="mt-6">
+                        <TeamManager />
+                      </TabsContent>
+                      <TabsContent value="roles" className="mt-6">
+                        <RoleManager />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                </PermissionGate>
               )}
 
 

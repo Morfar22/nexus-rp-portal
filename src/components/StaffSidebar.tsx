@@ -73,6 +73,7 @@ const navigationItems = [
   {
     group: "User Management",
     items: [
+      { id: "team", label: "Team Management", icon: Users },
       { id: "custom-roles", label: "Roller & Staff", icon: Crown },
       { id: "users", label: "Users", icon: Users },
       { id: "partners", label: "Partners", icon: Globe },

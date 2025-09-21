@@ -5,10 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Users, Crown, Settings } from 'lucide-react';
 import { TeamMemberCard } from '@/components/TeamMemberCard';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import TeamManager from '@/components/TeamManager';
-import RoleManager from '@/components/RoleManager';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -33,9 +29,6 @@ interface TeamMember {
 const OurTeam = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [managementOpen, setManagementOpen] = useState(false);
-  const { user } = useCustomAuth();
-  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     fetchTeamMembers();
@@ -109,44 +102,6 @@ const OurTeam = () => {
     <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       <main className="container mx-auto px-4 pt-20 pb-8">
-        {/* Management Panel for Staff */}
-        {user && (hasPermission('team.manage') || user.role === 'admin' || user.role === 'staff') ? (
-          <div className="mb-8">
-            
-            <div className="flex justify-end">
-              <Dialog open={managementOpen} onOpenChange={setManagementOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Settings className="h-4 w-4" />
-                    Administrer Team
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                  <Tabs defaultValue="members" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="members">Team Medlemmer</TabsTrigger>
-                      <TabsTrigger value="roles">Roller</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="members" className="mt-6">
-                      <TeamManager />
-                    </TabsContent>
-                    <TabsContent value="roles" className="mt-6">
-                      <RoleManager />
-                    </TabsContent>
-                  </Tabs>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        ) : user ? (
-          <div className="mb-8">
-            <p className="text-red-400">❌ Management panel hidden - User: {user.role || 'No role'} ({user.email}) - Missing team.manage permission</p>
-          </div>
-        ) : (
-          <div className="mb-8">
-            <p className="text-red-400">❌ Management panel hidden - User not logged in</p>
-          </div>
-        )}
 
         {/* Hero Section */}
         <div className="text-center mb-16 relative">
