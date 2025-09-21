@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSimpleNotifications } from "@/hooks/useSimpleNotifications";
+import { VoiceChatInterface } from "@/components/chat/VoiceChatInterface";
 import { MessageCircle, User, Clock, Send, Ban, Shield, Bell, BellOff, Volume2, VolumeX } from "lucide-react";
 
 interface ChatSession {
@@ -747,6 +748,11 @@ const LiveChatSupport = () => {
                 >
                   <Send className="h-4 w-4" />
                 </Button>
+              </div>
+              
+              {/* Voice Chat Interface */}
+              <div className="mt-4">
+                <VoiceChatInterface selectedSession={selectedSession} />
               </div>
             </div>
           </Card>
