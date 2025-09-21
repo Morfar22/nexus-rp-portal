@@ -66,6 +66,8 @@ import { SecurityOverview } from "@/components/SecurityOverview";
 import { SecuritySettings } from "@/components/SecuritySettings";
 import { SecurityDashboard } from "@/components/SecurityDashboard";
 import { ApplicationsOverview } from "@/components/applications/ApplicationsOverview";
+import { ActivityOverview } from "@/components/ActivityOverview";
+import { QuickInsightsOverview } from "@/components/QuickInsightsOverview";
 import { StaffOverview } from "@/components/StaffOverview";
 import { RulesOverview } from "@/components/RulesOverview";
 import { PartnersOverview } from "@/components/PartnersOverview";
@@ -925,8 +927,10 @@ const StaffPanel = () => {
             <div className="p-6 custom-scrollbar animate-fade-in">
               {activeTab === "overview" && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4 sm:gap-6">
                     <ApplicationsOverview applications={applications} />
+                    <ActivityOverview applications={applications} />
+                    <QuickInsightsOverview applications={applications} />
                     <StaffOverview staffMembers={staffMembers} />
                     <RulesOverview rules={rules} />
                     <PartnersOverview partners={partners} />
