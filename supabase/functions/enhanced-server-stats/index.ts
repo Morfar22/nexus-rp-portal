@@ -69,7 +69,7 @@ serve(async (req) => {
         players: Array.isArray(playersData) ? playersData.length : 0,
         maxPlayers: infoData.vars?.sv_maxClients ? parseInt(infoData.vars.sv_maxClients) : 64,
         serverName: infoData.vars?.sv_hostname || 'Adventure RP',
-        status: 'online',
+        status: playersResponse.status === 'fulfilled' && playersResponse.value.ok ? 'online' : 'offline',
         uptime: Date.now() - (infoData.server?.uptime || 0),
         version: infoData.server?.version || '1.0.0'
       };
@@ -127,7 +127,8 @@ serve(async (req) => {
       uptime_percentage: Math.round(uptimePercentage * 10) / 10,
       historical_data: historicalStats,
       response_time: Math.floor(Math.random() * 50) + 10,
-      uptime_formatted: formatUptime(currentStats.uptime_seconds)
+      uptime_formatted: formatUptime(currentStats.uptime_seconds),
+      server_online: currentStats.status === 'online'  // Add boolean server_online field
     };
 
     logStep("Stats generated", { players: currentStats.players_online, status: currentStats.status });
