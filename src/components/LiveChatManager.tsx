@@ -8,9 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Settings, Users, Save, UserX, Shield, Bell } from "lucide-react";
+import { MessageSquare, Settings, Users, Save, UserX, Shield, Bell, Bot, Headphones, BarChart3 } from "lucide-react";
 import LiveChatSupport from "./LiveChatSupport";
 import { TranslatedNotificationSettings } from "./TranslatedNotificationSettings";
+import { ChatAIAssistant } from "./chat/ChatAIAssistant";
+import { VoiceChatInterface } from "./chat/VoiceChatInterface";
+import { EnhancedChatAnalytics } from "./chat/EnhancedChatAnalytics";
 
 interface ChatSettings {
   enabled: boolean;
@@ -223,8 +226,10 @@ const LiveChatManager = () => {
         </div>
 
         <Tabs defaultValue="support" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="support">Live Support</TabsTrigger>
+            <TabsTrigger value="ai-assistant">AI Assistant</TabsTrigger>
+            <TabsTrigger value="voice-chat">Voice Chat</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="banned">Banned Users</TabsTrigger>
@@ -233,6 +238,28 @@ const LiveChatManager = () => {
 
           <TabsContent value="support">
             <LiveChatSupport />
+          </TabsContent>
+
+          <TabsContent value="ai-assistant">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <LiveChatSupport />
+              </div>
+              <div>
+                <ChatAIAssistant selectedSession={null} />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="voice-chat">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <LiveChatSupport />
+              </div>
+              <div>
+                <VoiceChatInterface selectedSession={null} />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
@@ -391,40 +418,7 @@ const LiveChatManager = () => {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <Card className="p-4 bg-gaming-darker border-gaming-border">
-              <h3 className="text-lg font-semibold mb-4 text-foreground flex items-center">
-                <Users className="h-5 w-5 mr-2 text-neon-teal" />
-                Chat Analytics
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 bg-gaming-dark border border-gaming-border rounded-lg">
-                  <div className="text-2xl font-bold text-neon-teal">{waitingChats}</div>
-                  <div className="text-sm text-muted-foreground">Waiting for Response</div>
-                </div>
-                
-                <div className="p-4 bg-gaming-dark border border-gaming-border rounded-lg">
-                  <div className="text-2xl font-bold text-green-500">{activeChats}</div>
-                  <div className="text-sm text-muted-foreground">Active Chats</div>
-                </div>
-                
-                <div className="p-4 bg-gaming-dark border border-gaming-border rounded-lg">
-                  <div className="text-2xl font-bold text-blue-500">0</div>
-                  <div className="text-sm text-muted-foreground">Avg Response Time</div>
-                </div>
-                
-                <div className="p-4 bg-gaming-dark border border-gaming-border rounded-lg">
-                  <div className="text-2xl font-bold text-purple-500">0</div>
-                  <div className="text-sm text-muted-foreground">Total Sessions Today</div>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <p className="text-sm text-muted-foreground">
-                  More detailed analytics coming soon...
-                </p>
-              </div>
-            </Card>
+            <EnhancedChatAnalytics />
           </TabsContent>
         </Tabs>
       </Card>
