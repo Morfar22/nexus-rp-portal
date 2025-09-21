@@ -26,7 +26,7 @@ const LazyLaws = lazy(() => import("./pages/Laws"));
 const LazyStaffPanel = lazy(() => import("./pages/StaffPanel"));
 const LazyOurTeam = lazy(() => import("./pages/OurTeam"));
 const LazyPartners = lazy(() => import("./pages/Partners"));
-const LazyServerManagement = lazy(() => import("./pages/ServerManagement"));
+
 const LazyProfile = lazy(() => import("./pages/Profile"));
 const LazyLive = lazy(() => import("./pages/Live"));
 const LazyPackages = lazy(() => import("./pages/Packages"));
@@ -132,13 +132,6 @@ const AppContent = () => {
                 </StaffProtectedRoute>
               } />
               
-              <Route path="/servers" element={
-                <StaffProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyServerManagement />
-                  </Suspense>
-                </StaffProtectedRoute>
-              } />
               
               <Route path="/team" element={
                 <Suspense fallback={<PageLoader />}>

@@ -82,6 +82,7 @@ import { SubscriptionOverview } from "@/components/SubscriptionOverview";
 import LawsManager from "@/components/LawsManager";
 import SocialMediaManager from "@/components/SocialMediaManager";
 import CustomRoleManager from "@/components/CustomRoleManager";
+import LiveServerManager from "@/components/LiveServerManager";
 
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
@@ -905,6 +906,7 @@ const StaffPanel = () => {
                     {activeTab === "packages" && "Package Management"}
                     {activeTab === "settings" && "System Settings"}
                     {activeTab === "content" && "Homepage Content"}
+                    {activeTab === "server-management" && "Live Server Management"}
                     {activeTab === "server-stats" && "Server Statistics"}
                     {activeTab === "deployment" && "Deployment Settings"}
                     {activeTab === "logs" && "System Logs"}
@@ -1002,6 +1004,12 @@ const StaffPanel = () => {
               {activeTab === "content" && (
                 <div className="space-y-6">
                   <HomepageContentManager />
+                </div>
+              )}
+
+              {activeTab === "server-management" && (
+                <div className="space-y-6">
+                  <LiveServerManager />
                 </div>
               )}
 
