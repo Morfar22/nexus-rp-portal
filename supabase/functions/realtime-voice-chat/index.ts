@@ -18,7 +18,9 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  const { socket, response } = Deno.upgradeWebSocket(req);
+  const { socket, response } = Deno.upgradeWebSocket(req, {
+    protocol: "",
+  });
   
   let openAISocket: WebSocket | null = null;
   let sessionCreated = false;
@@ -26,6 +28,10 @@ serve(async (req) => {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   if (!OPENAI_API_KEY) {
     console.error('OPENAI_API_KEY is not set');
+    socket.send(JSON.stringify({
+      type: 'error',
+      error: 'Server configuration error - API key not found'
+    }));
     socket.close(1000, 'Server configuration error');
     return response;
   }
@@ -35,14 +41,21 @@ serve(async (req) => {
     
     // Connect to OpenAI Realtime API
     try {
-      // Create WebSocket connection with authentication in the URL query parameter
-      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01&api_key=${encodeURIComponent(OPENAI_API_KEY)}`;
-      console.log('Attempting to connect to OpenAI...');
+      console.log('Creating OpenAI WebSocket connection...');
       
-      openAISocket = new WebSocket(wsUrl);
+      // Use the correct OpenAI Realtime WebSocket URL 
+      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
+      
+      // For Deno, we need to create the WebSocket without custom headers 
+      // and handle authentication through the subprotocol or connection upgrade
+      openAISocket = new WebSocket(wsUrl, [`Bearer.${OPENAI_API_KEY}`, 'realtime-v1']);
 
       openAISocket.onopen = () => {
         console.log('Successfully connected to OpenAI Realtime API');
+        socket.send(JSON.stringify({
+          type: 'connection_established',
+          message: 'Connected to OpenAI'
+        }));
       };
 
       openAISocket.onmessage = (event) => {
@@ -60,7 +73,7 @@ serve(async (req) => {
               type: 'session.update',
               session: {
                 modalities: ['text', 'audio'],
-                instructions: `You are a helpful customer support assistant. You are professional, friendly, and efficient. 
+                instructions: `You are a helpful customer support assistant for a gaming community. You are professional, friendly, and efficient. 
                               Keep responses concise and helpful. If you cannot help with something, acknowledge it clearly 
                               and suggest alternatives or escalation to a human agent.`,
                 voice: 'alloy',
@@ -90,6 +103,10 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error('Error parsing OpenAI message:', error);
+          socket.send(JSON.stringify({
+            type: 'error',
+            error: 'Failed to parse OpenAI response'
+          }));
         }
       };
 
@@ -97,17 +114,28 @@ serve(async (req) => {
         console.error('OpenAI WebSocket error:', error);
         socket.send(JSON.stringify({
           type: 'error',
-          error: 'OpenAI connection error'
+          error: 'OpenAI connection error',
+          details: error.toString()
         }));
       };
 
       openAISocket.onclose = (event) => {
         console.log('OpenAI WebSocket closed. Code:', event.code, 'Reason:', event.reason);
+        socket.send(JSON.stringify({
+          type: 'connection_closed',
+          code: event.code,
+          reason: event.reason || 'OpenAI connection closed'
+        }));
         socket.close(1000, 'OpenAI connection closed');
       };
 
     } catch (error) {
       console.error('Error creating OpenAI WebSocket connection:', error);
+      socket.send(JSON.stringify({
+        type: 'error',
+        error: 'Failed to connect to OpenAI',
+        details: error.message
+      }));
       socket.close(1000, 'Failed to connect to OpenAI');
     }
   };
@@ -119,12 +147,21 @@ serve(async (req) => {
 
       // Only forward messages after session is created
       if (sessionCreated && openAISocket && openAISocket.readyState === WebSocket.OPEN) {
+        console.log('Forwarding message to OpenAI:', data.type);
         openAISocket.send(JSON.stringify(data));
       } else if (!sessionCreated) {
-        console.log('Session not yet created, queuing message');
+        console.log('Session not yet created, cannot forward message');
+        socket.send(JSON.stringify({
+          type: 'error',
+          error: 'Session not ready'
+        }));
       }
     } catch (error) {
       console.error('Error parsing client message:', error);
+      socket.send(JSON.stringify({
+        type: 'error',
+        error: 'Invalid message format'
+      }));
     }
   };
 
@@ -134,7 +171,7 @@ serve(async (req) => {
 
   socket.onclose = (event) => {
     console.log('Client WebSocket closed:', event.code, event.reason);
-    if (openAISocket) {
+    if (openAISocket && openAISocket.readyState === WebSocket.OPEN) {
       openAISocket.close();
     }
   };
