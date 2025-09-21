@@ -411,28 +411,28 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
       {/* Voice Chat Status */}
       <Card className="p-4 bg-gaming-darker border-gaming-border">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Headphones className="h-5 w-5 text-purple-500" />
-            <h3 className="font-semibold text-foreground">Voice Chat</h3>
-            <Badge variant={isConnected ? "default" : "secondary"}>
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </Badge>
-          </div>
+        <div className="flex items-center space-x-2">
+          <Headphones className="h-5 w-5 text-neon-teal" />
+          <h3 className="font-semibold text-foreground">Voice Chat</h3>
+          <Badge variant={isConnected ? "default" : "secondary"}>
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </Badge>
+        </div>
           
-          <div className="flex items-center space-x-2">
-            {isListening && (
-              <Badge variant="outline" className="text-green-500">
-                <Waves className="h-3 w-3 mr-1 animate-pulse" />
-                Listening
-              </Badge>
-            )}
-            {isSpeaking && (
-              <Badge variant="outline" className="text-blue-500">
-                <Volume2 className="h-3 w-3 mr-1 animate-pulse" />
-                Speaking
-              </Badge>
-            )}
-          </div>
+        <div className="flex items-center space-x-2">
+          {isListening && (
+            <Badge variant="outline" className="text-neon-teal border-neon-teal">
+              <Waves className="h-3 w-3 mr-1 animate-pulse" />
+              Listening
+            </Badge>
+          )}
+          {isSpeaking && (
+            <Badge variant="outline" className="text-neon-blue border-neon-blue">
+              <Volume2 className="h-3 w-3 mr-1 animate-pulse" />
+              Speaking
+            </Badge>
+          )}
+        </div>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -440,7 +440,7 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
             <Button 
               onClick={connectVoiceChat}
               disabled={!selectedSession}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-neon-teal hover:bg-neon-teal/80 text-white"
             >
               <Phone className="h-4 w-4 mr-2" />
               Start Voice Chat
@@ -476,68 +476,71 @@ export const VoiceChatInterface = ({ selectedSession }: { selectedSession: ChatS
 
       {/* Voice Settings */}
       <Card className="p-4 bg-gaming-darker border-gaming-border">
-        <div className="flex items-center space-x-2 mb-4">
-          <Settings className="h-4 w-4 text-gray-500" />
-          <h4 className="font-medium text-foreground">Voice Configuration</h4>
-        </div>
+      <div className="flex items-center space-x-2 mb-4">
+        <Settings className="h-4 w-4 text-muted-foreground" />
+        <h4 className="font-medium text-foreground">Voice Configuration</h4>
+      </div>
         
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">Enable Voice Chat</Label>
-              <p className="text-xs text-muted-foreground">Allow voice communication</p>
-            </div>
-            <Switch
-              checked={voiceSettings.enabled}
-              onCheckedChange={(checked) => 
-                setVoiceSettings(prev => ({ ...prev, enabled: checked }))
-              }
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">Auto Transcription</Label>
-              <p className="text-xs text-muted-foreground">Convert speech to text automatically</p>
-            </div>
-            <Switch
-              checked={voiceSettings.auto_transcription}
-              onCheckedChange={(checked) => 
-                setVoiceSettings(prev => ({ ...prev, auto_transcription: checked }))
-              }
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">Noise Suppression</Label>
-              <p className="text-xs text-muted-foreground">Reduce background noise</p>
-            </div>
-            <Switch
-              checked={voiceSettings.noise_suppression}
-              onCheckedChange={(checked) => 
-                setVoiceSettings(prev => ({ ...prev, noise_suppression: checked }))
-              }
-            />
-          </div>
-          
+        <div className="flex items-center space-x-2">
           <div>
-            <Label className="text-sm font-medium mb-2 block">Volume: {Math.round(voiceSettings.volume * 100)}%</Label>
-            <Slider
-              value={[voiceSettings.volume]}
-              onValueChange={([value]) => 
-                setVoiceSettings(prev => ({ ...prev, volume: value }))
-              }
-              max={1}
-              min={0}
-              step={0.1}
-              className="w-full"
-            />
+            <Label className="text-sm font-medium">Enable Voice Chat</Label>
+            <p className="text-xs text-muted-foreground">Allow voice communication</p>
           </div>
+          <Switch
+            checked={voiceSettings.enabled}
+            onCheckedChange={(checked) => 
+              setVoiceSettings(prev => ({ ...prev, enabled: checked }))
+            }
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm font-medium">Auto Transcription</Label>
+            <p className="text-xs text-muted-foreground">Convert speech to text automatically</p>
+          </div>
+          <Switch
+            checked={voiceSettings.auto_transcription}
+            onCheckedChange={(checked) => 
+              setVoiceSettings(prev => ({ ...prev, auto_transcription: checked }))
+            }
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm font-medium">Noise Suppression</Label>
+            <p className="text-xs text-muted-foreground">Reduce background noise</p>
+          </div>
+          <Switch
+            checked={voiceSettings.noise_suppression}
+            onCheckedChange={(checked) => 
+              setVoiceSettings(prev => ({ ...prev, noise_suppression: checked }))
+            }
+          />
+        </div>
           
-          <Button onClick={saveVoiceSettings} className="w-full">
-            Save Voice Settings
-          </Button>
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Volume: {Math.round(voiceSettings.volume * 100)}%</Label>
+          <Slider
+            value={[voiceSettings.volume]}
+            onValueChange={([value]) => 
+              setVoiceSettings(prev => ({ ...prev, volume: value }))
+            }
+            max={1}
+            min={0}
+            step={0.1}
+            className="w-full"
+          />
+        </div>
+        
+        <Button 
+          onClick={saveVoiceSettings} 
+          className="w-full bg-neon-teal hover:bg-neon-teal/80 text-white"
+        >
+          Save Voice Settings
+        </Button>
         </div>
       </Card>
     </div>
