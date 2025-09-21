@@ -47,3 +47,9 @@ verify_jwt = false
 
 [functions.financial-analytics]
 verify_jwt = false
+
+[functions.discord-stats]
+verify_jwt = false
+
+[functions.data-seeder]
+verify_jwt = false

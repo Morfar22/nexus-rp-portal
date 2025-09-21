@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,25 @@ export const QuickActionsPanel = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const { toast } = useToast();
+
+  // Load current maintenance mode status on mount
+  useEffect(() => {
+    const loadMaintenanceStatus = async () => {
+      try {
+        const { data } = await supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'server_status')
+          .maybeSingle();
+        
+        setMaintenanceMode(data?.setting_value === 'maintenance');
+      } catch (error) {
+        console.error('Error loading maintenance status:', error);
+      }
+    };
+    
+    loadMaintenanceStatus();
+  }, []);
 
   const performQuickSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -254,10 +273,102 @@ export const QuickActionsPanel = () => {
 
         {/* System Actions */}
         <div className="pt-3 border-t border-gaming-border">
-          <Button variant="outline" size="sm" className="w-full">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh All Data
-          </Button>
+          <div className="space-y-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => window.location.reload()}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh All Data
+            </Button>
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Admin Tools
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Admin Tools</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground">
+                    Seed realistic data for testing and demonstration:
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await supabase.functions.invoke('data-seeder', {
+                            body: { action: 'seedAnalytics' }
+                          });
+                          toast({ title: "Analytics data seeded successfully" });
+                        } catch (error) {
+                          toast({ title: "Failed to seed analytics", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      Seed Analytics
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await supabase.functions.invoke('data-seeder', {
+                            body: { action: 'seedFinancialData' }
+                          });
+                          toast({ title: "Financial data seeded successfully" });
+                        } catch (error) {
+                          toast({ title: "Failed to seed financial data", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      Seed Financial
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await supabase.functions.invoke('data-seeder', {
+                            body: { action: 'seedServerPerformance' }
+                          });
+                          toast({ title: "Server data seeded successfully" });
+                        } catch (error) {
+                          toast({ title: "Failed to seed server data", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      Seed Server Data
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await supabase.functions.invoke('data-seeder', {
+                            body: { action: 'seedActivityLogs' }
+                          });
+                          toast({ title: "Activity logs seeded successfully" });
+                        } catch (error) {
+                          toast({ title: "Failed to seed activity logs", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      Seed Activity
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardContent>
     </Card>

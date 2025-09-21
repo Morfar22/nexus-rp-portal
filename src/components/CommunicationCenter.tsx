@@ -48,18 +48,44 @@ export const CommunicationCenter = () => {
       const pendingChats = chatSessions?.filter(s => s.status === 'waiting').length || 0;
       const activeChats = chatSessions?.filter(s => s.status === 'active').length || 0;
 
-      // Get Discord member count (simulate or fetch from Discord API)
-      const discordMembers = Math.floor(Math.random() * 200) + 150; // 150-350 members
+      // Get missed chats
+      const { data: missedChats } = await supabase
+        .from('missed_chats')
+        .select('id')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-      // Calculate missed messages (simulate based on pending chats)
-      const missedMessages = Math.floor(pendingChats * 1.5);
+      // Try to get Discord member count from our backend
+      let discordMembers = 0;
+      try {
+        const { data: discordData } = await supabase.functions.invoke('discord-stats', {
+          body: { action: 'getMemberCount' }
+        });
+        discordMembers = discordData?.data?.memberCount || 0;
+      } catch {
+        // Fallback: try to get from server settings or use reasonable default
+        const { data: discordSettings } = await supabase
+          .from('server_settings')
+          .select('setting_value')
+          .eq('setting_key', 'discord_stats')
+          .maybeSingle();
+        
+        discordMembers = (discordSettings?.setting_value as any)?.member_count || 180;
+      }
+
+      // Count support tickets (applications waiting for review)
+      const { data: supportTickets } = await supabase
+        .from('applications')
+        .select('id')
+        .eq('status', 'pending');
+
+      const supportTicketCount = supportTickets?.length || 0;
 
       setStats({
         liveChatActive: (chatSettings?.setting_value as any)?.enabled || false,
         pendingChats,
-        missedMessages,
+        missedMessages: missedChats?.length || 0,
         discordMembers,
-        supportTickets: Math.floor(Math.random() * 8) + 2, // 2-10 tickets
+        supportTickets: supportTicketCount,
         responseTime: pendingChats > 5 ? "2-3h" : pendingChats > 2 ? "< 1h" : "< 30m"
       });
     } catch (error) {
