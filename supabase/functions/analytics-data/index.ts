@@ -18,11 +18,55 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const { metric } = await req.json()
+    const { metric, type } = await req.json()
+
+    // Support both 'metric' and 'type' parameter names
+    const requestedMetric = metric || type
 
     let data = {}
 
-    switch (metric) {
+    switch (requestedMetric) {
+      case 'chat_analytics':
+        // Mock chat analytics data for the enhanced dashboard
+        data = {
+          totalSessions: 127,
+          activeSessions: 3,
+          avgResponseTime: 45,
+          satisfactionScore: 4.2,
+          resolutionRate: 87,
+          dailyStats: [
+            { date: '2025-09-15', sessions: 15 },
+            { date: '2025-09-16', sessions: 22 },
+            { date: '2025-09-17', sessions: 18 },
+            { date: '2025-09-18', sessions: 31 },
+            { date: '2025-09-19', sessions: 25 },
+            { date: '2025-09-20', sessions: 29 },
+            { date: '2025-09-21', sessions: 12 }
+          ],
+          responseTimeStats: [
+            { hour: '00:00', avgTime: 52 },
+            { hour: '04:00', avgTime: 48 },
+            { hour: '08:00', avgTime: 35 },
+            { hour: '12:00', avgTime: 41 },
+            { hour: '16:00', avgTime: 38 },
+            { hour: '20:00', avgTime: 44 }
+          ],
+          satisfactionBreakdown: [
+            { name: 'Excellent', value: 45 },
+            { name: 'Good', value: 30 },
+            { name: 'Average', value: 15 },
+            { name: 'Poor', value: 7 },
+            { name: 'Very Poor', value: 3 }
+          ],
+          agentPerformance: [
+            { name: 'Sarah K.', chatsHandled: 24, avgResponse: 38, satisfaction: 4.6 },
+            { name: 'Mike R.', chatsHandled: 19, avgResponse: 42, satisfaction: 4.3 },
+            { name: 'Lisa M.', chatsHandled: 16, avgResponse: 35, satisfaction: 4.8 },
+            { name: 'AI Bot', chatsHandled: 68, avgResponse: 12, satisfaction: 3.9 }
+          ]
+        }
+        break
+
       case 'user_stats':
         // Get user statistics
         const { data: userStats } = await supabase
