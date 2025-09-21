@@ -62,16 +62,37 @@ const ApplicationTypesManager = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setApplicationTypes(data?.map(item => ({
-        ...item,
-        form_fields: Array.isArray(item.form_fields) 
-          ? (item.form_fields as any) as FormField[]
-          : typeof item.form_fields === 'string' 
-            ? JSON.parse(item.form_fields) 
-            : [],
-        description: item.description || "",
-        required_permissions: item.required_permissions || []
-      })) || []);
+      
+      console.log('Raw application types data:', data);
+      console.log('Number of application types found:', data?.length || 0);
+      
+      const processedData = data?.map((item, index) => {
+        console.log(`Processing item ${index}:`, item.name, 'form_fields type:', typeof item.form_fields);
+        
+        let formFields = [];
+        try {
+          if (Array.isArray(item.form_fields)) {
+            formFields = (item.form_fields as any) as FormField[];
+          } else if (typeof item.form_fields === 'string') {
+            formFields = JSON.parse(item.form_fields);
+          } else if (item.form_fields) {
+            formFields = item.form_fields as unknown as FormField[];
+          }
+        } catch (parseError) {
+          console.error(`Error parsing form_fields for ${item.name}:`, parseError);
+          formFields = [];
+        }
+        
+        return {
+          ...item,
+          form_fields: formFields,
+          description: item.description || "",
+          required_permissions: item.required_permissions || []
+        };
+      }) || [];
+      
+      console.log('Processed application types:', processedData);
+      setApplicationTypes(processedData);
     } catch (error) {
       toast({
         title: "Error",
@@ -310,6 +331,15 @@ const ApplicationTypesManager = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="mb-4 p-3 bg-gaming-darker rounded-lg">
+          <p className="text-xs text-muted-foreground">
+            Debug: Found {applicationTypes.length} application types
+          </p>
+          <div className="text-xs text-muted-foreground mt-1">
+            Types: {applicationTypes.map(t => `${t.name}(${t.is_active ? 'active' : 'inactive'})`).join(', ')}
+          </div>
+        </div>
+        
         {applicationTypes.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">No application types found</p>
         ) : (
