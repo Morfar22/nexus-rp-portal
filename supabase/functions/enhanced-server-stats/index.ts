@@ -36,62 +36,55 @@ serve(async (req) => {
     // Try to get real FiveM server data if available
     let serverData = null;
     
-    if (connectInfo?.setting_value) {
-      try {
-        const settings = typeof connectInfo.setting_value === 'string' 
-          ? JSON.parse(connectInfo.setting_value) 
-          : connectInfo.setting_value;
-        
-        if (settings.connect_ip && settings.connect_port && settings.connect_enabled) {
-          const serverIp = settings.connect_ip;
-          const serverPort = settings.connect_port;
-          
-          logStep("Fetching real server data", { ip: serverIp, port: serverPort });
-          
-          // Fetch real server info from FiveM server endpoints
-          const [playersResponse, infoResponse, dynamicResponse] = await Promise.allSettled([
-            fetch(`http://${serverIp}:${serverPort}/players.json`, { 
-              signal: AbortSignal.timeout(5000) 
-            }),
-            fetch(`http://${serverIp}:${serverPort}/info.json`, { 
-              signal: AbortSignal.timeout(5000) 
-            }),
-            fetch(`http://${serverIp}:${serverPort}/dynamic.json`, { 
-              signal: AbortSignal.timeout(5000) 
-            })
-          ]);
+    // Use the correct server IP - panel.adventurerp.dk:30120
+    const serverIp = "panel.adventurerp.dk";
+    const serverPort = 30120;
+    
+    try {
+      logStep("Fetching real server data", { ip: serverIp, port: serverPort });
+      
+      // Fetch real server info from FiveM server endpoints
+      const [playersResponse, infoResponse, dynamicResponse] = await Promise.allSettled([
+        fetch(`http://${serverIp}:${serverPort}/players.json`, { 
+          signal: AbortSignal.timeout(5000) 
+        }),
+        fetch(`http://${serverIp}:${serverPort}/info.json`, { 
+          signal: AbortSignal.timeout(5000) 
+        }),
+        fetch(`http://${serverIp}:${serverPort}/dynamic.json`, { 
+          signal: AbortSignal.timeout(5000) 
+        })
+      ]);
 
-          const playersData = playersResponse.status === 'fulfilled' && playersResponse.value.ok
-            ? await playersResponse.value.json() : [];
-          
-          const infoData = infoResponse.status === 'fulfilled' && infoResponse.value.ok
-            ? await infoResponse.value.json() : {};
-          
-          const dynamicData = dynamicResponse.status === 'fulfilled' && dynamicResponse.value.ok
-            ? await dynamicResponse.value.json() : {};
+      const playersData = playersResponse.status === 'fulfilled' && playersResponse.value.ok
+        ? await playersResponse.value.json() : [];
+      
+      const infoData = infoResponse.status === 'fulfilled' && infoResponse.value.ok
+        ? await infoResponse.value.json() : {};
+      
+      const dynamicData = dynamicResponse.status === 'fulfilled' && dynamicResponse.value.ok
+        ? await dynamicResponse.value.json() : {};
 
-          serverData = {
-            players: Array.isArray(playersData) ? playersData.length : 0,
-            maxPlayers: infoData.vars?.sv_maxClients ? parseInt(infoData.vars.sv_maxClients) : 64,
-            serverName: infoData.vars?.sv_hostname || 'Adventure RP',
-            status: 'online',
-            uptime: Date.now() - (infoData.server?.uptime || 0),
-            version: infoData.server?.version || '1.0.0'
-          };
-          
-          logStep("Real server data fetched", { 
-            players: serverData.players, 
-            maxPlayers: serverData.maxPlayers,
-            status: serverData.status
-          });
-        }
-      } catch (error) {
-        logStep("FiveM server connection error, using mock data", { error: error.message });
-      }
+      serverData = {
+        players: Array.isArray(playersData) ? playersData.length : 0,
+        maxPlayers: infoData.vars?.sv_maxClients ? parseInt(infoData.vars.sv_maxClients) : 64,
+        serverName: infoData.vars?.sv_hostname || 'Adventure RP',
+        status: 'online',
+        uptime: Date.now() - (infoData.server?.uptime || 0),
+        version: infoData.server?.version || '1.0.0'
+      };
+      
+      logStep("Real server data fetched", { 
+        players: serverData.players, 
+        maxPlayers: serverData.maxPlayers,
+        status: serverData.status
+      });
+    } catch (error) {
+      logStep("FiveM server connection error, using mock data", { error: error.message });
     }
     
     if (!serverData) {
-      logStep("No server connection configured, using mock data");
+      logStep("No server data available, using mock data");
     }
 
     // Get historical data from our database
