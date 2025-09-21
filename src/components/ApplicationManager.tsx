@@ -246,7 +246,21 @@ const ApplicationManager = () => {
     try {
       setIsLoading(true);
       console.log('Fetching applications...');
-      // Fetch applications with their type (no profile join since there's no FK)
+      
+      // Test basic query first
+      const { data: basicData, error: basicError } = await supabase
+        .from('applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      console.log('Basic applications query result:', { basicData, basicError });
+      
+      if (basicError) {
+        console.error('Basic query failed:', basicError);
+        throw basicError;
+      }
+
+      // If basic query works, fetch with joins
       const { data, error } = await supabase
         .from('applications')
         .select(`
@@ -259,7 +273,7 @@ const ApplicationManager = () => {
         `)
         .order('created_at', { ascending: false });
 
-      console.log('Applications query result:', { data, error });
+      console.log('Full applications query result:', { data, error });
       if (error) throw error;
       const apps = data || [];
 
@@ -277,6 +291,7 @@ const ApplicationManager = () => {
       }
 
       const merged = apps.map((a: any) => ({ ...a, profiles: profileMap[a.user_id] || null }));
+      console.log('Final merged applications:', merged);
       setApplications(merged);
     } catch (error) {
       console.error('Error fetching applications:', error);
