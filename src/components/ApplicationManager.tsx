@@ -14,7 +14,7 @@ import { Eye, CheckCircle, XCircle, Clock, Trash2, Webhook, Settings, Shield } f
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import ApplicationTypesManager from "./ApplicationTypesManager";
+import ApplicationManager from "./applications/ApplicationManager";
 
 const ApplicationSettingsPanel = () => {
   const [applicationSettings, setApplicationSettings] = useState<any>({});
