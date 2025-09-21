@@ -36,7 +36,7 @@ serve(async (req) => {
     try {
       console.log('Getting ephemeral token from OpenAI...');
       
-      // First, get an ephemeral token for WebSocket authentication
+      // Get ephemeral token for authentication
       const tokenResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
         method: 'POST',
         headers: {
@@ -51,10 +51,10 @@ serve(async (req) => {
 
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
-        console.error('Failed to get ephemeral token:', errorText);
+        console.error('Failed to get ephemeral token:', tokenResponse.status, errorText);
         socket.send(JSON.stringify({
           type: 'error',
-          error: `Failed to authenticate: ${tokenResponse.status}`,
+          error: `Failed to authenticate with OpenAI: ${tokenResponse.status}`,
           details: errorText
         }));
         socket.close(1000, 'Authentication failed');
@@ -62,23 +62,29 @@ serve(async (req) => {
       }
 
       const tokenData = await tokenResponse.json();
-      console.log('Got ephemeral token, connecting to WebSocket...');
+      console.log('Got ephemeral token response:', {
+        hasClientSecret: !!tokenData.client_secret?.value,
+        expiresAt: tokenData.expires_at,
+        sessionId: tokenData.id
+      });
 
       if (!tokenData.client_secret?.value) {
-        console.error('No client secret in token response');
+        console.error('No client secret in token response:', tokenData);
         socket.send(JSON.stringify({
           type: 'error',
-          error: 'Failed to get authentication token',
+          error: 'Failed to get authentication token from OpenAI',
         }));
         socket.close(1000, 'Authentication failed');
         return;
       }
 
-      // Now connect to WebSocket with the ephemeral token
+      // Connect to OpenAI WebSocket using ephemeral token as subprotocol
+      const ephemeralToken = tokenData.client_secret.value;
       const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
       
-      // Create WebSocket connection with ephemeral token as authorization
-      openAISocket = new WebSocket(wsUrl, [`Bearer.${tokenData.client_secret.value}`]);
+      console.log('Connecting to OpenAI with ephemeral token as subprotocol...');
+      // Try using the ephemeral token as a subprotocol (similar to Kubernetes approach)
+      openAISocket = new WebSocket(wsUrl, [`realtime`, `Bearer.${ephemeralToken}`]);
 
       openAISocket.onopen = () => {
         console.log('Successfully connected to OpenAI Realtime API');
@@ -185,6 +191,12 @@ serve(async (req) => {
         socket.send(JSON.stringify({
           type: 'error',
           error: 'Session not ready'
+        }));
+      } else {
+        console.log('OpenAI socket not ready, state:', openAISocket?.readyState);
+        socket.send(JSON.stringify({
+          type: 'error',
+          error: 'Connection not ready'
         }));
       }
     } catch (error) {
