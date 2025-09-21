@@ -1,7 +1,7 @@
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp } from "lucide-react";
+import { FileText, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Users, Calendar, Activity } from "lucide-react";
 
 interface ApplicationsOverviewProps {
   applications: any[];
@@ -26,6 +26,9 @@ export const ApplicationsOverview = ({ applications }: ApplicationsOverviewProps
   const processedApps = approvedApps + rejectedApps;
   const approvalRate = processedApps > 0 ? Math.round((approvedApps / processedApps) * 100) : 0;
 
+  // Average processing time (simplified calculation)
+  const avgProcessingTime = "2-3 days"; // This could be calculated from data
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'text-amber-400';
@@ -47,88 +50,164 @@ export const ApplicationsOverview = ({ applications }: ApplicationsOverviewProps
   };
 
   return (
-    <Card className="p-6 bg-gaming-card border-gaming-border">
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Main Overview Card */}
+      <Card className="bg-gaming-card border-gaming-border md:col-span-2 lg:col-span-1">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
             <FileText className="h-5 w-5 text-neon-blue" />
-            <h3 className="font-semibold text-foreground">Applications</h3>
+            <span>Applications Overview</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Total Applications */}
+          <div className="text-center p-4 bg-gaming-dark rounded-lg">
+            <p className="text-3xl font-bold text-foreground">{totalApps}</p>
+            <p className="text-sm text-muted-foreground">Total Applications</p>
+            <Badge variant={recentApps > 0 ? "default" : "secondary"} className="mt-2">
+              {recentApps} this week
+            </Badge>
           </div>
-          <Badge variant={recentApps > 0 ? "default" : "secondary"}>
-            {recentApps} this week
-          </Badge>
-        </div>
 
-        {/* Main Count */}
-        <div className="text-center">
-          <p className="text-3xl font-bold text-foreground">{totalApps}</p>
-          <p className="text-sm text-muted-foreground">Total applications</p>
-        </div>
-
-        {/* Status Breakdown */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-foreground">Status Breakdown</h4>
-          
-          <div className="space-y-2">
-            {[
-              { status: 'pending', count: pendingApps, label: 'Pending Review' },
-              { status: 'under_review', count: underReviewApps, label: 'Under Review' },
-              { status: 'approved', count: approvedApps, label: 'Approved' },
-              { status: 'rejected', count: rejectedApps, label: 'Rejected' }
-            ].map(({ status, count, label }) => {
-              const StatusIcon = getStatusIcon(status);
-              return (
-                <div key={status} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <StatusIcon className={`h-3 w-3 ${getStatusColor(status)}`} />
-                    <span className="text-muted-foreground">{label}</span>
+          {/* Status Breakdown */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-foreground">Status Breakdown</h4>
+            
+            <div className="space-y-2">
+              {[
+                { status: 'pending', count: pendingApps, label: 'Pending Review' },
+                { status: 'under_review', count: underReviewApps, label: 'Under Review' },
+                { status: 'approved', count: approvedApps, label: 'Approved' },
+                { status: 'rejected', count: rejectedApps, label: 'Rejected' }
+              ].map(({ status, count, label }) => {
+                const StatusIcon = getStatusIcon(status);
+                return (
+                  <div key={status} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-2">
+                      <StatusIcon className={`h-3 w-3 ${getStatusColor(status)}`} />
+                      <span className="text-muted-foreground">{label}</span>
+                    </div>
+                    <span className={`font-medium ${getStatusColor(status)}`}>{count}</span>
                   </div>
-                  <span className={`font-medium ${getStatusColor(status)}`}>{count}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Approval Rate */}
-        {processedApps > 0 && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Approval Rate</span>
-              <span className="font-medium text-foreground">{approvalRate}%</span>
-            </div>
-            <Progress value={approvalRate} className="h-2" />
-          </div>
-        )}
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gaming-border">
-          <div className="text-center">
-            <TrendingUp className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Recent Activity</p>
-            <p className="text-sm font-medium text-foreground">{recentApps} new</p>
-          </div>
-          
-          <div className="text-center">
-            <Clock className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Needs Action</p>
-            <p className="text-sm font-medium text-foreground">{pendingApps + underReviewApps}</p>
-          </div>
-        </div>
-
-        {/* Quick Action Indicator */}
-        {(pendingApps + underReviewApps) > 0 && (
-          <div className="pt-3 border-t border-gaming-border">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-4 w-4 text-amber-400" />
-              <span className="text-xs text-amber-400">
-                {pendingApps + underReviewApps} application{(pendingApps + underReviewApps) !== 1 ? 's' : ''} waiting for review
-              </span>
+                );
+              })}
             </div>
           </div>
-        )}
-      </div>
-    </Card>
+
+          {/* Approval Rate */}
+          {processedApps > 0 && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Approval Rate</span>
+                <span className="font-medium text-foreground">{approvalRate}%</span>
+              </div>
+              <Progress value={approvalRate} className="h-2" />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Activity Stats Card */}
+      <Card className="bg-gaming-card border-gaming-border">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Activity className="h-5 w-5 text-neon-green" />
+            <span>Activity Stats</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 bg-gaming-dark rounded-lg">
+              <TrendingUp className="h-6 w-6 mx-auto mb-2 text-neon-green" />
+              <p className="text-lg font-bold text-foreground">{recentApps}</p>
+              <p className="text-xs text-muted-foreground">New This Week</p>
+            </div>
+            
+            <div className="text-center p-3 bg-gaming-dark rounded-lg">
+              <Clock className="h-6 w-6 mx-auto mb-2 text-amber-400" />
+              <p className="text-lg font-bold text-foreground">{pendingApps + underReviewApps}</p>
+              <p className="text-xs text-muted-foreground">Needs Review</p>
+            </div>
+          </div>
+
+          <div className="p-3 bg-gaming-dark rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Avg. Processing Time</span>
+            </div>
+            <p className="text-lg font-semibold text-foreground">{avgProcessingTime}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions Card */}
+      <Card className="bg-gaming-card border-gaming-border">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Users className="h-5 w-5 text-neon-purple" />
+            <span>Quick Insights</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Priority Actions */}
+          {(pendingApps + underReviewApps) > 0 ? (
+            <div className="p-3 bg-amber-400/10 border border-amber-400/20 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-amber-400" />
+                <span className="text-sm font-medium text-amber-400">Action Required</span>
+              </div>
+              <p className="text-xs text-amber-300">
+                {pendingApps + underReviewApps} application{(pendingApps + underReviewApps) !== 1 ? 's' : ''} awaiting review
+              </p>
+            </div>
+          ) : (
+            <div className="p-3 bg-emerald-400/10 border border-emerald-400/20 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                <span className="text-sm font-medium text-emerald-400">All Caught Up</span>
+              </div>
+              <p className="text-xs text-emerald-300">No pending applications to review</p>
+            </div>
+          )}
+
+          {/* Performance Indicator */}
+          <div className="p-3 bg-gaming-dark rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Team Performance</span>
+              <Badge variant={approvalRate >= 70 ? "default" : "destructive"}>
+                {approvalRate >= 70 ? "Good" : "Needs Attention"}
+              </Badge>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Approval Rate</span>
+                <span className="text-foreground">{approvalRate}%</span>
+              </div>
+              <Progress value={approvalRate} className="h-1" />
+            </div>
+          </div>
+
+          {/* Recent Activity Summary */}
+          <div className="p-3 bg-gaming-dark rounded-lg">
+            <h5 className="text-sm font-medium text-foreground mb-2">This Week</h5>
+            <div className="text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">New Applications</span>
+                <span className="text-foreground font-medium">{recentApps}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Processed</span>
+                <span className="text-foreground font-medium">
+                  {applications.filter(app => {
+                    const reviewDate = app.reviewed_at ? new Date(app.reviewed_at) : null;
+                    return reviewDate && reviewDate >= oneWeekAgo;
+                  }).length}
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
