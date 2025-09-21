@@ -82,7 +82,7 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
 
   const fetchServers = async () => {
     try {
-      // Fetch servers
+      // Fetch servers from database
       const { data: serversData, error: serversError } = await supabase
         .from("servers")
         .select("*")
@@ -91,47 +91,114 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
 
       if (serversError) throw serversError;
 
-      // Fetch global server stats
-      const { data: globalStats, error: globalStatsError } = await supabase
-        .from("server_stats")
-        .select("*")
-        .order("last_updated", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // If no servers in database, create a default server entry
+      if (!serversData || serversData.length === 0) {
+        const defaultServer = {
+          id: 'main-server',
+          name: 'Adventure RP Main Server',
+          ip_address: '95.216.29.189',
+          port: 30120,
+          is_active: true
+        };
 
-      if (globalStatsError) console.error("Error fetching global stats:", globalStatsError);
+        // Try to get real stats from enhanced-server-stats function
+        try {
+          const { data: statsData, error: statsError } = await supabase.functions.invoke('enhanced-server-stats', {
+            body: { server_id: 'main' }
+          });
 
-      // Fetch individual server stats for each server
-      const serversWithStats = await Promise.all(
-        (serversData || []).map(async (server) => {
-          const { data: individualStats, error: individualError } = await supabase
-            .from("individual_server_stats")
-            .select("*")
-            .eq("server_id", server.id)
-            .order("recorded_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          if (statsError) throw statsError;
 
-          if (individualError) {
-            console.error(`Error fetching stats for server ${server.id}:`, individualError);
-          }
+          const serverStats = statsData?.success && statsData.data ? {
+            players_online: statsData.data.players_online || 0,
+            max_players: statsData.data.max_players || 64,
+            queue_count: 0,
+            uptime_percentage: statsData.data.uptime_percentage || 0,
+            ping_ms: statsData.data.response_time || 0,
+            server_online: statsData.data.status === 'online',
+            last_updated: new Date().toISOString(),
+          } : {
+            players_online: 0,
+            max_players: 64,
+            queue_count: 0,
+            uptime_percentage: 0,
+            ping_ms: 0,
+            server_online: false,
+            last_updated: new Date().toISOString(),
+          };
 
-          return {
-            ...server,
-            stats: individualStats || globalStats || {
+          setServers([{
+            ...defaultServer,
+            stats: serverStats
+          }]);
+        } catch (error) {
+          console.error("Error fetching stats:", error);
+          setServers([{
+            ...defaultServer,
+            stats: {
               players_online: 0,
-              max_players: 48,
+              max_players: 64,
               queue_count: 0,
               uptime_percentage: 0,
               ping_ms: 0,
               server_online: false,
               last_updated: new Date().toISOString(),
-            },
-          };
-        })
-      );
+            }
+          }]);
+        }
+      } else {
+        // Use enhanced-server-stats function for real data
+        const serversWithStats = await Promise.all(
+          serversData.map(async (server) => {
+            try {
+              const { data: statsData, error: statsError } = await supabase.functions.invoke('enhanced-server-stats', {
+                body: { server_id: server.id }
+              });
 
-      setServers(serversWithStats);
+              if (statsError) throw statsError;
+
+              const serverStats = statsData?.success && statsData.data ? {
+                players_online: statsData.data.players_online || 0,
+                max_players: statsData.data.max_players || 64,
+                queue_count: 0,
+                uptime_percentage: statsData.data.uptime_percentage || 0,
+                ping_ms: statsData.data.response_time || 0,
+                server_online: statsData.data.status === 'online',
+                last_updated: new Date().toISOString(),
+              } : {
+                players_online: 0,
+                max_players: 64,
+                queue_count: 0,
+                uptime_percentage: 0,
+                ping_ms: 0,
+                server_online: false,
+                last_updated: new Date().toISOString(),
+              };
+
+              return {
+                ...server,
+                stats: serverStats
+              };
+            } catch (error) {
+              console.error(`Error fetching stats for server ${server.id}:`, error);
+              return {
+                ...server,
+                stats: {
+                  players_online: 0,
+                  max_players: 64,
+                  queue_count: 0,
+                  uptime_percentage: 0,
+                  ping_ms: 0,
+                  server_online: false,
+                  last_updated: new Date().toISOString(),
+                }
+              };
+            }
+          })
+        );
+
+        setServers(serversWithStats);
+      }
     } catch (error) {
       console.error("Error fetching servers:", error);
       toast({
@@ -175,19 +242,14 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
 
   const handleRefreshStats = async () => {
     try {
-      // Call the auto-fetch function to manually trigger stats update
-      const { error } = await supabase.functions.invoke("auto-fetch-server-stats");
-      
-      if (error) throw error;
+      // Simply refresh the data by calling fetchServers
+      await fetchServers();
+      await fetchServerInfo();
       
       toast({
         title: "Success",
         description: "Server stats refreshed successfully",
       });
-      
-      // Refresh the data
-      await fetchServers();
-      await fetchServerInfo();
     } catch (error) {
       console.error("Error refreshing stats:", error);
       toast({
