@@ -35,15 +35,14 @@ serve(async (req) => {
     
     // Connect to OpenAI Realtime API
     try {
-      openAISocket = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01", {
-        headers: {
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-          "OpenAI-Beta": "realtime=v1"
-        }
-      });
+      // Create WebSocket connection with authentication in the URL query parameter
+      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01&api_key=${encodeURIComponent(OPENAI_API_KEY)}`;
+      console.log('Attempting to connect to OpenAI...');
+      
+      openAISocket = new WebSocket(wsUrl);
 
       openAISocket.onopen = () => {
-        console.log('Connected to OpenAI Realtime API');
+        console.log('Successfully connected to OpenAI Realtime API');
       };
 
       openAISocket.onmessage = (event) => {
@@ -103,12 +102,12 @@ serve(async (req) => {
       };
 
       openAISocket.onclose = (event) => {
-        console.log('OpenAI WebSocket closed:', event.code, event.reason);
+        console.log('OpenAI WebSocket closed. Code:', event.code, 'Reason:', event.reason);
         socket.close(1000, 'OpenAI connection closed');
       };
 
     } catch (error) {
-      console.error('Error connecting to OpenAI:', error);
+      console.error('Error creating OpenAI WebSocket connection:', error);
       socket.close(1000, 'Failed to connect to OpenAI');
     }
   };
@@ -123,7 +122,6 @@ serve(async (req) => {
         openAISocket.send(JSON.stringify(data));
       } else if (!sessionCreated) {
         console.log('Session not yet created, queuing message');
-        // Could implement message queuing here if needed
       }
     } catch (error) {
       console.error('Error parsing client message:', error);
