@@ -86,6 +86,16 @@ import ConsolidatedServerManager from "@/components/ConsolidatedServerManager";
 import TeamManager from "@/components/TeamManager";
 import RoleManager from "@/components/RoleManager";
 
+// New comprehensive overview components
+import { ServerPerformanceOverview } from "@/components/ServerPerformanceOverview";
+import { FinancialDashboard } from "@/components/FinancialDashboard";
+import { UserActivityOverview } from "@/components/UserActivityOverview";
+import { CommunicationCenter } from "@/components/CommunicationCenter";
+import { SystemHealthMonitor } from "@/components/SystemHealthMonitor";
+import { RecentActivityTimeline } from "@/components/RecentActivityTimeline";
+import { QuickActionsPanel } from "@/components/QuickActionsPanel";
+import { AnalyticsSummary } from "@/components/AnalyticsSummary";
+
 const DiscordLogsManager = () => {
   const [discordSettings, setDiscordSettings] = useState<any>({});
   const [applicationDiscordSettings, setApplicationDiscordSettings] = useState<any>({});
@@ -930,7 +940,8 @@ const StaffPanel = () => {
             <div className="p-6 custom-scrollbar animate-fade-in">
               {activeTab === "overview" && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4 sm:gap-6">
+                  {/* Enhanced Overview Grid with new comprehensive components */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
                     <ApplicationsOverview applications={applications} />
                     <ActivityOverview applications={applications} />
                     <QuickInsightsOverview applications={applications} />
@@ -941,6 +952,18 @@ const StaffPanel = () => {
                       serverSettings={serverSettings} 
                       staffCount={staffMembers.length}
                     />
+                    <ServerPerformanceOverview />
+                    <FinancialDashboard />
+                    <UserActivityOverview />
+                    <CommunicationCenter />
+                    <SystemHealthMonitor />
+                  </div>
+
+                  {/* Secondary Grid - Larger components that need more space */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <QuickActionsPanel />
+                    <RecentActivityTimeline />
+                    <AnalyticsSummary />
                   </div>
                 </div>
               )}
