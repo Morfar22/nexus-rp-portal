@@ -157,7 +157,7 @@ const IPWhitelistManager = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveIPAddress(index)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                    className="text-rose-400 hover:text-rose-300 hover:bg-rose-400/10"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -174,7 +174,7 @@ const IPWhitelistManager = ({
             </div>
           </div>
           
-          <div className="text-sm text-muted-foreground bg-yellow-500/10 border border-yellow-500/20 rounded p-3">
+          <div className="text-sm text-muted-foreground bg-amber-500/10 border border-amber-500/20 rounded p-3">
             <strong>Warning:</strong> IP whitelist restricts access to only the specified IP addresses. 
             Make sure to add your current IP address before enabling to avoid being locked out.
           </div>
