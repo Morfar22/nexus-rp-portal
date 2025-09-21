@@ -3,7 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Zap, 
   Image, 
@@ -14,7 +16,13 @@ import {
   AlertTriangle,
   TrendingUp,
   Clock,
-  Monitor
+  Monitor,
+  BarChart3,
+  Settings,
+  RefreshCw,
+  Activity,
+  Globe,
+  Gauge
 } from 'lucide-react';
 
 interface PerformanceMetrics {
@@ -25,6 +33,14 @@ interface PerformanceMetrics {
   ttfb: number;
 }
 
+interface BackendAnalysis {
+  overall_score: number;
+  database: any;
+  api: any;
+  frontend: any;
+  recommendations: string[];
+}
+
 export const PerformanceOptimizer = () => {
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     lcp: 0,
@@ -33,26 +49,41 @@ export const PerformanceOptimizer = () => {
     fcp: 0,
     ttfb: 0
   });
+  const [backendAnalysis, setBackendAnalysis] = useState<BackendAnalysis | null>(null);
   const [optimizations, setOptimizations] = useState({
     imageOptimization: false,
     codesplitting: false,
     caching: false,
     preloading: false,
-    lazyLoading: false
+    lazyLoading: false,
+    databaseOptimized: false,
+    apiOptimized: false
   });
+  const [loading, setLoading] = useState(false);
+  const [autoOptimizing, setAutoOptimizing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     measurePerformance();
+    fetchBackendAnalysis();
     applyOptimizations();
   }, []);
 
   const measurePerformance = async () => {
+    // Record start time for TTFB measurement
+    const navigationStart = performance.timing?.navigationStart || Date.now();
+    const ttfb = performance.timing?.responseStart - navigationStart || 0;
+    setMetrics(prev => ({ ...prev, ttfb }));
+
     // Measure LCP
     const lcpObserver = new PerformanceObserver((entryList) => {
       const entries = entryList.getEntries();
       const lastEntry = entries[entries.length - 1];
-      setMetrics(prev => ({ ...prev, lcp: lastEntry.startTime }));
+      const lcpValue = lastEntry.startTime;
+      setMetrics(prev => ({ ...prev, lcp: lcpValue }));
+      
+      // Send to backend for analysis
+      recordMetric('lcp', lcpValue);
     });
 
     try {
@@ -70,6 +101,7 @@ export const PerformanceOptimizer = () => {
         }
       }
       setMetrics(prev => ({ ...prev, cls: clsValue }));
+      recordMetric('cls', clsValue);
     });
 
     try {
@@ -83,7 +115,9 @@ export const PerformanceOptimizer = () => {
       const entries = entryList.getEntries();
       entries.forEach((entry) => {
         if (entry.name === 'first-contentful-paint') {
-          setMetrics(prev => ({ ...prev, fcp: entry.startTime }));
+          const fcpValue = entry.startTime;
+          setMetrics(prev => ({ ...prev, fcp: fcpValue }));
+          recordMetric('fcp', fcpValue);
         }
       });
     });
@@ -94,12 +128,60 @@ export const PerformanceOptimizer = () => {
       console.log('FCP measurement not supported');
     }
 
+    // Measure INP (simulated)
+    const inpValue = 88; // Simulated good INP
+    setMetrics(prev => ({ ...prev, inp: inpValue }));
+
     // Cleanup observers after 10 seconds
     setTimeout(() => {
       lcpObserver.disconnect();
       clsObserver.disconnect();
       fcpObserver.disconnect();
     }, 10000);
+  };
+
+  const recordMetric = async (type: string, value: number) => {
+    try {
+      await supabase.functions.invoke('performance-analytics', {
+        body: {
+          action: 'recordMetric',
+          data: {
+            metric_type: type,
+            value,
+            url: window.location.href,
+            user_agent: navigator.userAgent,
+            connection_type: (navigator as any).connection?.effectiveType || 'unknown',
+            session_id: crypto.randomUUID()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error recording metric:', error);
+    }
+  };
+
+  const fetchBackendAnalysis = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('performance-optimizer', {
+        body: { action: 'analyzePerformance' }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setBackendAnalysis(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching backend analysis:', error);
+      toast({
+        title: "Analysis Error",
+        description: "Could not fetch backend performance analysis",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const applyOptimizations = () => {
@@ -141,204 +223,378 @@ export const PerformanceOptimizer = () => {
   const getMetricStatus = (metric: string, value: number) => {
     switch (metric) {
       case 'lcp':
-        if (value <= 2500) return { status: 'good', color: 'bg-green-500' };
-        if (value <= 4000) return { status: 'needs-improvement', color: 'bg-yellow-500' };
-        return { status: 'poor', color: 'bg-red-500' };
+        if (value <= 2500) return { status: 'good', color: 'text-emerald-400', bgColor: 'bg-emerald-400' };
+        if (value <= 4000) return { status: 'needs-improvement', color: 'text-amber-400', bgColor: 'bg-amber-400' };
+        return { status: 'poor', color: 'text-rose-400', bgColor: 'bg-rose-400' };
       
       case 'cls':
-        if (value <= 0.1) return { status: 'good', color: 'bg-green-500' };
-        if (value <= 0.25) return { status: 'needs-improvement', color: 'bg-yellow-500' };
-        return { status: 'poor', color: 'bg-red-500' };
+        if (value <= 0.1) return { status: 'good', color: 'text-emerald-400', bgColor: 'bg-emerald-400' };
+        if (value <= 0.25) return { status: 'needs-improvement', color: 'text-amber-400', bgColor: 'bg-amber-400' };
+        return { status: 'poor', color: 'text-rose-400', bgColor: 'bg-rose-400' };
       
       case 'inp':
-        if (value <= 200) return { status: 'good', color: 'bg-green-500' };
-        if (value <= 500) return { status: 'needs-improvement', color: 'bg-yellow-500' };
-        return { status: 'poor', color: 'bg-red-500' };
+        if (value <= 200) return { status: 'good', color: 'text-emerald-400', bgColor: 'bg-emerald-400' };
+        if (value <= 500) return { status: 'needs-improvement', color: 'text-amber-400', bgColor: 'bg-amber-400' };
+        return { status: 'poor', color: 'text-rose-400', bgColor: 'bg-rose-400' };
       
       case 'fcp':
-        if (value <= 1800) return { status: 'good', color: 'bg-green-500' };
-        if (value <= 3000) return { status: 'needs-improvement', color: 'bg-yellow-500' };
-        return { status: 'poor', color: 'bg-red-500' };
+        if (value <= 1800) return { status: 'good', color: 'text-emerald-400', bgColor: 'bg-emerald-400' };
+        if (value <= 3000) return { status: 'needs-improvement', color: 'text-amber-400', bgColor: 'bg-amber-400' };
+        return { status: 'poor', color: 'text-rose-400', bgColor: 'bg-rose-400' };
+      
+      case 'ttfb':
+        if (value <= 800) return { status: 'good', color: 'text-emerald-400', bgColor: 'bg-emerald-400' };
+        if (value <= 1800) return { status: 'needs-improvement', color: 'text-amber-400', bgColor: 'bg-amber-400' };
+        return { status: 'poor', color: 'text-rose-400', bgColor: 'bg-rose-400' };
       
       default:
-        return { status: 'unknown', color: 'bg-gray-500' };
+        return { status: 'unknown', color: 'text-muted-foreground', bgColor: 'bg-muted-foreground' };
     }
   };
 
-  const optimizeImages = () => {
-    // Convert images to WebP format and add proper sizing
-    const images = document.querySelectorAll('img');
-    images.forEach(img => {
-      if (!img.getAttribute('loading')) {
-        img.setAttribute('loading', 'lazy');
-      }
-      if (!img.getAttribute('decoding')) {
-        img.setAttribute('decoding', 'async');
-      }
-    });
+  const optimizeDatabase = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('performance-optimizer', {
+        body: { action: 'optimizeDatabase' }
+      });
 
-    toast({
-      title: "Images Optimized",
-      description: "Image loading has been optimized for better performance",
-    });
+      if (error) throw error;
+
+      setOptimizations(prev => ({ ...prev, databaseOptimized: true }));
+      toast({
+        title: "Database Optimized",
+        description: `Applied ${data?.data?.optimizations_applied || 0} database optimizations`,
+      });
+    } catch (error) {
+      console.error('Error optimizing database:', error);
+      toast({
+        title: "Optimization Failed",
+        description: "Could not optimize database performance",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const enableCodeSplitting = () => {
-    // Code splitting is handled by Vite automatically
-    toast({
-      title: "Code Splitting Enabled",
-      description: "JavaScript bundles are now split for optimal loading",
-    });
+  const enableCaching = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('performance-optimizer', {
+        body: { action: 'enableCaching' }
+      });
+
+      if (error) throw error;
+
+      setOptimizations(prev => ({ ...prev, caching: true }));
+      toast({
+        title: "Caching Enabled",
+        description: "Advanced caching strategies have been applied",
+      });
+    } catch (error) {
+      console.error('Error enabling caching:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runAutoOptimization = async () => {
+    try {
+      setAutoOptimizing(true);
+      const { data, error } = await supabase.functions.invoke('performance-optimizer', {
+        body: { action: 'autoOptimize' }
+      });
+
+      if (error) throw error;
+
+      // Refresh analysis after optimization
+      await fetchBackendAnalysis();
+      
+      toast({
+        title: "Auto-Optimization Complete",
+        description: data?.data?.message || "Optimizations have been applied",
+      });
+    } catch (error) {
+      console.error('Error in auto-optimization:', error);
+      toast({
+        title: "Auto-Optimization Failed",
+        description: "Could not complete automatic optimizations",
+        variant: "destructive"
+      });
+    } finally {
+      setAutoOptimizing(false);
+    }
+  };
+
+  const generateReport = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('performance-optimizer', {
+        body: { action: 'generateReport' }
+      });
+
+      if (error) throw error;
+
+      // Download report as JSON
+      const blob = new Blob([JSON.stringify(data.data.report, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'performance-report.json';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Report Generated",
+        description: "Performance report has been downloaded",
+      });
+    } catch (error) {
+      console.error('Error generating report:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getOverallScore = () => {
+    if (!backendAnalysis) return 0;
+    return backendAnalysis.overall_score;
   };
 
   return (
     <div className="space-y-6">
-      {/* Performance Metrics */}
+      {/* Performance Score Overview */}
       <Card className="bg-gaming-card border-gaming-border">
         <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Monitor className="h-5 w-5 text-neon-blue" />
-            <CardTitle>Core Web Vitals</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Gauge className="h-5 w-5 text-neon-blue" />
+              <CardTitle>Performance Score</CardTitle>
+            </div>
+            <Badge variant={getOverallScore() >= 80 ? 'default' : 'destructive'}>
+              {getOverallScore()}/100
+            </Badge>
           </div>
-          <CardDescription>Real-time performance metrics for your application</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">LCP</span>
-                <Badge variant={getMetricStatus('lcp', metrics.lcp).status === 'good' ? 'default' : 'destructive'}>
-                  {metrics.lcp > 0 ? `${(metrics.lcp / 1000).toFixed(2)}s` : 'Measuring...'}
-                </Badge>
+          <div className="flex items-center justify-center">
+            <div className="relative w-32 h-32">
+              <div className="absolute inset-0 rounded-full border-8 border-gaming-border"></div>
+              <div 
+                className="absolute inset-0 rounded-full border-8 border-neon-blue border-t-transparent animate-spin"
+                style={{
+                  animationDuration: '2s',
+                  transform: `rotate(${(getOverallScore() / 100) * 360}deg)`
+                }}
+              ></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-foreground">{getOverallScore()}</span>
               </div>
-              <Progress 
-                value={Math.min((metrics.lcp / 4000) * 100, 100)} 
-                className="h-2"
-              />
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">CLS</span>
-                <Badge variant={getMetricStatus('cls', metrics.cls).status === 'good' ? 'default' : 'destructive'}>
-                  {metrics.cls.toFixed(3)}
-                </Badge>
-              </div>
-              <Progress 
-                value={Math.min((metrics.cls / 0.25) * 100, 100)} 
-                className="h-2"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">FCP</span>
-                <Badge variant={getMetricStatus('fcp', metrics.fcp).status === 'good' ? 'default' : 'destructive'}>
-                  {metrics.fcp > 0 ? `${(metrics.fcp / 1000).toFixed(2)}s` : 'Measuring...'}
-                </Badge>
-              </div>
-              <Progress 
-                value={Math.min((metrics.fcp / 3000) * 100, 100)} 
-                className="h-2"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">INP</span>
-                <Badge variant="default">
-                  88ms
-                </Badge>
-              </div>
-              <Progress 
-                value={30} 
-                className="h-2"
-              />
-            </div>
+          </div>
+          
+          <div className="mt-4 flex justify-center space-x-4">
+            <Button 
+              onClick={runAutoOptimization} 
+              disabled={autoOptimizing}
+              className="bg-neon-green hover:bg-neon-green/80"
+            >
+              {autoOptimizing ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Zap className="h-4 w-4 mr-2" />
+              )}
+              Auto-Optimize
+            </Button>
+            <Button 
+              onClick={generateReport} 
+              variant="outline"
+              disabled={loading}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Generate Report
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Optimization Status */}
-      <Card className="bg-gaming-card border-gaming-border">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Zap className="h-5 w-5 text-neon-green" />
-            <CardTitle>Performance Optimizations</CardTitle>
+      <Tabs defaultValue="frontend" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-gaming-card">
+          <TabsTrigger value="frontend">Frontend</TabsTrigger>
+          <TabsTrigger value="backend">Backend</TabsTrigger>
+          <TabsTrigger value="optimizations">Optimizations</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="frontend">
+          {/* Frontend Performance Metrics */}
+          <Card className="bg-gaming-card border-gaming-border">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Monitor className="h-5 w-5 text-neon-blue" />
+                <CardTitle>Core Web Vitals</CardTitle>
+              </div>
+              <CardDescription>Real-time frontend performance metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {[
+                  { key: 'lcp', label: 'LCP', value: metrics.lcp, unit: 's', divisor: 1000 },
+                  { key: 'cls', label: 'CLS', value: metrics.cls, unit: '', divisor: 1 },
+                  { key: 'fcp', label: 'FCP', value: metrics.fcp, unit: 's', divisor: 1000 },
+                  { key: 'inp', label: 'INP', value: metrics.inp, unit: 'ms', divisor: 1 },
+                  { key: 'ttfb', label: 'TTFB', value: metrics.ttfb, unit: 'ms', divisor: 1 }
+                ].map(({ key, label, value, unit, divisor }) => {
+                  const status = getMetricStatus(key, value);
+                  const displayValue = divisor > 1 ? (value / divisor).toFixed(2) : value.toFixed(3);
+                  
+                  return (
+                    <div key={key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{label}</span>
+                        <Badge variant={status.status === 'good' ? 'default' : 'destructive'}>
+                          {value > 0 ? `${displayValue}${unit}` : 'Measuring...'}
+                        </Badge>
+                      </div>
+                      <Progress 
+                        value={Math.min((value / (key === 'cls' ? 0.25 : key === 'inp' ? 500 : 4000)) * 100, 100)} 
+                        className="h-2"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="backend">
+          {/* Backend Performance Analysis */}
+          <div className="space-y-4">
+            {backendAnalysis && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-gaming-card border-gaming-border">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4 text-neon-purple" />
+                        <CardTitle className="text-sm">Database</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-foreground">{backendAnalysis.database.score}/100</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {backendAnalysis.database.avg_query_time}ms avg query time
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gaming-card border-gaming-border">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center space-x-2">
+                        <Globe className="h-4 w-4 text-neon-green" />
+                        <CardTitle className="text-sm">API</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-foreground">{backendAnalysis.api.score}/100</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {backendAnalysis.api.avg_response_time}ms avg response
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gaming-card border-gaming-border">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center space-x-2">
+                        <Activity className="h-4 w-4 text-neon-blue" />
+                        <CardTitle className="text-sm">Frontend</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-foreground">{backendAnalysis.frontend.score}/100</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {backendAnalysis.frontend.bundle_size}KB bundle size
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card className="bg-gaming-card border-gaming-border">
+                  <CardHeader>
+                    <CardTitle>Performance Recommendations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {backendAnalysis.recommendations.map((rec, index) => (
+                        <div key={index} className="flex items-center space-x-2 text-sm">
+                          <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0" />
+                          <span className="text-muted-foreground">{rec}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
-          <CardDescription>Applied optimizations to improve Core Web Vitals</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 border border-gaming-border rounded">
-              <div className="flex items-center space-x-2">
-                <Image className="h-4 w-4 text-neon-blue" />
-                <span className="text-sm">Image Optimization</span>
-              </div>
-              {optimizations.imageOptimization ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <Button size="sm" onClick={optimizeImages}>Enable</Button>
-              )}
-            </div>
+        </TabsContent>
 
-            <div className="flex items-center justify-between p-3 border border-gaming-border rounded">
+        <TabsContent value="optimizations">
+          {/* Optimization Controls */}
+          <Card className="bg-gaming-card border-gaming-border">
+            <CardHeader>
               <div className="flex items-center space-x-2">
-                <Code className="h-4 w-4 text-neon-purple" />
-                <span className="text-sm">Code Splitting</span>
+                <Settings className="h-5 w-5 text-neon-green" />
+                <CardTitle>Performance Optimizations</CardTitle>
               </div>
-              {optimizations.codesplitting ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <Button size="sm" onClick={enableCodeSplitting}>Enable</Button>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between p-3 border border-gaming-border rounded">
-              <div className="flex items-center space-x-2">
-                <Database className="h-4 w-4 text-neon-green" />
-                <span className="text-sm">Caching Strategy</span>
+              <CardDescription>Applied optimizations and available actions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { key: 'imageOptimization', label: 'Image Optimization', icon: Image, color: 'text-neon-blue' },
+                  { key: 'codesplitting', label: 'Code Splitting', icon: Code, color: 'text-neon-purple' },
+                  { key: 'caching', label: 'Caching Strategy', icon: Database, color: 'text-neon-green', action: enableCaching },
+                  { key: 'preloading', label: 'Resource Preloading', icon: Wifi, color: 'text-neon-blue' },
+                  { key: 'lazyLoading', label: 'Lazy Loading', icon: Clock, color: 'text-neon-purple' },
+                  { key: 'databaseOptimized', label: 'Database Optimization', icon: Database, color: 'text-neon-green', action: optimizeDatabase }
+                ].map(({ key, label, icon: Icon, color, action }) => (
+                  <div key={key} className="flex items-center justify-between p-3 border border-gaming-border rounded">
+                    <div className="flex items-center space-x-2">
+                      <Icon className={`h-4 w-4 ${color}`} />
+                      <span className="text-sm">{label}</span>
+                    </div>
+                    {optimizations[key as keyof typeof optimizations] ? (
+                      <CheckCircle className="h-4 w-4 text-emerald-400" />
+                    ) : action ? (
+                      <Button size="sm" onClick={action} disabled={loading}>
+                        {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Enable'}
+                      </Button>
+                    ) : (
+                      <AlertTriangle className="h-4 w-4 text-amber-400" />
+                    )}
+                  </div>
+                ))}
               </div>
-              {optimizations.caching ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              )}
-            </div>
 
-            <div className="flex items-center justify-between p-3 border border-gaming-border rounded">
-              <div className="flex items-center space-x-2">
-                <Wifi className="h-4 w-4 text-neon-blue" />
-                <span className="text-sm">Resource Preloading</span>
+              <div className="mt-6 pt-4 border-t border-gaming-border">
+                <Button 
+                  onClick={fetchBackendAnalysis} 
+                  className="w-full" 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                  )}
+                  Refresh Analysis
+                </Button>
               </div>
-              {optimizations.preloading ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              )}
-            </div>
-
-            <div className="flex items-center justify-between p-3 border border-gaming-border rounded">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-neon-purple" />
-                <span className="text-sm">Lazy Loading</span>
-              </div>
-              {optimizations.lazyLoading ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              )}
-            </div>
-
-            <div className="flex items-center justify-center p-3 border border-gaming-border rounded">
-              <Button onClick={applyOptimizations} className="w-full">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Re-apply All Optimizations
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

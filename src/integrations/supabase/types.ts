@@ -1192,6 +1192,63 @@ export type Database = {
           },
         ]
       }
+      performance_analysis: {
+        Row: {
+          analysis_type: string
+          created_at: string
+          id: string
+          results: Json
+        }
+        Insert: {
+          analysis_type: string
+          created_at?: string
+          id?: string
+          results: Json
+        }
+        Update: {
+          analysis_type?: string
+          created_at?: string
+          id?: string
+          results?: Json
+        }
+        Relationships: []
+      }
+      performance_metrics: {
+        Row: {
+          connection_type: string | null
+          created_at: string
+          id: string
+          metric_type: string
+          recorded_at: string
+          session_id: string | null
+          url: string
+          user_agent: string | null
+          value: number
+        }
+        Insert: {
+          connection_type?: string | null
+          created_at?: string
+          id?: string
+          metric_type: string
+          recorded_at?: string
+          session_id?: string | null
+          url: string
+          user_agent?: string | null
+          value: number
+        }
+        Update: {
+          connection_type?: string | null
+          created_at?: string
+          id?: string
+          metric_type?: string
+          recorded_at?: string
+          session_id?: string | null
+          url?: string
+          user_agent?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           category: string
