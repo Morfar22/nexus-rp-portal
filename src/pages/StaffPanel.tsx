@@ -581,6 +581,18 @@ const StaffPanel = () => {
   const { settings: globalSettings, updateSetting: updateGlobalSetting } = useServerSettings();
   const { toast } = useToast();
 
+  // Force refresh user data on component mount to get latest role
+  const { forceRefreshUser } = useCustomAuth();
+  
+  useEffect(() => {
+    const refreshUserData = async () => {
+      console.log('Forcing user data refresh in StaffPanel...');
+      const refreshedUser = await forceRefreshUser();
+      console.log('Refreshed user:', refreshedUser);
+    };
+    refreshUserData();
+  }, [forceRefreshUser]);
+
   // Basic state variables needed for functionality
   const [applications, setApplications] = useState<any[]>([]);
   const [rules, setRules] = useState<any[]>([]);

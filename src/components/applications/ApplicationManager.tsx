@@ -148,6 +148,17 @@ const ApplicationManager = () => {
 
   const deleteApplication = async (applicationId: string) => {
     try {
+      console.log('ApplicationManager: Attempting to delete application with user role:', user?.role);
+      
+      if (!user || !['admin', 'staff', 'moderator'].includes(user.role)) {
+        toast({
+          title: "Permission Denied",
+          description: `You need admin, staff, or moderator role to delete applications. Current role: ${user?.role || 'none'}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('applications')
         .delete()

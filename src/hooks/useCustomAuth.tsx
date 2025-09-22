@@ -21,6 +21,7 @@ interface CustomAuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: string | null; success?: boolean; banned?: boolean; userInfo?: any }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  forceRefreshUser: () => Promise<User | null>;
 }
 
 const CustomAuthContext = createContext<CustomAuthContextType | undefined>(undefined);
@@ -116,6 +117,33 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
     }
   };
 
+  const forceRefreshUser = async () => {
+    const token = localStorage.getItem('custom_session_token');
+    if (!token) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-session', {
+        body: { session_token: token }
+      });
+
+      if (error) throw error;
+
+      if (data.valid && data.user) {
+        console.log('Force refreshing user data:', data.user);
+        setUser(data.user);
+        setSessionToken(token);
+        return data.user;
+      } else {
+        clearAuth();
+        return null;
+      }
+    } catch (error) {
+      console.error('Error force refreshing user:', error);
+      clearAuth();
+      return null;
+    }
+  };
+
   const refreshSession = async () => {
     const token = localStorage.getItem('custom_session_token');
     if (!token) {
@@ -131,7 +159,11 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
       if (error) throw error;
 
       if (data.valid && data.user) {
-        setUser(data.user);
+        // Force refresh user data from database to get latest role
+        setUser({
+          ...data.user,
+          role: data.user.role // This will now have the updated admin role
+        });
         setSessionToken(token);
       } else {
         if (data.banned) {
@@ -187,6 +219,7 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
     signIn,
     signOut,
     refreshSession,
+    forceRefreshUser,
   };
 
   return (
