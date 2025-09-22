@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,19 +18,9 @@ const FormFieldEditor = ({ applicationTypeId, initialFields, onSave }: any) => {
   const [fields, setFields] = useState(initialFields || []);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
-  const { user, forceRefreshUser } = useCustomAuth();
+  const { user } = useCustomAuth();
 
-  // Force refresh user data when component mounts to ensure latest permissions
-  useEffect(() => {
-    const refreshUser = async () => {
-      if (user) {
-        console.log('FormFieldEditor: Current user role:', user.role);
-        const refreshedUser = await forceRefreshUser();
-        console.log('FormFieldEditor: Refreshed user role:', refreshedUser?.role);
-      }
-    };
-    refreshUser();
-  }, [user, forceRefreshUser]);
+  // No automatic refresh - let user role be checked when actions are performed
 
   const fieldTypes = [
     { value: 'text', label: 'Text Input' },

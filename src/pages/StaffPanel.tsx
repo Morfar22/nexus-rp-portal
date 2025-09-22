@@ -581,17 +581,16 @@ const StaffPanel = () => {
   const { settings: globalSettings, updateSetting: updateGlobalSetting } = useServerSettings();
   const { toast } = useToast();
 
-  // Force refresh user data on component mount to get latest role
+  // Only refresh user data once when component mounts if user role might be outdated
   const { forceRefreshUser } = useCustomAuth();
   
   useEffect(() => {
-    const refreshUserData = async () => {
-      console.log('Forcing user data refresh in StaffPanel...');
-      const refreshedUser = await forceRefreshUser();
-      console.log('Refreshed user:', refreshedUser);
-    };
-    refreshUserData();
-  }, [forceRefreshUser]);
+    // Only refresh if user exists and has a basic role that might need updating
+    if (user && user.role === 'user') {
+      console.log('Checking if user role needs refresh in StaffPanel...');
+      forceRefreshUser();
+    }
+  }, []); // Empty dependency array to run only once
 
   // Basic state variables needed for functionality
   const [applications, setApplications] = useState<any[]>([]);
