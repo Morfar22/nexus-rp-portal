@@ -107,7 +107,16 @@ const ApplicationManager = () => {
 
   const updateApplicationStatus = async (applicationId: string, status: string, notes?: string) => {
     try {
-      const reviewerId = (await supabase.auth.getUser()).data.user?.id;
+      console.log('ApplicationManager: Attempting to update application with user role:', user?.role);
+      console.log('ApplicationManager: User object:', user);
+      
+      // Use the custom auth user ID instead of supabase auth
+      const reviewerId = user?.id;
+      console.log('ApplicationManager: Reviewer ID from custom auth:', reviewerId);
+
+      if (!reviewerId) {
+        throw new Error('No user ID available for review');
+      }
 
       const { error } = await supabase
         .from('applications')
@@ -119,12 +128,15 @@ const ApplicationManager = () => {
         })
         .eq('id', applicationId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('ApplicationManager: Database error:', error);
+        throw error;
+      }
 
       // Update local state
       setApplications(prev => prev.map(app => 
         app.id === applicationId 
-          ? { ...app, status: status as any, notes, reviewed_by: reviewerId || '', reviewed_at: new Date().toISOString() }
+          ? { ...app, status: status as any, notes, reviewed_by: reviewerId, reviewed_at: new Date().toISOString() }
           : app
       ));
 
@@ -133,8 +145,7 @@ const ApplicationManager = () => {
         description: `Application has been ${status}`,
       });
 
-      // Send notification email if needed
-      // This would typically be handled by a database trigger or separate function
+      console.log('ApplicationManager: Successfully updated application');
 
     } catch (error) {
       console.error('Error updating application status:', error);
@@ -150,21 +161,15 @@ const ApplicationManager = () => {
     try {
       console.log('ApplicationManager: Attempting to delete application with user role:', user?.role);
       
-      if (!user || !['admin', 'staff', 'moderator'].includes(user.role)) {
-        toast({
-          title: "Permission Denied",
-          description: `You need admin, staff, or moderator role to delete applications. Current role: ${user?.role || 'none'}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { error } = await supabase
         .from('applications')
         .delete()
         .eq('id', applicationId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('ApplicationManager: Delete error:', error);
+        throw error;
+      }
 
       setApplications(prev => prev.filter(app => app.id !== applicationId));
       
@@ -172,6 +177,8 @@ const ApplicationManager = () => {
         title: "Application Deleted",
         description: "The application has been permanently deleted",
       });
+
+      console.log('ApplicationManager: Successfully deleted application');
     } catch (error) {
       console.error('Error deleting application:', error);
       toast({

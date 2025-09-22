@@ -67,11 +67,12 @@ const FormFieldEditor = ({ applicationTypeId, initialFields, onSave }: any) => {
   const saveFields = async () => {
     try {
       console.log('FormFieldEditor: Attempting to save fields with user role:', user?.role);
+      console.log('FormFieldEditor: User ID:', user?.id);
       
-      if (!user || !['admin', 'staff'].includes(user.role)) {
+      if (!user) {
         toast({
           title: "Permission Denied",
-          description: `You need admin or staff role to edit fields. Current role: ${user?.role || 'none'}`,
+          description: "You must be logged in to edit fields",
           variant: "destructive",
         });
         return;
@@ -82,7 +83,10 @@ const FormFieldEditor = ({ applicationTypeId, initialFields, onSave }: any) => {
         .update({ form_fields: fields })
         .eq('id', applicationTypeId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('FormFieldEditor: Database error:', error);
+        throw error;
+      }
 
       onSave(fields);
       setIsEditing(false);
@@ -90,6 +94,8 @@ const FormFieldEditor = ({ applicationTypeId, initialFields, onSave }: any) => {
         title: "Success",
         description: "Form fields updated successfully",
       });
+
+      console.log('FormFieldEditor: Successfully saved fields');
     } catch (error) {
       console.error('Error saving fields:', error);
       toast({
