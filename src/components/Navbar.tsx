@@ -7,7 +7,7 @@ import {
   Vote, FileText, BarChart3, Palette, Shield, Settings
 } from "lucide-react";
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavbarOverflow } from "@/hooks/useNavbarOverflow";
