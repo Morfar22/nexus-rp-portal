@@ -9,6 +9,7 @@ import { ApplicationSettingsPanel } from "./ApplicationSettingsPanel";
 import ApplicationTypesManager from "../ApplicationTypesManager";
 import ClosedApplications from "../ClosedApplications";
 import { Application } from "./types";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 
 const ApplicationManager = () => {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -16,14 +17,26 @@ const ApplicationManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { roleAssignments } = usePermissions();
+  const { user } = useCustomAuth();
 
   useEffect(() => {
     fetchApplications();
   }, []);
 
   useEffect(() => {
-    // Filter applications based on user's staff roles
+    // If user has admin role in custom_users table, show all applications
+    if (user?.role === 'admin' || user?.role === 'staff') {
+      setFilteredApplications(applications);
+      return;
+    }
+
+    // Filter applications based on user's staff roles from role assignments
     if (roleAssignments.length === 0) {
+      // If no role assignments but user has staff role in custom_users, show all
+      if (user?.role === 'moderator') {
+        setFilteredApplications(applications);
+        return;
+      }
       setFilteredApplications([]);
       return;
     }
@@ -38,7 +51,7 @@ const ApplicationManager = () => {
     });
 
     setFilteredApplications(filtered);
-  }, [applications, roleAssignments]);
+  }, [applications, roleAssignments, user?.role]);
 
   const fetchApplications = async () => {
     try {
