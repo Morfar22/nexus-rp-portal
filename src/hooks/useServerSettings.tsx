@@ -12,6 +12,9 @@ interface ServerSettings {
   application_settings: {
     accept_applications: boolean;
     multiple_applications_allowed?: boolean;
+    auto_close_applications?: boolean;
+    require_age_verification?: boolean;
+    cooldown_days?: number;
   };
   security_settings: {
     require_2fa: boolean;
@@ -66,6 +69,9 @@ const defaultSettings: ServerSettings = {
   application_settings: {
     accept_applications: true,
     multiple_applications_allowed: false,
+    auto_close_applications: false,
+    require_age_verification: false,
+    cooldown_days: 0,
   },
   security_settings: {
     require_2fa: false,

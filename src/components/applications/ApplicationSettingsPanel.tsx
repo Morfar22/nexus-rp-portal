@@ -1,67 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Settings } from "lucide-react";
-import { ApplicationSettings } from "./types";
+import { useServerSettings } from "@/hooks/useServerSettings";
 
 export const ApplicationSettingsPanel = () => {
-  const [settings, setSettings] = useState<ApplicationSettings>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { settings, updateSetting } = useServerSettings();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('server_settings')
-        .select('setting_value')
-        .eq('setting_key', 'application_settings')
-        .maybeSingle();
-
-      if (error) throw error;
-      setSettings((data?.setting_value as any) || {});
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    }
-  };
-
-  const updateSettings = async (newSettings: ApplicationSettings) => {
+  const handleSettingChange = async (key: string, value: any) => {
     setLoading(true);
     try {
-      const { data: existing } = await supabase
-        .from('server_settings')
-        .select('id')
-        .eq('setting_key', 'application_settings')
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from('server_settings')
-          .update({
-            setting_value: JSON.stringify(newSettings) as any,
-            updated_at: new Date().toISOString()
-          })
-          .eq('setting_key', 'application_settings');
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('server_settings')
-          .insert([{
-            setting_key: 'application_settings',
-            setting_value: JSON.stringify(newSettings) as any,
-            created_by: (await supabase.auth.getUser()).data.user?.id
-          }]);
-        if (error) throw error;
-      }
-      
-      setSettings(newSettings);
+      const newApplicationSettings = { 
+        ...settings.application_settings, 
+        [key]: value 
+      };
+      await updateSetting('application_settings', newApplicationSettings);
       toast({
         title: "Settings Updated",
         description: "Application settings have been saved successfully.",
@@ -75,11 +33,6 @@ export const ApplicationSettingsPanel = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSettingChange = (key: keyof ApplicationSettings, value: any) => {
-    const newSettings = { ...settings, [key]: value };
-    updateSettings(newSettings);
   };
 
   return (
@@ -99,7 +52,7 @@ export const ApplicationSettingsPanel = () => {
             </div>
           </div>
           <Switch
-            checked={settings.accept_applications !== false}
+            checked={settings.application_settings?.accept_applications !== false}
             onCheckedChange={(checked) => handleSettingChange('accept_applications', checked)}
             disabled={loading}
           />
@@ -113,7 +66,7 @@ export const ApplicationSettingsPanel = () => {
             </div>
           </div>
           <Switch
-            checked={settings.multiple_applications_allowed || false}
+            checked={settings.application_settings?.multiple_applications_allowed || false}
             onCheckedChange={(checked) => handleSettingChange('multiple_applications_allowed', checked)}
             disabled={loading}
           />
@@ -127,7 +80,7 @@ export const ApplicationSettingsPanel = () => {
             </div>
           </div>
           <Switch
-            checked={settings.auto_close_applications || false}
+            checked={settings.application_settings?.auto_close_applications || false}
             onCheckedChange={(checked) => handleSettingChange('auto_close_applications', checked)}
             disabled={loading}
           />
@@ -141,7 +94,7 @@ export const ApplicationSettingsPanel = () => {
             </div>
           </div>
           <Switch
-            checked={settings.require_age_verification || false}
+            checked={settings.application_settings?.require_age_verification || false}
             onCheckedChange={(checked) => handleSettingChange('require_age_verification', checked)}
             disabled={loading}
           />
@@ -156,7 +109,7 @@ export const ApplicationSettingsPanel = () => {
             type="number"
             min="0"
             max="365"
-            value={settings.cooldown_days || 0}
+            value={settings.application_settings?.cooldown_days || 0}
             onChange={(e) => handleSettingChange('cooldown_days', parseInt(e.target.value) || 0)}
             disabled={loading}
             className="w-32 bg-gaming-dark border-gaming-border text-foreground"
