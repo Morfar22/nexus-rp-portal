@@ -87,10 +87,24 @@ const ApplicationManager = () => {
         });
       }
 
-      const merged = (data || []).map((a: any) => ({
-        ...a,
-        profiles: profileMap[a.user_id] || null
-      }));
+      const merged = (data || []).map((a: any) => {
+        // Parse form_fields if it's a string
+        if (a.application_types?.form_fields) {
+          try {
+            if (typeof a.application_types.form_fields === 'string') {
+              a.application_types.form_fields = JSON.parse(a.application_types.form_fields);
+            }
+          } catch (parseError) {
+            console.error('Error parsing form_fields for application:', a.id, parseError);
+            a.application_types.form_fields = [];
+          }
+        }
+        
+        return {
+          ...a,
+          profiles: profileMap[a.user_id] || null
+        };
+      });
 
       setApplications(merged);
     } catch (error) {

@@ -289,7 +289,24 @@ const ApplicationManager = () => {
         });
       }
 
-      const merged = apps.map((a: any) => ({ ...a, profiles: profileMap[a.user_id] || null }));
+      const merged = apps.map((a: any) => {
+        // Parse form_fields if it's a string
+        if (a.application_types?.form_fields) {
+          try {
+            if (typeof a.application_types.form_fields === 'string') {
+              a.application_types.form_fields = JSON.parse(a.application_types.form_fields);
+            }
+          } catch (parseError) {
+            console.error('Error parsing form_fields for application:', a.id, parseError);
+            a.application_types.form_fields = [];
+          }
+        }
+        
+        return { 
+          ...a, 
+          profiles: profileMap[a.user_id] || null 
+        };
+      });
       console.log('Final merged applications:', merged);
       setApplications(merged);
     } catch (error) {
@@ -810,13 +827,13 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                       {selectedApp && (
                         <div className="space-y-4">
                           {/* Dynamic form fields based on application type */}
-                          {selectedApp.application_types?.form_fields ? (
+                          {selectedApp.application_types?.form_fields && Array.isArray(selectedApp.application_types.form_fields) ? (
                             <div className="grid grid-cols-1 gap-4">
-                               {(selectedApp.application_types.form_fields as any[]).map((field: any, index: number) => {
+                               {selectedApp.application_types.form_fields.map((field: any, index: number) => {
                                  const fieldValue = selectedApp.form_data?.[field.key] || 'N/A';
                                  
                                  return (
-                                   <div key={field.key} className="space-y-1">
+                                   <div key={field.key || index} className="space-y-1">
                                      <Label className="text-foreground">{field.label}</Label>
                                      {field.type === 'textarea' ? (
                                        <div className="text-sm text-muted-foreground p-3 bg-gaming-dark rounded border min-h-[60px]">
