@@ -204,6 +204,27 @@ const ApplicationTypesManager = () => {
       console.log('ApplicationTypesManager: User ID:', user?.id);
       console.log('ApplicationTypesManager: Type ID to delete:', typeId);
       
+      // First check if there are any applications using this type
+      const { data: applications, error: checkError } = await supabase
+        .from('applications')
+        .select('id')
+        .eq('application_type_id', typeId)
+        .limit(1);
+
+      if (checkError) {
+        console.error('ApplicationTypesManager: Error checking applications:', checkError);
+        throw checkError;
+      }
+
+      if (applications && applications.length > 0) {
+        toast({
+          title: "Cannot Delete",
+          description: "This application type is still being used by existing applications. Please reassign or delete those applications first.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const { error } = await supabase
         .from('application_types')
         .delete()
@@ -211,6 +232,17 @@ const ApplicationTypesManager = () => {
         
       if (error) {
         console.error('ApplicationTypesManager: Delete error:', error);
+        
+        // Handle foreign key constraint error specifically
+        if (error.code === '23503') {
+          toast({
+            title: "Cannot Delete",
+            description: "This application type is still being used by existing applications. Please reassign or delete those applications first.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         throw error;
       }
       
