@@ -578,6 +578,7 @@ const StaffPanel = () => {
   const [serverSettings, setServerSettings] = useState<any>({});
   const [activeTab, setActiveTab] = useState("overview");
   const { user } = useCustomAuth();
+  const { settings: globalSettings, updateSetting: updateGlobalSetting } = useServerSettings();
   const { toast } = useToast();
 
   // Basic state variables needed for functionality
@@ -998,17 +999,13 @@ const StaffPanel = () => {
                           </p>
                         </div>
                         <Switch
-                          checked={serverSettings.application_settings?.accept_applications || false}
-                          onCheckedChange={(checked) => {
+                          checked={globalSettings.application_settings?.accept_applications || false}
+                          onCheckedChange={async (checked) => {
                             const newSettings = {
-                              ...serverSettings.application_settings,
+                              ...globalSettings.application_settings,
                               accept_applications: checked
                             };
-                            setServerSettings({
-                              ...serverSettings,
-                              application_settings: newSettings
-                            });
-                            handleSettingUpdate('application_settings', newSettings);
+                            await updateGlobalSetting('application_settings', newSettings);
                           }}
                         />
                       </div>
@@ -1016,8 +1013,8 @@ const StaffPanel = () => {
                       <div className="p-3 sm:p-4 bg-gaming-dark rounded border">
                         <p className="text-xs sm:text-sm text-muted-foreground">
                           <strong>Status:</strong> Applications are currently{' '}
-                          <span className={serverSettings.application_settings?.accept_applications ? 'text-green-400' : 'text-red-400'}>
-                            {serverSettings.application_settings?.accept_applications ? 'OPEN' : 'CLOSED'}
+                          <span className={globalSettings.application_settings?.accept_applications ? 'text-green-400' : 'text-red-400'}>
+                            {globalSettings.application_settings?.accept_applications ? 'OPEN' : 'CLOSED'}
                           </span>
                         </p>
                       </div>
