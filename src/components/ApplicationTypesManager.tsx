@@ -154,6 +154,10 @@ const ApplicationTypesManager = () => {
 
   const updateApplicationType = async (typeId: string, updates: Partial<ApplicationType>) => {
     try {
+      console.log('ApplicationTypesManager: Attempting to update application type with user role:', user?.role);
+      console.log('ApplicationTypesManager: User ID:', user?.id);
+      console.log('ApplicationTypesManager: Update data:', updates);
+      
       if (updates.form_fields) {
         updates.form_fields = ensureDiscordField(updates.form_fields);
       }
@@ -163,12 +167,17 @@ const ApplicationTypesManager = () => {
         form_fields: updates.form_fields ? JSON.stringify(updates.form_fields) : undefined
       };
       
+      console.log('ApplicationTypesManager: Final update data:', updateData);
+      
       const { error } = await supabase
         .from('application_types')
         .update(updateData)
         .eq('id', typeId);
         
-      if (error) throw error;
+      if (error) {
+        console.error('ApplicationTypesManager: Update error:', error);
+        throw error;
+      }
       
       await fetchApplicationTypes();
       setEditingType(null);
@@ -177,7 +186,10 @@ const ApplicationTypesManager = () => {
         title: "Success",
         description: "Application type updated successfully",
       });
+
+      console.log('ApplicationTypesManager: Successfully updated application type');
     } catch (error) {
+      console.error('ApplicationTypesManager: Failed to update application type:', error);
       toast({
         title: "Error", 
         description: "Failed to update application type",
@@ -188,12 +200,19 @@ const ApplicationTypesManager = () => {
 
   const deleteApplicationType = async (typeId: string) => {
     try {
+      console.log('ApplicationTypesManager: Attempting to delete application type with user role:', user?.role);
+      console.log('ApplicationTypesManager: User ID:', user?.id);
+      console.log('ApplicationTypesManager: Type ID to delete:', typeId);
+      
       const { error } = await supabase
         .from('application_types')
         .delete()
         .eq('id', typeId);
         
-      if (error) throw error;
+      if (error) {
+        console.error('ApplicationTypesManager: Delete error:', error);
+        throw error;
+      }
       
       await fetchApplicationTypes();
       
@@ -201,7 +220,10 @@ const ApplicationTypesManager = () => {
         title: "Success",
         description: "Application type deleted successfully",
       });
+
+      console.log('ApplicationTypesManager: Successfully deleted application type');
     } catch (error) {
+      console.error('ApplicationTypesManager: Failed to delete application type:', error);
       toast({
         title: "Error",
         description: "Failed to delete application type", 
