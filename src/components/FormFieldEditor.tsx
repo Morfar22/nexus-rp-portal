@@ -68,6 +68,7 @@ const FormFieldEditor = ({ applicationTypeId, initialFields, onSave }: any) => {
     try {
       console.log('FormFieldEditor: Attempting to save fields with user role:', user?.role);
       console.log('FormFieldEditor: User ID:', user?.id);
+      console.log('FormFieldEditor: Fields to save:', fields);
       
       if (!user) {
         toast({
@@ -80,7 +81,7 @@ const FormFieldEditor = ({ applicationTypeId, initialFields, onSave }: any) => {
 
       const { error } = await supabase
         .from('application_types')
-        .update({ form_fields: fields })
+        .update({ form_fields: JSON.stringify(fields) })
         .eq('id', applicationTypeId);
 
       if (error) {

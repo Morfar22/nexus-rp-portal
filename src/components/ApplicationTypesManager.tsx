@@ -204,22 +204,26 @@ const ApplicationTypesManager = () => {
       console.log('ApplicationTypesManager: User ID:', user?.id);
       console.log('ApplicationTypesManager: Type ID to delete:', typeId);
       
-      // First check if there are any applications using this type
-      const { data: applications, error: checkError } = await supabase
+      // Check if there are any applications using this type and get count
+      const { data: applications, error: checkError, count } = await supabase
         .from('applications')
-        .select('id')
-        .eq('application_type_id', typeId)
-        .limit(1);
+        .select('id, form_data', { count: 'exact' })
+        .eq('application_type_id', typeId);
 
       if (checkError) {
         console.error('ApplicationTypesManager: Error checking applications:', checkError);
-        throw checkError;
+        toast({
+          title: "Error",
+          description: "Failed to check for existing applications. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
 
       if (applications && applications.length > 0) {
         toast({
           title: "Cannot Delete",
-          description: "This application type is still being used by existing applications. Please reassign or delete those applications first.",
+          description: `This application type is being used by ${applications.length} existing application(s). Please delete those applications first or contact an administrator.`,
           variant: "destructive",
         });
         return;
@@ -237,7 +241,7 @@ const ApplicationTypesManager = () => {
         if (error.code === '23503') {
           toast({
             title: "Cannot Delete",
-            description: "This application type is still being used by existing applications. Please reassign or delete those applications first.",
+            description: "This application type is still being used by existing applications. The applications may have been created after our check. Please try again or contact support.",
             variant: "destructive",
           });
           return;
@@ -258,7 +262,7 @@ const ApplicationTypesManager = () => {
       console.error('ApplicationTypesManager: Failed to delete application type:', error);
       toast({
         title: "Error",
-        description: "Failed to delete application type", 
+        description: "Failed to delete application type. Please try again.", 
         variant: "destructive",
       });
     }
