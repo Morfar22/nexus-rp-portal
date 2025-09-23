@@ -32,16 +32,21 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log('=== SEND APPLICATION EMAIL FUNCTION START ===');
+    console.log('Request method:', req.method);
+    console.log('Timestamp:', new Date().toISOString());
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const requestBody: EmailRequest = await req.json();
-    console.log('Email request received:', requestBody);
+    console.log('Email request received:', JSON.stringify(requestBody, null, 2));
 
     // Handle legacy format for backward compatibility
     if (requestBody.type && requestBody.userEmail) {
+      console.log('Processing legacy email request format');
       return handleLegacyRequest(requestBody);
     }
 
@@ -58,12 +63,14 @@ const handler = async (req: Request): Promise<Response> => {
     } = requestBody;
 
     const effectiveTemplateType = templateType === 'application_accepted' ? 'application_approved' : templateType;
-    console.log('Sending email for application:', applicationId, 'type:', effectiveTemplateType);
+    console.log('Processing email for application:', applicationId, 'type:', effectiveTemplateType);
 
     // Resolve recipient email (fallback to profile or auth.users if not provided)
     let targetEmail = (recipientEmail || '').trim();
+    console.log('Initial recipient email:', targetEmail);
 
     if (!targetEmail) {
+      console.log('No recipient email provided, looking up application user...');
       const { data: appRow, error: appError } = await supabase
         .from('applications')
         .select('user_id')
@@ -79,10 +86,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const userId = appRow.user_id;
+      console.log('Found user ID:', userId);
 
-      // Try profiles.email first
+      // Try custom_users.email first
       const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+        .from('custom_users')
         .select('email')
         .eq('id', userId)
         .single();
@@ -93,25 +101,31 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (profile?.email) {
         targetEmail = profile.email;
+        console.log('Found email in custom_users:', targetEmail);
       } else {
+        console.log('No email in custom_users, trying auth.users...');
         // Fallback to auth.users via Admin API
         const { data: userRes, error: adminErr } = await supabase.auth.admin.getUserById(userId);
         if (adminErr) {
           console.warn('Auth admin getUserById error (non-fatal):', adminErr);
         }
         targetEmail = userRes?.user?.email ?? '';
+        console.log('Email from auth.users:', targetEmail);
       }
     }
 
     if (!targetEmail) {
-      console.warn('No email found for user; aborting send');
+      console.error('No email found for user; aborting send');
       return new Response(
         JSON.stringify({ error: 'No email found for user', success: false }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
 
+    console.log('Final target email:', targetEmail);
+
     // Fetch the email template
+    console.log('Fetching email template:', effectiveTemplateType);
     const { data: template, error: templateError } = await supabase
       .from('email_templates')
       .select('*')
@@ -123,6 +137,8 @@ const handler = async (req: Request): Promise<Response> => {
       console.error('Template not found:', templateError);
       throw new Error(`Email template '${effectiveTemplateType}' not found or inactive`);
     }
+
+    console.log('Found template:', template.subject);
 
     // Replace template variables
     let emailSubject = template.subject;
@@ -210,14 +226,22 @@ const handler = async (req: Request): Promise<Response> => {
       '{{today_date}}': new Date().toLocaleDateString()
     };
 
+    console.log('Replacements to be applied:', JSON.stringify(replacements, null, 2));
+
     for (const [placeholder, value] of Object.entries(replacements)) {
       emailSubject = emailSubject.replace(new RegExp(placeholder, 'g'), value);
       emailBody = emailBody.replace(new RegExp(placeholder, 'g'), value);
     }
 
+    console.log('Final email subject:', emailSubject);
+    console.log('Final email body preview:', emailBody.substring(0, 200) + '...');
+
     // Initialize Resend per request (avoids stale/missing secrets on cold starts)
     let RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    console.log('Resend API Key available:', !!RESEND_API_KEY);
+    
     if (!RESEND_API_KEY) {
+      console.log('No RESEND_API_KEY in env, checking server_settings...');
       // Fallback: load from server_settings (service role client)
       try {
         const { data: keyRow } = await supabase
@@ -228,20 +252,25 @@ const handler = async (req: Request): Promise<Response> => {
         const val = keyRow?.setting_value;
         if (typeof val === 'string') RESEND_API_KEY = val;
         else if (val && typeof val.key === 'string') RESEND_API_KEY = val.key;
+        console.log('Resend API Key from server_settings:', !!RESEND_API_KEY);
       } catch (e) {
         console.warn('Failed to load RESEND key from server_settings:', e);
       }
     }
+    
     if (!RESEND_API_KEY) {
-      console.error('RESEND_API_KEY missing');
+      console.error('RESEND_API_KEY missing from both env and server_settings');
       return new Response(
         JSON.stringify({ error: 'Missing RESEND_API_KEY', success: false }),
         { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
+    
+    console.log('Initializing Resend client...');
     const resend = new Resend(RESEND_API_KEY);
 
     // Send email via Resend
+    console.log('Sending email via Resend to:', targetEmail);
     const emailResponse = await resend.emails.send({
       from: "Adventurer RP <noreply@adventurerp.dk>",
       to: [targetEmail],
@@ -250,12 +279,14 @@ const handler = async (req: Request): Promise<Response> => {
       text: emailBody,
     });
 
+    console.log('Resend response:', JSON.stringify(emailResponse, null, 2));
+
     if (emailResponse.error) {
       console.error('Resend error:', emailResponse.error);
       throw new Error(`Failed to send email: ${emailResponse.error.message}`);
     }
 
-    console.log('Email sent successfully:', emailResponse);
+    console.log('✅ Email sent successfully! Email ID:', emailResponse.data?.id);
 
     // Log the email send
     const { error: logError } = await supabase
@@ -287,7 +318,14 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error: any) {
-    console.error("Error in send-application-email function:", error);
+    console.error("❌ ERROR in send-application-email function:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error details:", {
+      name: error.name,
+      message: error.message,
+      cause: error.cause
+    });
+    
     return new Response(
       JSON.stringify({ 
         error: error.message,

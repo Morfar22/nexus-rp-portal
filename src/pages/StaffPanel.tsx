@@ -936,6 +936,7 @@ const StaffPanel = () => {
                     {activeTab === "deployment" && "Deployment Settings"}
                     {activeTab === "logs" && "System Logs"}
                     {activeTab === "emails" && "Email Templates"}
+                    {activeTab === "email-test" && "Email System Test"}
                     {activeTab === "design" && "Design & Appearance"}
                     {activeTab === "social-media" && "Social Media Management"}
                     {activeTab === "chat" && "Live Chat Management"}
