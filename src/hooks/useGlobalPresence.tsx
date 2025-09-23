@@ -15,7 +15,16 @@ interface ActiveUser {
 }
 
 export const useGlobalPresence = () => {
-  const { user } = useCustomAuth();
+  // Safely access auth context with error handling
+  let authContext;
+  try {
+    authContext = useCustomAuth();
+  } catch (error) {
+    // Auth context not ready yet, return empty state
+    return { activeUsers: [] };
+  }
+  
+  const { user } = authContext;
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
   const [userPresence, setUserPresence] = useState<any>(null);
 
