@@ -129,7 +129,13 @@ const ApplicationManager = () => {
       console.log('ApplicationManager: Reviewer ID from custom auth:', reviewerId);
 
       if (!reviewerId) {
-        throw new Error('No user ID available for review');
+        console.error('ApplicationManager: No user ID available for review - user object:', user);
+        toast({
+          title: "Error",
+          description: "Unable to identify reviewer - please refresh and try again",
+          variant: "destructive",
+        });
+        return;
       }
 
       const { error } = await supabase
@@ -157,7 +163,10 @@ const ApplicationManager = () => {
       // Send email notification for approved/rejected applications
       if (status === 'approved' || status === 'rejected') {
         try {
+          console.log('ApplicationManager: Attempting to send email notification for status:', status);
           const application = applications.find(app => app.id === applicationId);
+          console.log('ApplicationManager: Found application:', application);
+          
           if (application) {
             const templateType = status === 'approved' ? 'application_approved' : 'application_denied';
             
@@ -165,21 +174,33 @@ const ApplicationManager = () => {
             const steamName = application.form_data?.steam_name || application.form_data?.steamName || '';
             const fivemName = application.form_data?.fivem_name || application.form_data?.fivemName || '';
             
-            await supabase.functions.invoke('send-application-email', {
-              body: {
-                applicationId,
-                templateType,
-                recipientEmail: application.profiles?.email,
-                applicantName: application.profiles?.username || application.profiles?.full_name || 'Applicant',
-                applicationType: application.application_types?.name || 'Application',
-                reviewNotes: notes,
-                discordName: application.discord_name,
-                steamName,
-                fivemName
-              }
+            const emailPayload = {
+              applicationId,
+              templateType,
+              recipientEmail: application.profiles?.email,
+              applicantName: application.profiles?.username || application.profiles?.full_name || 'Applicant',
+              applicationType: application.application_types?.name || 'Application',
+              reviewNotes: notes,
+              discordName: application.discord_name,
+              steamName,
+              fivemName
+            };
+            
+            console.log('ApplicationManager: Sending email with payload:', emailPayload);
+            
+            const emailResult = await supabase.functions.invoke('send-application-email', {
+              body: emailPayload
             });
             
+            console.log('ApplicationManager: Email function result:', emailResult);
+            
+            if (emailResult.error) {
+              throw new Error(`Email function error: ${emailResult.error.message}`);
+            }
+            
             console.log('ApplicationManager: Email sent successfully');
+          } else {
+            console.error('ApplicationManager: Application not found in local state:', applicationId);
           }
         } catch (emailError) {
           console.error('Failed to send notification email:', emailError);
