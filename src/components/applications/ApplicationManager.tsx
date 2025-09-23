@@ -154,9 +154,47 @@ const ApplicationManager = () => {
           : app
       ));
 
+      // Send email notification for approved/rejected applications
+      if (status === 'approved' || status === 'rejected') {
+        try {
+          const application = applications.find(app => app.id === applicationId);
+          if (application) {
+            const templateType = status === 'approved' ? 'application_approved' : 'application_denied';
+            
+            // Extract steam_name and fivem_name from form_data
+            const steamName = application.form_data?.steam_name || application.form_data?.steamName || '';
+            const fivemName = application.form_data?.fivem_name || application.form_data?.fivemName || '';
+            
+            await supabase.functions.invoke('send-application-email', {
+              body: {
+                applicationId,
+                templateType,
+                recipientEmail: application.profiles?.email,
+                applicantName: application.profiles?.username || application.profiles?.full_name || 'Applicant',
+                applicationType: application.application_types?.name || 'Application',
+                reviewNotes: notes,
+                discordName: application.discord_name,
+                steamName,
+                fivemName
+              }
+            });
+            
+            console.log('ApplicationManager: Email sent successfully');
+          }
+        } catch (emailError) {
+          console.error('Failed to send notification email:', emailError);
+          // Don't block the status update if email fails
+          toast({
+            title: "Warning",
+            description: "Application updated but email notification failed to send",
+            variant: "destructive",
+          });
+        }
+      }
+
       toast({
         title: "Application Updated",
-        description: `Application has been ${status}`,
+        description: `Application has been ${status}${status === 'approved' || status === 'rejected' ? ' and notification email sent' : ''}`,
       });
 
       console.log('ApplicationManager: Successfully updated application');
