@@ -493,11 +493,28 @@ const ApplicationManager = () => {
           let fivemName = '';
 
           if (applicationType?.form_fields && appData.form_data) {
-            const formFields = applicationType.form_fields as any[];
+            let formFields = applicationType.form_fields;
+            
+            // Parse form_fields if it's a string
+            if (typeof formFields === 'string') {
+              try {
+                formFields = JSON.parse(formFields);
+              } catch (parseError) {
+                console.error('Error parsing form_fields:', parseError);
+                formFields = [];
+              }
+            }
+            
+            // Ensure formFields is an array
+            if (!Array.isArray(formFields)) {
+              console.error('form_fields is not an array:', formFields);
+              formFields = [];
+            }
+            
             const formData = appData.form_data as any;
 
             // Map field indices to actual values
-            formFields.forEach((field, index) => {
+            formFields.forEach((field: any, index: number) => {
               const fieldValue = formData[`field_${index}`];
               if (fieldValue) {
                 const fieldId = field.id || field.name;
