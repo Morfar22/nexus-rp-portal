@@ -68,7 +68,27 @@ const ApplicationForm = () => {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      setApplicationTypes(data || []);
+      
+      // Parse form_fields if they come as JSON strings
+      const processedData = (data || []).map(type => {
+        if (type.form_fields) {
+          try {
+            if (typeof type.form_fields === 'string') {
+              type.form_fields = JSON.parse(type.form_fields);
+            }
+          } catch (parseError) {
+            console.error('Error parsing form_fields for type:', type.id, parseError);
+            type.form_fields = [];
+          }
+        }
+        // Ensure form_fields is always an array
+        if (!Array.isArray(type.form_fields)) {
+          type.form_fields = [];
+        }
+        return type;
+      });
+      
+      setApplicationTypes(processedData);
     } catch (error) {
       toast({ title: "Error", description: "Failed to fetch application types", variant: "destructive" });
     } finally {
