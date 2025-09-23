@@ -128,14 +128,85 @@ const handler = async (req: Request): Promise<Response> => {
     let emailSubject = template.subject;
     let emailBody = template.body;
 
+    // Get the actual form data to extract values
+    const actualFormData = await supabase
+      .from('applications')
+      .select(`
+        form_data,
+        discord_name,
+        steam_name,
+        fivem_name,
+        application_types!inner(form_fields)
+      `)
+      .eq('id', applicationId)
+      .single();
+
+    let extractedSteamName = steamName;
+    let extractedFivemName = fivemName;
+    let extractedDiscordName = discordName;
+    let extractedApplicantName = applicantName;
+
+    // Extract values from form_data if available
+    if (actualFormData.data?.form_data && actualFormData.data?.application_types?.form_fields) {
+      const formData = actualFormData.data.form_data;
+      let formFields = actualFormData.data.application_types.form_fields;
+      
+      // Parse form_fields if it's a string
+      if (typeof formFields === 'string') {
+        try {
+          formFields = JSON.parse(formFields);
+        } catch (e) {
+          console.warn('Failed to parse form_fields:', e);
+          formFields = [];
+        }
+      }
+
+      // Extract values from form_data using field mapping
+      if (Array.isArray(formFields)) {
+        formFields.forEach((field: any) => {
+          const fieldValue = formData[field.id];
+          if (fieldValue && typeof fieldValue === 'string' && fieldValue.trim()) {
+            if (field.id === 'discord_name' || field.label?.toLowerCase().includes('discord')) {
+              extractedDiscordName = fieldValue;
+              if (!extractedApplicantName || extractedApplicantName === 'Applicant') {
+                extractedApplicantName = fieldValue;
+              }
+            } else if (field.id === 'steam_name' || field.label?.toLowerCase().includes('steam')) {
+              extractedSteamName = fieldValue;
+              if (!extractedApplicantName || extractedApplicantName === 'Applicant') {
+                extractedApplicantName = fieldValue;
+              }
+            } else if (field.id === 'fivem_name' || field.label?.toLowerCase().includes('fivem')) {
+              extractedFivemName = fieldValue;
+            } else if (field.label?.toLowerCase().includes('navn') || field.label?.toLowerCase().includes('name')) {
+              if (!extractedApplicantName || extractedApplicantName === 'Applicant') {
+                extractedApplicantName = fieldValue;
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // Fallback to direct fields if form_data extraction failed
+    if (actualFormData.data?.discord_name && (!extractedDiscordName || !extractedDiscordName.trim())) {
+      extractedDiscordName = actualFormData.data.discord_name;
+    }
+    if (actualFormData.data?.steam_name && (!extractedSteamName || !extractedSteamName.trim())) {
+      extractedSteamName = actualFormData.data.steam_name;
+    }
+    if (actualFormData.data?.fivem_name && (!extractedFivemName || !extractedFivemName.trim())) {
+      extractedFivemName = actualFormData.data.fivem_name;
+    }
+
     const replacements = {
-      '{{applicant_name}}': applicantName || 'Applicant',
+      '{{applicant_name}}': extractedApplicantName || applicantName || 'Applicant',
       '{{application_type}}': applicationType || 'Application',
       '{{review_notes}}': reviewNotes || '',
-      '{{discord_name}}': discordName || '',
-      '{{steam_name}}': steamName || '',
-      '{{fivem_name}}': fivemName || '',
-      '{{server_name}}': 'Adventurer RP', // You can make this dynamic later
+      '{{discord_name}}': extractedDiscordName || '',
+      '{{steam_name}}': extractedSteamName || '',
+      '{{fivem_name}}': extractedFivemName || '',
+      '{{server_name}}': 'Adventurer RP',
       '{{today_date}}': new Date().toLocaleDateString()
     };
 
