@@ -830,10 +830,10 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                         <Eye className="h-4 w-4" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-gaming-card border-gaming-border">
-                      <DialogHeader>
-                        <DialogTitle className="text-foreground">Application Details</DialogTitle>
-                        <DialogDescription className="text-muted-foreground">
+                    <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-gaming-card border-gaming-border mx-auto">
+                      <DialogHeader className="space-y-2">
+                        <DialogTitle className="text-foreground text-lg sm:text-xl">Application Details</DialogTitle>
+                        <DialogDescription className="text-muted-foreground text-sm">
                           Review application from {selectedApp?.profiles?.username || 
                             selectedApp?.profiles?.full_name || 
                             (selectedApp?.form_data as any)?.steam_name || 
@@ -842,22 +842,22 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                       </DialogHeader>
                       
                       {selectedApp && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 sm:space-y-6">
                           {/* Dynamic form fields based on application type */}
                           {selectedApp.application_types?.form_fields && Array.isArray(selectedApp.application_types.form_fields) ? (
-                            <div className="grid grid-cols-1 gap-4">
+                            <div className="grid grid-cols-1 gap-3 sm:gap-4">
                                {selectedApp.application_types.form_fields.map((field: any, index: number) => {
                                  const fieldValue = selectedApp.form_data?.[field.key] || 'N/A';
                                  
                                  return (
-                                   <div key={field.key || index} className="space-y-1">
-                                     <Label className="text-foreground">{field.label}</Label>
+                                   <div key={field.key || index} className="space-y-2">
+                                     <Label className="text-foreground font-medium text-sm">{field.label}</Label>
                                      {field.type === 'textarea' ? (
-                                       <div className="text-sm text-muted-foreground p-3 bg-gaming-dark rounded border min-h-[60px]">
+                                       <div className="text-sm text-muted-foreground p-3 bg-gaming-dark rounded border min-h-[60px] break-words">
                                          {fieldValue}
                                        </div>
                                      ) : (
-                                       <p className="text-sm text-muted-foreground">{fieldValue}</p>
+                                       <p className="text-sm text-muted-foreground break-words">{fieldValue}</p>
                                      )}
                                    </div>
                                  );
@@ -865,22 +865,22 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                             </div>
                           ) : (
                             /* Fallback for old applications without dynamic form fields */
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label className="text-foreground">Steam Name</Label>
-                                <p className="text-sm text-muted-foreground">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-foreground font-medium text-sm">Steam Name</Label>
+                                <p className="text-sm text-muted-foreground break-words">
                                   {(selectedApp.form_data as any)?.steam_name || selectedApp.steam_name || 'N/A'}
                                 </p>
                               </div>
-                              <div>
-                                <Label className="text-foreground">Discord Name</Label>
-                                <p className="text-sm text-muted-foreground">
+                              <div className="space-y-2">
+                                <Label className="text-foreground font-medium text-sm">Discord Name</Label>
+                                <p className="text-sm text-muted-foreground break-words">
                                   {(selectedApp.form_data as any)?.discord_name || selectedApp.discord_name || 'N/A'}
                                 </p>
                               </div>
-                              <div>
-                                <Label className="text-foreground">FiveM Name</Label>
-                                <p className="text-sm text-muted-foreground">
+                              <div className="space-y-2 sm:col-span-2">
+                                <Label className="text-foreground font-medium text-sm">FiveM Name</Label>
+                                <p className="text-sm text-muted-foreground break-words">
                                   {(selectedApp.form_data as any)?.fivem_name || selectedApp.fivem_name || 'N/A'}
                                 </p>
                               </div>
@@ -888,9 +888,9 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                           )}
 
                           {selectedApp.notes && (
-                            <div>
-                              <Label className="text-foreground">Review Notes</Label>
-                              <p className="text-sm text-muted-foreground mt-1 p-3 bg-gaming-dark rounded border">
+                            <div className="space-y-2">
+                              <Label className="text-foreground font-medium text-sm">Review Notes</Label>
+                              <p className="text-sm text-muted-foreground p-3 bg-gaming-dark rounded border break-words">
                                 {selectedApp.notes}
                               </p>
                             </div>
@@ -898,17 +898,17 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
 
                           {selectedApp.status === 'pending' && (
                             <div className="space-y-2">
-                              <Label className="text-foreground">Review Notes</Label>
+                              <Label className="text-foreground font-medium text-sm">Review Notes</Label>
                               <Textarea
                                 value={reviewNotes}
                                 onChange={(e) => setReviewNotes(e.target.value)}
                                 placeholder="Add review notes..."
-                                className="bg-gaming-dark border-gaming-border text-foreground"
+                                className="bg-gaming-dark border-gaming-border text-foreground resize-none min-h-[80px]"
                               />
                             </div>
                           )}
 
-                          <div className="flex justify-end space-x-2">
+                          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 pt-2">
                             {selectedApp.status === 'pending' && (
                               <>
                                 <Button
@@ -916,7 +916,7 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                                     updateApplicationStatus(selectedApp.id, 'approved', reviewNotes);
                                     setReviewNotes("");
                                   }}
-                                  className="bg-green-600 hover:bg-green-700"
+                                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />
                                   Approve
@@ -927,6 +927,7 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                                     setReviewNotes("");
                                   }}
                                   variant="destructive"
+                                  className="w-full sm:w-auto"
                                 >
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Reject
