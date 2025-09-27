@@ -1205,36 +1205,6 @@ const StaffPanel = () => {
                 <div className="space-y-6">
                   {/* Email Test */}
                   <EmailTest />
-                  
-                  <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
-                    <div className="flex items-center space-x-2 mb-4 sm:mb-6">
-                      <Settings className="h-5 w-5 text-neon-green" />
-                      <h2 className="text-lg sm:text-xl font-semibold text-foreground">Email Testing</h2>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-foreground text-sm sm:text-base">Test Email Function</Label>
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-                          Test if your Resend API key is working correctly
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                          <Button onClick={testMinimalFunction} variant="outline" size="sm">
-                            Test Minimal Function
-                          </Button>
-                          <Button onClick={testSimpleFunction} variant="outline" size="sm">
-                            Test Simple Function
-                          </Button>
-                          <Button onClick={testEmail} variant="outline" size="sm">
-                            Test Basic Email
-                          </Button>
-                          <Button onClick={testApplicationEmail} variant="outline" size="sm">
-                            Test Application Email
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
 
                   {/* General Settings */}
                   <Card className="p-4 sm:p-6 bg-gaming-card border-gaming-border shadow-gaming">
