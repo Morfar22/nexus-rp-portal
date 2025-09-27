@@ -38,6 +38,14 @@ const SimpleLiveChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasStartedChat, setHasStartedChat] = useState(false);
 
+  // Auto-fill user data when chat opens
+  useEffect(() => {
+    if (isOpen && user) {
+      setVisitorName(user.username || user.email || "");
+      setVisitorEmail(user.email || "");
+    }
+  }, [isOpen, user]);
+
   useEffect(() => {
     if (isOpen && session) {
       fetchMessages();
@@ -124,10 +132,13 @@ const SimpleLiveChat = () => {
   };
 
   const startChat = async () => {
-    if (!visitorName.trim()) {
+    const name = user ? (user.username || user.email || "") : visitorName;
+    const email = user ? user.email || "" : visitorEmail;
+    
+    if (!name.trim()) {
       toast({
         title: "Fejl",
-        description: "Indtast venligst dit navn for at starte chatten",
+        description: "Kunne ikke finde dit navn. Prøv at logge ind igen.",
         variant: "destructive"
       });
       return;
@@ -138,8 +149,8 @@ const SimpleLiveChat = () => {
       const sessionData = {
         status: 'waiting',
         user_id: user?.id || null,
-        visitor_name: visitorName,
-        visitor_email: visitorEmail || null
+        visitor_name: name,
+        visitor_email: email || null
       };
 
       const { data, error } = await supabase
@@ -174,9 +185,10 @@ const SimpleLiveChat = () => {
   };
 
   const sendWelcomeMessage = async (sessionId: string) => {
+    const name = user ? (user.username || user.email || "") : visitorName;
     const welcomeMessage = {
       session_id: sessionId,
-      message: `Hej ${visitorName}! 👋 Velkommen til Adventure RP support. Vores AI assistent er her for at hjælpe dig med spørgsmål om serveren. Hvis du har brug for menneskeligt personale, vil de blive kontaktet automatisk.`,
+      message: `Hej ${name}! 👋 Velkommen til Adventure RP support. Vores AI assistent er her for at hjælpe dig med spørgsmål om serveren. Hvis du har brug for menneskeligt personale, vil de blive kontaktet automatisk.`,
       sender_type: 'ai' as const,
       sender_name: 'AI Support'
     };
@@ -194,12 +206,13 @@ const SimpleLiveChat = () => {
     setIsLoading(true);
     try {
       // Send user message
+      const name = user ? (user.username || user.email || "") : visitorName;
       const messageData = {
         session_id: session.id,
         message: newMessage,
         sender_type: user ? 'visitor' : 'visitor' as const,
         sender_id: user?.id || null,
-        sender_name: visitorName
+        sender_name: name
       };
 
       await supabase.from('chat_messages').insert(messageData);
@@ -290,26 +303,37 @@ const SimpleLiveChat = () => {
                   </div>
                   
                   <div className="space-y-3">
-                    <div>
-                      <Input
-                        placeholder="Dit navn *"
-                        value={visitorName}
-                        onChange={(e) => setVisitorName(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div>
-                      <Input
-                        placeholder="Din email (valgfrit)"
-                        type="email"
-                        value={visitorEmail}
-                        onChange={(e) => setVisitorEmail(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
+                    {user && (
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Logget ind som:</p>
+                        <p className="font-medium">{user.username || user.email}</p>
+                        {user.email && <p className="text-sm text-muted-foreground">{user.email}</p>}
+                      </div>
+                    )}
+                    {!user && (
+                      <>
+                        <div>
+                          <Input
+                            placeholder="Dit navn *"
+                            value={visitorName}
+                            onChange={(e) => setVisitorName(e.target.value)}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div>
+                          <Input
+                            placeholder="Din email (valgfrit)"
+                            type="email"
+                            value={visitorEmail}
+                            onChange={(e) => setVisitorEmail(e.target.value)}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </>
+                    )}
                     <Button 
                       onClick={startChat} 
-                      disabled={isLoading || !visitorName.trim()}
+                      disabled={isLoading || (!user && !visitorName.trim())}
                       className="w-full"
                     >
                       {isLoading ? 'Starter...' : 'Start Chat'}

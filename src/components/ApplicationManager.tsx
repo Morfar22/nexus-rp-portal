@@ -301,6 +301,15 @@ const ApplicationManager = () => {
             a.application_types.form_fields = [];
           }
         }
+        // Ensure form_data is an object
+        if (a.form_data && typeof a.form_data === 'string') {
+          try {
+            a.form_data = JSON.parse(a.form_data);
+          } catch (e) {
+            console.error('Error parsing form_data for application:', a.id, e);
+            a.form_data = {};
+          }
+        }
         
         return { 
           ...a, 
@@ -457,6 +466,77 @@ const ApplicationManager = () => {
         reviewed_at: new Date().toISOString()
       }) : prev);
 
+      // Get the application type to map form fields properly
+      const { data: applicationType } = await supabase
+        .from('application_types')
+        .select('name, form_fields')
+        .eq('id', appData.application_type_id)
+        .single();
+
+      // Extract applicant data from form_data using the field mapping
+      let applicantName = 'Applicant';
+      let discordName = '';
+      let steamName = '';
+      let fivemName = '';
+
+      if (applicationType?.form_fields && appData.form_data) {
+        let formFields = applicationType.form_fields;
+        
+        // Parse form_fields if it's a string
+        if (typeof formFields === 'string') {
+          try {
+            formFields = JSON.parse(formFields);
+          } catch (parseError) {
+            console.error('Error parsing form_fields:', parseError);
+            formFields = [];
+          }
+        }
+        
+        // Ensure formFields is an array
+        if (!Array.isArray(formFields)) {
+          console.error('form_fields is not an array:', formFields);
+          formFields = [];
+        }
+        
+        const formData = appData.form_data as any;
+
+        // Extract values using correct field keys
+        formFields.forEach((field: any) => {
+          const fieldKey = field.key || field.id;
+          const fieldValue = formData[fieldKey];
+          
+          if (fieldValue && typeof fieldValue === 'string' && fieldValue.trim() !== '') {
+            const fieldId = field.id || field.key || field.name;
+            
+            if (fieldId === 'discord_name' || fieldId === 'discord_username') {
+              discordName = fieldValue.trim();
+              if (!applicantName || applicantName === 'Applicant') applicantName = fieldValue.trim();
+            } else if (fieldId === 'steam_name') {
+              steamName = fieldValue.trim();
+              if (!applicantName || applicantName === 'Applicant') applicantName = fieldValue.trim();
+            } else if (fieldId === 'fivem_name') {
+              fivemName = fieldValue.trim();
+            } else if (fieldId === 'full_name' || fieldId === 'name') {
+              applicantName = fieldValue.trim();
+            } else if (fieldId === 'karakternavn') {
+              if (!applicantName || applicantName === 'Applicant') applicantName = fieldValue.trim();
+            }
+          }
+        });
+      }
+
+      // Also check the legacy direct fields
+      if (appData.steam_name) {
+        steamName = appData.steam_name;
+        if (!applicantName || applicantName === 'Applicant') applicantName = appData.steam_name;
+      }
+      if (appData.discord_tag) {
+        discordName = appData.discord_tag;
+      }
+      if (appData.fivem_name) {
+        fivemName = appData.fivem_name;
+      }
+
       // Send email notification
       try {
         // Get user email from custom_users table
@@ -469,97 +549,29 @@ const ApplicationManager = () => {
         if (profileError) throw profileError;
 
         // Update the application manager to use new template system
-        {
-          let templateType: 'application_approved' | 'application_denied' | 'application_submitted';
-          if (status === 'approved') {
-            templateType = 'application_approved';
-          } else if (status === 'rejected') {
-            templateType = 'application_denied';
-          } else {
-            templateType = 'application_submitted'; // fallback
-          }
-
-          // Get the application type to map form fields properly
-          const { data: applicationType } = await supabase
-            .from('application_types')
-            .select('name, form_fields')
-            .eq('id', appData.application_type_id)
-            .single();
-
-          // Extract applicant data from form_data using the field mapping
-          let applicantName = 'Applicant';
-          let discordName = '';
-          let steamName = '';
-          let fivemName = '';
-
-          if (applicationType?.form_fields && appData.form_data) {
-            let formFields = applicationType.form_fields;
-            
-            // Parse form_fields if it's a string
-            if (typeof formFields === 'string') {
-              try {
-                formFields = JSON.parse(formFields);
-              } catch (parseError) {
-                console.error('Error parsing form_fields:', parseError);
-                formFields = [];
-              }
-            }
-            
-            // Ensure formFields is an array
-            if (!Array.isArray(formFields)) {
-              console.error('form_fields is not an array:', formFields);
-              formFields = [];
-            }
-            
-            const formData = appData.form_data as any;
-
-            // Map field indices to actual values
-            formFields.forEach((field: any, index: number) => {
-              const fieldValue = formData[`field_${index}`];
-              if (fieldValue) {
-                const fieldId = field.id || field.name;
-                if (fieldId === 'discord_name' || fieldId === 'discord_username') {
-                  discordName = fieldValue;
-                  if (!applicantName || applicantName === 'Applicant') applicantName = fieldValue;
-                } else if (fieldId === 'steam_name') {
-                  steamName = fieldValue;
-                  if (!applicantName || applicantName === 'Applicant') applicantName = fieldValue;
-                } else if (fieldId === 'fivem_name') {
-                  fivemName = fieldValue;
-                } else if (fieldId === 'full_name') {
-                  applicantName = fieldValue;
-                }
-              }
-            });
-          }
-
-          // Also check the legacy direct fields
-          if (appData.steam_name) {
-            steamName = appData.steam_name;
-            if (!applicantName || applicantName === 'Applicant') applicantName = appData.steam_name;
-          }
-          if (appData.discord_tag) {
-            discordName = appData.discord_tag;
-          }
-          if (appData.fivem_name) {
-            fivemName = appData.fivem_name;
-          }
-
-          await supabase.functions.invoke('send-application-email', {
-            body: {
-              applicationId: applicationId,
-              templateType: templateType,
-              recipientEmail: userProfile?.email,
-              applicantName: applicantName,
-              applicationType: applicationType?.name || 'Application',
-              reviewNotes: notes || '',
-              discordName: discordName,
-              steamName: steamName,
-              fivemName: fivemName
-            }
-          });
-          console.log('Status update email invoked');
+        let templateType: 'application_approved' | 'application_denied' | 'application_submitted';
+        if (status === 'approved') {
+          templateType = 'application_approved';
+        } else if (status === 'rejected') {
+          templateType = 'application_denied';
+        } else {
+          templateType = 'application_submitted'; // fallback
         }
+
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            applicationId: applicationId,
+            templateType: templateType,
+            recipientEmail: userProfile?.email,
+            applicantName: applicantName,
+            applicationType: applicationType?.name || 'Application',
+            reviewNotes: notes || '',
+            discordName: discordName,
+            steamName: steamName,
+            fivemName: fivemName
+          }
+        });
+        console.log('Status update email invoked');
       } catch (emailError) {
         console.error('Error sending status update email:', emailError);
       }
@@ -569,21 +581,41 @@ const ApplicationManager = () => {
         const discordType = status === 'approved' ? 'application_approved' : 
                           status === 'rejected' ? 'application_denied' : 
                           'application_under_review';
+
+        // Extract the same data we used for email
+        let discordApplicantName = applicantName || 'Unknown';
+        let discordSteamName = steamName || '';
+        let discordDiscordName = discordName || '';
+        let discordFivemName = fivemName || '';
+
+        // If we still don't have data, try to extract from form_data directly
+        if (!discordDiscordName && appData.form_data) {
+          const formData = appData.form_data as any;
+          discordDiscordName = formData.discord_name || formData.discord_username || '';
+          if (!discordApplicantName || discordApplicantName === 'Unknown') {
+            discordApplicantName = discordDiscordName || formData.karakternavn || formData.name || 'Unknown';
+          }
+        }
         
         await supabase.functions.invoke('discord-logger', {
           body: {
             type: discordType,
             data: {
-              steam_name: (appData.form_data as any)?.steam_name || '',
-              discord_tag: (appData.form_data as any)?.discord_tag || '',
-              discord_name: (appData.form_data as any)?.discord_name || '',
-              fivem_name: (appData.form_data as any)?.fivem_name || '',
+              applicant_name: discordApplicantName,
+              steam_name: discordSteamName,
+              discord_tag: discordDiscordName, // Using discord_tag for legacy compatibility
+              discord_name: discordDiscordName,
+              fivem_name: discordFivemName,
               review_notes: notes || '',
+              application_type: applicationType?.name || 'Application',
               form_data: appData.form_data || {} // Include the form_data for fallback
             }
           }
         });
-        console.log('Discord notification sent successfully');
+        console.log('Discord notification sent successfully with data:', {
+          applicant_name: discordApplicantName,
+          discord_name: discordDiscordName
+        });
       } catch (discordError) {
         console.error('Error sending Discord notification:', discordError);
       }
@@ -847,17 +879,37 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                           {selectedApp.application_types?.form_fields && Array.isArray(selectedApp.application_types.form_fields) ? (
                             <div className="grid grid-cols-1 gap-3 sm:gap-4">
                                {selectedApp.application_types.form_fields.map((field: any, index: number) => {
-                                 const fieldValue = selectedApp.form_data?.[field.key] || 'N/A';
+                                 // Support both field.key and field.id, and handle 0/empty values correctly
+                                 const fieldKey = field.key ?? field.id;
+                                 let value: any = undefined;
+
+                                 if (fieldKey && selectedApp.form_data && Object.prototype.hasOwnProperty.call(selectedApp.form_data, fieldKey)) {
+                                   value = selectedApp.form_data[fieldKey];
+                                 }
+
+                                 // Fallback to top-level columns for known system fields
+                                 if ((value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) && fieldKey) {
+                                   const topLevel = (selectedApp as any)[fieldKey];
+                                   if (topLevel !== undefined && topLevel !== null && !(typeof topLevel === 'string' && topLevel.trim() === '')) {
+                                     value = topLevel;
+                                   } else {
+                                     if (fieldKey === 'discord_name') value = (selectedApp as any).discord_name;
+                                     if (fieldKey === 'steam_name') value = (selectedApp as any).steam_name;
+                                     if (fieldKey === 'fivem_name') value = (selectedApp as any).fivem_name;
+                                   }
+                                 }
+
+                                 const displayValue = (value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '')) ? value : 'N/A';
                                  
                                  return (
-                                   <div key={field.key || index} className="space-y-2">
+                                   <div key={fieldKey || index} className="space-y-2">
                                      <Label className="text-foreground font-medium text-sm">{field.label}</Label>
                                      {field.type === 'textarea' ? (
                                        <div className="text-sm text-muted-foreground p-3 bg-gaming-dark rounded border min-h-[60px] break-words">
-                                         {fieldValue}
+                                         {typeof displayValue === 'string' ? displayValue : JSON.stringify(displayValue)}
                                        </div>
                                      ) : (
-                                       <p className="text-sm text-muted-foreground break-words">{fieldValue}</p>
+                                       <p className="text-sm text-muted-foreground break-words">{typeof displayValue === 'string' ? displayValue : JSON.stringify(displayValue)}</p>
                                      )}
                                    </div>
                                  );

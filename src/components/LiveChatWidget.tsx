@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { MessageCircle, X, Send, Minimize2, Maximize2, Bot, ThumbsUp, ThumbsDown } from "lucide-react";
 import TypingIndicator from "./TypingIndicator";
 import VoiceRecorder from "./VoiceRecorder";
@@ -42,6 +43,8 @@ interface ChatSession {
 }
 
 const LiveChatWidget = () => {
+  const { user } = useCustomAuth();
+  
   // Load persisted state from localStorage
   const getPersistedState = () => {
     try {
@@ -67,7 +70,6 @@ const LiveChatWidget = () => {
   const [aiInteractions, setAiInteractions] = useState<AIInteraction[]>([]);
   const [lastAiResponse, setLastAiResponse] = useState<AIInteraction | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,18 +98,12 @@ const LiveChatWidget = () => {
 
   useEffect(() => {
     checkChatSettings();
-    getCurrentUser();
     
     // If we have a persisted session, validate it's still active
     if (persistedState.session && persistedState.hasStartedChat) {
       validateAndRestoreSession(persistedState.session);
     }
   }, []);
-
-  const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setCurrentUserId(user?.id || null);
-  };
 
   // Validate and restore a persisted session
   const validateAndRestoreSession = async (persistedSession: ChatSession) => {
@@ -435,8 +431,7 @@ const LiveChatWidget = () => {
       }
 
       // Attach authenticated user if available
-      const { data: authData } = await supabase.auth.getUser();
-      const userId = authData?.user?.id ?? null;
+      const userId = user?.id ?? null;
 
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
@@ -516,7 +511,7 @@ const LiveChatWidget = () => {
           .from('chat_typing_indicators')
           .upsert({
             session_id: session.id,
-            user_id: currentUserId,
+            user_id: user?.id,
             user_type: 'visitor',
             is_typing: true,
             last_activity: new Date().toISOString()
@@ -530,8 +525,8 @@ const LiveChatWidget = () => {
           .eq('session_id', session.id)
           .eq('user_type', 'visitor');
         
-        if (currentUserId) {
-          deleteQuery = deleteQuery.eq('user_id', currentUserId);
+        if (user?.id) {
+          deleteQuery = deleteQuery.eq('user_id', user.id);
         } else {
           deleteQuery = deleteQuery.is('user_id', null);
         }
@@ -905,12 +900,12 @@ const LiveChatWidget = () => {
                        </div>
                      )}
                     
-                    {/* Typing Indicator */}
-                    <TypingIndicator 
-                      sessionId={session.id} 
-                      currentUserType="visitor"
-                      currentUserId={currentUserId}
-                    />
+                     {/* Typing Indicator */}
+                     <TypingIndicator 
+                       sessionId={session.id} 
+                       currentUserType="visitor"
+                       currentUserId={user?.id}
+                     />
                     
                     <div ref={messagesEndRef} />
                   </div>
@@ -934,13 +929,13 @@ const LiveChatWidget = () => {
                             isDisabled={!session}
                           />
                           
-                          <FileAttachment
-                            sessionId={session?.id || ''}
-                            senderId={currentUserId}
-                            senderType="visitor"
-                            onFileUploaded={handleFileUploaded}
-                            isDisabled={!session}
-                          />
+                           <FileAttachment
+                             sessionId={session?.id || ''}
+                             senderId={user?.id}
+                             senderType="visitor"
+                             onFileUploaded={handleFileUploaded}
+                             isDisabled={!session}
+                           />
                         </div>
                       </div>
                       

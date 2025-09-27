@@ -69,13 +69,13 @@ serve(async (req) => {
       .select('setting_key, setting_value')
       .in('setting_key', ['general_settings', 'application_settings']);
 
-    const settings = {};
+    const settings: Record<string, any> = {};
     serverSettings?.forEach(setting => {
       settings[setting.setting_key] = setting.setting_value;
     });
 
-    const generalSettings = settings['general_settings'] || {};
-    const applicationSettings = settings['application_settings'] || {};
+    const generalSettings: Record<string, any> = settings['general_settings'] || {};
+    const applicationSettings: Record<string, any> = settings['application_settings'] || {};
 
     // 🧠 AI LEARNING: Hent tidligere succesfulde interaktioner for at lære
     const { data: successfulInteractions } = await supabase
@@ -89,7 +89,7 @@ serve(async (req) => {
     // 🎯 AI LEARNING: Analyser brugerens spørgsmål mod tidligere succeser
     const learningContext = successfulInteractions
       ?.filter(interaction => {
-        const questionSimilarity = message.toLowerCase().split(' ').some(word => 
+        const questionSimilarity = message.toLowerCase().split(' ').some((word: string) => 
           interaction.user_question.toLowerCase().includes(word) && word.length > 3
         );
         return questionSimilarity;
@@ -105,8 +105,8 @@ serve(async (req) => {
       .not('was_helpful', 'is', null)
       .limit(100);
 
-    const learningAdjustment = feedbackStats?.length > 0 
-      ? feedbackStats.filter(f => f.was_helpful).length / feedbackStats.length
+    const learningAdjustment = (feedbackStats?.length ?? 0) > 0
+      ? (feedbackStats?.filter(f => f.was_helpful).length ?? 0) / (feedbackStats?.length ?? 1)
       : 0.7;
 
     // Create AI prompt with full creative freedom - Like talking to a real human with ChatGPT-5 intelligence
@@ -166,7 +166,7 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
     );
 
     // Try AI response with rate limiting handling
-    let aiResponse;
+    let aiResponse: string | undefined;
     let confidenceScore = 0.7 * learningAdjustment; // 🧠 Learning-adjusted base confidence
     
     console.log(`🧠 AI Learning: Base confidence adjusted to ${confidenceScore.toFixed(2)} based on ${Math.round(learningAdjustment * 100)}% success rate`);
@@ -223,7 +223,7 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
           
         } catch (error) {
           retryCount++;
-          if (error.message === 'RATE_LIMITED' || retryCount > maxRetries) {
+          if ((error instanceof Error && error.message === 'RATE_LIMITED') || retryCount > maxRetries) {
             throw error;
           }
           // Wait before retry
@@ -232,8 +232,8 @@ Du har TOTAL frihed til at være kreativ, personlig og ægte. Forestil dig du si
       }
     } catch (error) {
       console.log('❌ OpenAI Error Details:', {
-        message: error.message,
-        stack: error.stack,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'Unknown stack',
         apiKeyPresent: !!openAIApiKey,
         apiKeyStart: openAIApiKey?.substring(0, 7) + '...',
       });
@@ -340,8 +340,8 @@ Men jeg er også bare glad for at snakke! Hvad bringer dig forbi i dag? Ny på s
     ];
 
     const hasHelpfulContent = helpfulKeywords.some(keyword =>
-      aiResponse.toLowerCase().includes(keyword) ||
-      message.toLowerCase().includes(keyword)
+      (aiResponse?.toLowerCase().includes(keyword) ||
+      message.toLowerCase().includes(keyword))
     );
 
     if (hasHelpfulContent) {

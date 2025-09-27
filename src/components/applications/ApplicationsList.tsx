@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Application } from "./types";
 import { getStatusBadgeClass, formatDate } from "./utils";
+import { CreateApplicationDialog } from "./CreateApplicationDialog";
 
 interface ApplicationsListProps {
   applications: Application[];
@@ -70,14 +71,17 @@ export const ApplicationsList = ({
             <span>Active Applications</span>
             <Badge variant="secondary">{applications.length}</Badge>
           </div>
-          <Button 
-            onClick={onRefresh} 
-            variant="outline" 
-            size="sm"
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <CreateApplicationDialog onApplicationCreated={onRefresh} />
+            <Button 
+              onClick={onRefresh} 
+              variant="outline" 
+              size="sm"
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -231,25 +235,30 @@ export const ApplicationsList = ({
                 </Card>
 
                 {/* Form Data */}
-                {selectedApp.form_data && Object.keys(selectedApp.form_data).length > 0 && (
-                  <Card className="bg-gaming-dark border-gaming-border">
-                    <CardHeader>
-                      <CardTitle className="text-sm">Application Data</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {Object.entries(selectedApp.form_data).map(([key, value]) => (
+                <Card className="bg-gaming-dark border-gaming-border">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Application Data</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {selectedApp.form_data && Object.keys(selectedApp.form_data).length > 0 ? (
+                      Object.entries(selectedApp.form_data).map(([key, value]) => (
                         <div key={key}>
                           <Label className="text-foreground capitalize">
                             {key.replace(/_/g, ' ')}
                           </Label>
                           <p className="text-muted-foreground text-sm mt-1">
-                            {typeof value === 'string' ? value : JSON.stringify(value)}
+                            {value ? (typeof value === 'string' ? value : JSON.stringify(value)) : 'N/A'}
                           </p>
                         </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
+                      ))
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-muted-foreground">No form data available for this application.</p>
+                        <p className="text-xs text-muted-foreground mt-1">This may be an older application or created without form data.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Review Actions */}
                 <Card className="bg-gaming-dark border-gaming-border">

@@ -135,33 +135,35 @@ serve(async (req) => {
         }
         
         // Extract data from form_data if available, fallback to direct fields, then user profile
-        const steamName = data.steam_name || data.form_data?.steam_name || userProfile?.username || userProfile?.email || "Not provided";
-        const discordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
+        const steamName = data.applicant_name || data.steam_name || data.form_data?.steam_name || userProfile?.username || userProfile?.email || "Not provided";
+        const discordTag = data.discord_name || data.discord_tag || data.form_data?.discord_tag || data.form_data?.discord_name || "Not provided";
         const fivemName = data.fivem_name || data.form_data?.fivem_name || steamName || "Not provided";
-        const age = data.age || data.form_data?.age || "Not provided";
+        const age = data.age || data.form_data?.age || data.form_data?.alder || "Not provided";
         const applicantEmail = data.applicantEmail || data.user_email || userProfile?.email || "Not provided";
+        const applicationType = data.application_type || "Application";
         
         embed = {
           title: "🆕 New Application Submitted",
           color: 0x3498db, // Blue
           fields: [
-            { name: "Applicant Email", value: applicantEmail, inline: true },
-            { name: "Steam Name", value: steamName, inline: true },
+            { name: "Applicant", value: steamName, inline: true },
+            { name: "Application Type", value: applicationType, inline: true },
+            { name: "Email", value: applicantEmail, inline: true },
             { name: "Discord Tag", value: discordTag, inline: true },
             { name: "FiveM Name", value: fivemName, inline: true },
             { name: "Age", value: age.toString(), inline: true },
-            { name: "Status", value: "Pending Review", inline: true }
+            { name: "Status", value: "Pending Review", inline: false }
           ],
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `📋 **New application received** from **${steamName}** (${applicantEmail})`
+        content = `📋 **New ${applicationType} application received** from **${steamName}** (${applicantEmail})`
         break
 
       case 'application_approved':
         webhookUrl = applicationDiscordSettings.staff_webhook_url
-        const approvedSteamName = data.steam_name || data.form_data?.steam_name || "Not provided";
-        const approvedDiscordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
+        const approvedSteamName = data.applicant_name || data.steam_name || data.form_data?.steam_name || "Not provided";
+        const approvedDiscordTag = data.discord_name || data.discord_tag || data.form_data?.discord_tag || data.form_data?.discord_name || "Not provided";
         const approvedFivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
         
         embed = {
@@ -176,13 +178,13 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `🎉 **Application approved** for **${approvedSteamName}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}! Welcome to the server!`
+        content = `🎉 **Application approved** for **${approvedSteamName}**${approvedDiscordTag && approvedDiscordTag !== 'Not provided' ? ` (<@${approvedDiscordTag.replace(/[@<>]/g, '')}>)` : ''}! Welcome to the server!`
         break
 
       case 'application_denied':
         webhookUrl = applicationDiscordSettings.staff_webhook_url
-        const deniedSteamName = data.steam_name || data.form_data?.steam_name || "Not provided";
-        const deniedDiscordTag = data.discord_tag || data.form_data?.discord_tag || "Not provided";
+        const deniedSteamName = data.applicant_name || data.steam_name || data.form_data?.steam_name || "Not provided";
+        const deniedDiscordTag = data.discord_name || data.discord_tag || data.form_data?.discord_tag || data.form_data?.discord_name || "Not provided";
         const deniedFivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
         
         embed = {
@@ -197,7 +199,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "FiveM Server Application System" }
         }
-        content = `🚫 **Application denied** for **${deniedSteamName}**${data.discord_name ? ` (<@${data.discord_name.replace(/[@<>]/g, '')}>)` : ''}`
+        content = `🚫 **Application denied** for **${deniedSteamName}**${deniedDiscordTag && deniedDiscordTag !== 'Not provided' ? ` (<@${deniedDiscordTag.replace(/[@<>]/g, '')}>)` : ''}`
         break
 
       case 'staff_action':

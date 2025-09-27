@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,7 +62,7 @@ async function checkDeploymentReadiness(): Promise<Response> {
   let emailWorking = false;
   if (checks.resend_configured) {
     try {
-      const { Resend } = await import('npm:resend@2.0.0');
+      const { Resend } = await import('https://esm.sh/resend@2.0.0');
       const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
       
       // Just check if we can create the client without erroring
@@ -123,7 +123,7 @@ async function validateApiKey(keyName: string, keyValue: string): Promise<Respon
   try {
     switch (keyName) {
       case 'RESEND_API_KEY':
-        const { Resend } = await import('npm:resend@2.0.0');
+        const { Resend } = await import('https://esm.sh/resend@2.0.0');
         const resend = new Resend(keyValue);
         
         // Test with a simple API call
