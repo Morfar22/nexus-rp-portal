@@ -601,6 +601,13 @@ export type Database = {
             referencedRelation: "custom_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "chat_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       chat_typing_indicators: {
