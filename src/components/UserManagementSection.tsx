@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Ban, Shield, Trash2, Eye, Mail, Calendar, Clock, UserX, CheckCircle, AlertTriangle, Edit2, Save, X, User, Globe, Gamepad2, MessageSquare, LogOut } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -28,6 +29,7 @@ const UserManagementSection = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [banReason, setBanReason] = useState("");
   const { toast } = useToast();
+  const { user: currentUser } = useCustomAuth();
 
   useEffect(() => {
     fetchUsers();
@@ -105,19 +107,17 @@ const handleBanUser = async (user: any, reason: string) => {
     return;
   }
 
+  if (!currentUser?.id) {
+    toast({
+      title: "Error",
+      description: "You must be logged in to ban users.",
+      variant: "destructive",
+    });
+    return;
+  }
+
   try {
-    // Get current staff info from custom auth
-    const { data: { session } } = await supabase.auth.getSession();
-    const staffId = session?.user?.id;
-    
-    // Get staff display name
-    const { data: staffProfile } = await supabase
-      .from('custom_users')
-      .select('username, email, full_name')
-      .eq('id', staffId)
-      .single();
-    
-    const staffDisplayName = staffProfile?.full_name || staffProfile?.username || staffProfile?.email || "Staff";
+    const staffDisplayName = currentUser.full_name || currentUser.username || currentUser.email || "Staff";
 
     // Mark user as banned in custom_users table
     const { error: banError } = await supabase
@@ -125,7 +125,7 @@ const handleBanUser = async (user: any, reason: string) => {
       .update({ 
         banned: true, 
         banned_at: new Date().toISOString(),
-        banned_by: staffId
+        banned_by: currentUser.id
       })
       .eq('id', user.id);
 
@@ -181,6 +181,15 @@ const handleBanUser = async (user: any, reason: string) => {
 
 
   const handleUnbanUser = async (userId: string) => {
+    if (!currentUser?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to unban users.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Get user info before unbanning for notification
       const { data: userToUnban } = await supabase
@@ -189,17 +198,7 @@ const handleBanUser = async (user: any, reason: string) => {
         .eq('id', userId)
         .single();
 
-      // Get current staff info
-      const { data: { session } } = await supabase.auth.getSession();
-      const staffId = session?.user?.id;
-      
-      const { data: staffProfile } = await supabase
-        .from('custom_users')
-        .select('username, email, full_name')
-        .eq('id', staffId)
-        .single();
-      
-      const staffDisplayName = staffProfile?.full_name || staffProfile?.username || staffProfile?.email || "Staff";
+      const staffDisplayName = currentUser.full_name || currentUser.username || currentUser.email || "Staff";
 
       // Unban the user
       const { error } = await supabase
