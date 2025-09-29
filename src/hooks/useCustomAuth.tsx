@@ -165,6 +165,7 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
           role: data.user.role // This will now have the updated admin role
         });
         setSessionToken(token);
+        setIsBanned(false);
       } else {
         if (data.banned) {
           setIsBanned(true);
@@ -209,6 +210,44 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
     const interval = setInterval(refreshSession, 5 * 60 * 1000); // Check every 5 minutes
     return () => clearInterval(interval);
   }, [session_token]);
+
+  // Real-time ban detection - immediately logout users when banned
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log(`🔄 Setting up real-time ban detection for user: ${user.id}`);
+
+    const channel = supabase
+      .channel('custom-ban-detection')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'custom_users',
+          filter: `id=eq.${user.id}`,
+        },
+        async (payload) => {
+          console.log('🔄 User profile updated:', payload);
+          
+          // Check if the user was just banned
+          if (payload.new?.banned && !payload.old?.banned) {
+            console.log('🚨 User was banned in real-time, immediately signing out...');
+            setIsBanned(true);
+            
+            // Immediately sign out
+            clearAuth();
+            window.location.href = '/auth';
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔄 Cleaning up real-time ban detection');
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const value = {
     user,

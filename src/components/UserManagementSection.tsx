@@ -99,20 +99,28 @@ const handleBanUser = async (user: any, reason: string) => {
   if (!user || !user.email) {
     toast({
       title: "Error",
-      description: "Could not send ban notification: user or user email missing.",
+      description: "Could not ban user: user information missing.",
       variant: "destructive",
     });
-    console.error("handleBanUser called with:", user, reason);
     return;
   }
 
   try {
-    // Get current admin user from custom auth
-    const staffId = user.id; // We'll use the current user's ID for banned_by
-    const staffDisplayName = user.email || "Unknown Staff";
+    // Get current staff info from custom auth
+    const { data: { session } } = await supabase.auth.getSession();
+    const staffId = session?.user?.id;
+    
+    // Get staff display name
+    const { data: staffProfile } = await supabase
+      .from('custom_users')
+      .select('username, email, full_name')
+      .eq('id', staffId)
+      .single();
+    
+    const staffDisplayName = staffProfile?.full_name || staffProfile?.username || staffProfile?.email || "Staff";
 
     // Mark user as banned in custom_users table
-    const { error } = await supabase
+    const { error: banError } = await supabase
       .from('custom_users')
       .update({ 
         banned: true, 
@@ -121,27 +129,45 @@ const handleBanUser = async (user: any, reason: string) => {
       })
       .eq('id', user.id);
 
-    if (error) throw error;
+    if (banError) throw banError;
+
+    // Force logout the banned user (delete all their sessions)
+    try {
+      const { error: logoutError } = await supabase.functions.invoke('force-logout-user', {
+        body: { userId: user.id }
+      });
+      
+      if (logoutError) {
+        console.warn('Failed to force logout user:', logoutError);
+      }
+    } catch (logoutErr) {
+      console.warn('Error during force logout:', logoutErr);
+    }
 
     // Send ban notification via edge function
     try {
-      await supabase.functions.invoke('send-ban-notification', {
+      const { error: notificationError } = await supabase.functions.invoke('send-ban-notification', {
         body: {
           userEmail: user.email,
-          userName: user.username,
+          userName: user.username || user.email,
           isBanned: true,
           banReason: reason,
-          staffName: staffDisplayName
+          staffName: staffDisplayName,
+          originalUserEmail: user.email
         }
       });
+      
+      if (notificationError) {
+        console.warn('Failed to send ban notification:', notificationError);
+      }
     } catch (fnError) {
-      console.warn('Failed to send ban notification:', fnError);
+      console.warn('Error sending ban notification:', fnError);
     }
 
     await fetchUsers();
     toast({
       title: "Success",
-      description: "User has been banned successfully",
+      description: `${user.username || user.email} has been banned and logged out`,
     });
   } catch (error) {
     console.error('Error banning user:', error);
@@ -156,6 +182,26 @@ const handleBanUser = async (user: any, reason: string) => {
 
   const handleUnbanUser = async (userId: string) => {
     try {
+      // Get user info before unbanning for notification
+      const { data: userToUnban } = await supabase
+        .from('custom_users')
+        .select('email, username, full_name')
+        .eq('id', userId)
+        .single();
+
+      // Get current staff info
+      const { data: { session } } = await supabase.auth.getSession();
+      const staffId = session?.user?.id;
+      
+      const { data: staffProfile } = await supabase
+        .from('custom_users')
+        .select('username, email, full_name')
+        .eq('id', staffId)
+        .single();
+      
+      const staffDisplayName = staffProfile?.full_name || staffProfile?.username || staffProfile?.email || "Staff";
+
+      // Unban the user
       const { error } = await supabase
         .from('custom_users')
         .update({ 
@@ -167,10 +213,27 @@ const handleBanUser = async (user: any, reason: string) => {
 
       if (error) throw error;
 
+      // Send unban notification
+      if (userToUnban?.email) {
+        try {
+          await supabase.functions.invoke('send-ban-notification', {
+            body: {
+              userEmail: userToUnban.email,
+              userName: userToUnban.username || userToUnban.email,
+              isBanned: false,
+              staffName: staffDisplayName,
+              originalUserEmail: userToUnban.email
+            }
+          });
+        } catch (fnError) {
+          console.warn('Failed to send unban notification:', fnError);
+        }
+      }
+
       await fetchUsers();
       toast({
         title: "Success",
-        description: "User has been unbanned successfully",
+        description: `${userToUnban?.username || userToUnban?.email || "User"} has been unbanned successfully`,
       });
     } catch (error) {
       console.error('Error unbanning user:', error);
