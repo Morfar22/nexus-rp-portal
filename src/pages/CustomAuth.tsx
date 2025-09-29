@@ -35,6 +35,11 @@ const AuthContextWrapper = ({ children }: { children: React.ReactNode }) => {
 };
 
 const CustomAuth = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const captchaRef = useRef<HCaptcha>(null);
+  
+  // ALL hooks must be called before any conditional logic
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
@@ -47,14 +52,15 @@ const CustomAuth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [serverName, setServerName] = useState("Adventure RP");
-  const captchaRef = useRef<HCaptcha>(null);
-  const navigate = useNavigate();
-  const { toast } = useToast();
   
-  // Safely access the auth context
-  let authContext;
+  // Safely access the auth context - this must come after ALL hooks
+  let user, loading, signIn, signUp;
   try {
-    authContext = useCustomAuth();
+    const authContext = useCustomAuth();
+    user = authContext.user;
+    loading = authContext.loading;
+    signIn = authContext.signIn;
+    signUp = authContext.signUp;
   } catch (error) {
     console.error('Auth context not available:', error);
     return (
@@ -71,8 +77,6 @@ const CustomAuth = () => {
       </div>
     );
   }
-
-  const { user, loading, signIn, signUp } = authContext;
 
   // Redirect if already authenticated
   useEffect(() => {
