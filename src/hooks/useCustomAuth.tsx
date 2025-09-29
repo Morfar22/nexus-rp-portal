@@ -71,31 +71,38 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('custom-login', {
-        body: { email, password }
+      const response = await fetch(`https://vqvluqwadoaerghwyohk.supabase.co/functions/v1/custom-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdmx1cXdhZG9hZXJnaHd5b2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4ODc4NDksImV4cCI6MjA3MTQ2Mzg0OX0.ItCgdk_h-5fgz2LYN9tGHgmWJLHvXYuZREVeYJnoBMw',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdmx1cXdhZG9hZXJnaHd5b2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4ODc4NDksImV4cCI6MjA3MTQ2Mzg0OX0.ItCgdk_h-5fgz2LYN9tGHgmWJLHvXYuZREVeYJnoBMw'
+        },
+        body: JSON.stringify({ email, password })
       });
 
-      // Handle 403 responses (banned users) - data still contains the ban info
-      if (error) {
-        // If we got data along with the error, check if it's a ban
-        if (data?.banned) {
-          return { error: data.error || 'Account suspended', banned: true, userInfo: data.userInfo };
-        }
-        // Otherwise, throw to be caught below
-        throw error;
+      const data = await response.json();
+
+      // Handle banned users (403 status)
+      if (response.status === 403 && data.banned) {
+        return { 
+          error: data.error || 'Account suspended', 
+          banned: true, 
+          userInfo: data.userInfo 
+        };
       }
 
-      if (data.error) {
-        if (data.banned) {
-          return { error: data.error, banned: true, userInfo: data.userInfo };
-        }
-        // If login fails due to password mismatch, suggest password reset
-        if (data.error.includes('Invalid credentials') || data.error.includes('Password verification failed')) {
-          return { error: 'Invalid email or password. If you forgot your password, please use the "Forgot Password" option.' };
-        }
+      // Handle other errors
+      if (!response.ok) {
+        return { error: data.error || 'Login failed' };
+      }
+
+      // Handle email not verified
+      if (data.emailNotVerified) {
         return { error: data.error };
       }
 
+      // Successful login
       if (data.success && data.user && data.session_token) {
         setUser(data.user);
         setSessionToken(data.session_token);
@@ -106,26 +113,6 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
       return { error: 'Login failed' };
     } catch (error: any) {
       console.error('Login error:', error);
-      
-      // Try to extract ban info from error context if available
-      if (error?.context?.body) {
-        try {
-          const errorBody = typeof error.context.body === 'string' 
-            ? JSON.parse(error.context.body) 
-            : error.context.body;
-          
-          if (errorBody.banned) {
-            return { 
-              error: errorBody.error || 'Account suspended', 
-              banned: true, 
-              userInfo: errorBody.userInfo 
-            };
-          }
-        } catch (parseError) {
-          console.error('Error parsing error body:', parseError);
-        }
-      }
-      
       return { error: error.message || 'Login failed' };
     }
   };
