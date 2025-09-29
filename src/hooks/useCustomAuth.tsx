@@ -75,7 +75,15 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
         body: { email, password }
       });
 
-      if (error) throw error;
+      // Handle 403 responses (banned users) - data still contains the ban info
+      if (error) {
+        // If we got data along with the error, check if it's a ban
+        if (data?.banned) {
+          return { error: data.error || 'Account suspended', banned: true, userInfo: data.userInfo };
+        }
+        // Otherwise, throw to be caught below
+        throw error;
+      }
 
       if (data.error) {
         if (data.banned) {
@@ -98,6 +106,26 @@ export const CustomAuthProvider = ({ children }: CustomAuthProviderProps) => {
       return { error: 'Login failed' };
     } catch (error: any) {
       console.error('Login error:', error);
+      
+      // Try to extract ban info from error context if available
+      if (error?.context?.body) {
+        try {
+          const errorBody = typeof error.context.body === 'string' 
+            ? JSON.parse(error.context.body) 
+            : error.context.body;
+          
+          if (errorBody.banned) {
+            return { 
+              error: errorBody.error || 'Account suspended', 
+              banned: true, 
+              userInfo: errorBody.userInfo 
+            };
+          }
+        } catch (parseError) {
+          console.error('Error parsing error body:', parseError);
+        }
+      }
+      
       return { error: error.message || 'Login failed' };
     }
   };
