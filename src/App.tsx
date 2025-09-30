@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n';
 import { CustomAuthProvider } from "@/hooks/useCustomAuth";
 import { ServerSettingsProvider } from "@/hooks/useServerSettings";
 import { GlobalPresenceProvider } from "@/contexts/GlobalPresenceContext";
@@ -227,15 +229,17 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <CustomAuthProvider>
-      <ServerSettingsProvider>
-        <GlobalPresenceProvider>
-          <AppContent />
-        </GlobalPresenceProvider>
-      </ServerSettingsProvider>
-    </CustomAuthProvider>
-  </QueryClientProvider>
+  <I18nextProvider i18n={i18n}>
+    <QueryClientProvider client={queryClient}>
+      <CustomAuthProvider>
+        <ServerSettingsProvider>
+          <GlobalPresenceProvider>
+            <AppContent />
+          </GlobalPresenceProvider>
+        </ServerSettingsProvider>
+      </CustomAuthProvider>
+    </QueryClientProvider>
+  </I18nextProvider>
 );
 
 export default App;
