@@ -34,7 +34,8 @@ import {
   Scale,
   Instagram,
   Zap,
-  Crown
+  Crown,
+  Heart
 } from "lucide-react";
 
 interface StaffSidebarProps {
@@ -77,6 +78,7 @@ const navigationItems = [
       { id: "custom-roles", label: "Roller & Staff", icon: Crown },
       { id: "users", label: "Users", icon: Users },
       { id: "partners", label: "Partners", icon: Globe },
+      { id: "supporters", label: "Supporters", icon: Heart },
     ]
   },
   {

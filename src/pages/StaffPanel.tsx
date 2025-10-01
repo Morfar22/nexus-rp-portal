@@ -85,6 +85,7 @@ import CustomRoleManager from "@/components/CustomRoleManager";
 import ConsolidatedServerManager from "@/components/ConsolidatedServerManager";
 import TeamManager from "@/components/TeamManager";
 import RoleManager from "@/components/RoleManager";
+import SupportersManager from "@/components/SupportersManager";
 
 // New comprehensive overview components
 import { ServerPerformanceOverview } from "@/components/ServerPerformanceOverview";
@@ -927,6 +928,7 @@ const StaffPanel = () => {
                     {activeTab === "custom-roles" && "Roller & Staff Management"}
                     {activeTab === "users" && "User Management"}
                     {activeTab === "partners" && "Partners Management"}
+                    {activeTab === "supporters" && "Supporters Management"}
                     {activeTab === "navbar" && "Navigation Management"}
                     {activeTab === "live-streamers" && "Live Streamers"}
                     {activeTab === "packages" && "Package Management"}
@@ -1088,6 +1090,14 @@ const StaffPanel = () => {
                 <div className="space-y-6">
                   <PartnerManager />
                 </div>
+              )}
+
+              {activeTab === "supporters" && (
+                <PermissionGate permissions={["users.manage", "system.admin"]} showFallback={true}>
+                  <div className="space-y-6">
+                    <SupportersManager />
+                  </div>
+                </PermissionGate>
               )}
 
               {activeTab === "navbar" && (
