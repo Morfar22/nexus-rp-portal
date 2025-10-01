@@ -106,11 +106,16 @@ export default function Packages() {
       return;
     }
 
+    if (!session_token) {
+      toast.error("No valid session found");
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { packageId },
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          Authorization: `Bearer ${session_token}`,
         },
       });
 
@@ -130,6 +135,11 @@ const handleCustomSubscribe = async (amount: number) => {
     return;
   }
 
+  if (!session_token) {
+    toast.error("No valid session found");
+    return;
+  }
+
   // Sikre value er et tal og minimum 1 usd
   const numericAmount = Math.max(1, Number(amount)); // Minimum $1
 
@@ -142,7 +152,7 @@ const handleCustomSubscribe = async (amount: number) => {
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: { customAmount: numericAmount },
       headers: {
-        Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        Authorization: `Bearer ${session_token}`,
       },
     });
 
@@ -167,10 +177,15 @@ const handleCustomSubscribe = async (amount: number) => {
   const handleManageSubscription = async () => {
     if (!user) return;
 
+    if (!session_token) {
+      toast.error("No valid session found");
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal", {
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          Authorization: `Bearer ${session_token}`,
         },
       });
 
