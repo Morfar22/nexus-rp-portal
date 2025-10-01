@@ -37,9 +37,21 @@ serve(async (req) => {
     logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
+    logStep("Validating session token");
+    
+    // Validate session using the validate-session function
+    const { data: sessionData, error: sessionError } = await supabaseClient.functions.invoke(
+      'validate-session',
+      {
+        body: { session_token: token }
+      }
+    );
+
+    if (sessionError || !sessionData?.valid) {
+      throw new Error(`Session validation failed: ${sessionError?.message || 'Invalid session'}`);
+    }
+
+    const user = sessionData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
