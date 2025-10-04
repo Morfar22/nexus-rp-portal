@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.data-seeder]
 verify_jwt = false
+
+[functions.kill-switch]
+verify_jwt = false
