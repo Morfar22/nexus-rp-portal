@@ -42,22 +42,29 @@ serve(async (req) => {
     const user = sessionData.user;
 
     // CRITICAL: Only allow access to specific email for kill switch control
-    const { data: userData } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('custom_users')
       .select('email')
       .eq('id', user.id)
       .single();
 
-    if (userData?.email !== 'emilfrobergww@gmail.com') {
+    console.log('User data check:', { userData, userError, userId: user.id });
+
+    if (userError || !userData || userData.email !== 'emilfrobergww@gmail.com') {
+      console.log('Access denied - email check failed');
       return new Response(
         JSON.stringify({ error: "Unauthorized - Access restricted" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
+    console.log('Access granted for:', userData.email);
+
     // Parse body once
     const body = await req.json();
     const { action, active } = body;
+
+    console.log('Kill switch request:', { action, active });
 
     if (action === "status") {
       // Get current kill switch status
@@ -76,12 +83,19 @@ serve(async (req) => {
     }
 
     if (action === "toggle") {
+      console.log('Toggling kill switch to:', active);
+      
       // Get current settings
-      const { data: currentSettings } = await supabase
+      const { data: currentSettings, error: settingsError } = await supabase
         .from('server_settings')
         .select('setting_value')
         .eq('setting_key', 'general_settings')
         .single();
+
+      if (settingsError) {
+        console.error('Error fetching settings:', settingsError);
+        throw new Error('Failed to fetch settings');
+      }
 
       // Update kill switch status
       const updatedSettings = {
@@ -89,10 +103,19 @@ serve(async (req) => {
         kill_switch_active: active
       };
 
-      await supabase
+      console.log('Updating settings:', updatedSettings);
+
+      const { error: updateError } = await supabase
         .from('server_settings')
         .update({ setting_value: updatedSettings })
         .eq('setting_key', 'general_settings');
+
+      if (updateError) {
+        console.error('Error updating settings:', updateError);
+        throw new Error('Failed to update settings');
+      }
+
+      console.log('Kill switch updated successfully');
 
       return new Response(
         JSON.stringify({ success: true, active }),
