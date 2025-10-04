@@ -41,14 +41,16 @@ serve(async (req) => {
 
     const user = sessionData.user;
 
-    // Check if user is admin
-    const { data: isAdmin } = await supabase.rpc('check_user_is_admin', {
-      check_user_id: user.id
-    });
+    // CRITICAL: Only allow access to specific email for kill switch control
+    const { data: userData } = await supabase
+      .from('custom_users')
+      .select('email')
+      .eq('id', user.id)
+      .single();
 
-    if (!isAdmin) {
+    if (userData?.email !== 'emilfrobergww@gmail.com') {
       return new Response(
-        JSON.stringify({ error: "Unauthorized - Admin access required" }),
+        JSON.stringify({ error: "Unauthorized - Access restricted" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

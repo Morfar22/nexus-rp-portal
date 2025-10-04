@@ -24,12 +24,17 @@ const KillSwitchControl = () => {
       }
 
       try {
-        const { data } = await supabase.rpc('check_user_is_admin', {
-          check_user_id: user.id
-        });
-        setIsAdmin(!!data);
+        // Only allow access to specific email
+        const { data: userData } = await supabase
+          .from('custom_users')
+          .select('email')
+          .eq('id', user.id)
+          .single();
+
+        const isAuthorized = userData?.email === 'emilfrobergww@gmail.com';
+        setIsAdmin(isAuthorized);
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error('Error checking access:', error);
         setIsAdmin(false);
       } finally {
         setCheckingAdmin(false);
@@ -108,7 +113,19 @@ const KillSwitchControl = () => {
   }
 
   if (!user || !isAdmin) {
-    return <Navigate to="/" replace />;
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 text-center bg-gaming-card border-red-500">
+          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Access Denied
+          </h1>
+          <p className="text-muted-foreground">
+            This emergency control panel is restricted to authorized personnel only.
+          </p>
+        </Card>
+      </div>
+    );
   }
 
   return (
