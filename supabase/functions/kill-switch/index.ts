@@ -55,7 +55,9 @@ serve(async (req) => {
       );
     }
 
-    const { action } = await req.json();
+    // Parse body once
+    const body = await req.json();
+    const { action, active } = body;
 
     if (action === "status") {
       // Get current kill switch status
@@ -74,8 +76,6 @@ serve(async (req) => {
     }
 
     if (action === "toggle") {
-      const { active } = await req.json();
-
       // Get current settings
       const { data: currentSettings } = await supabase
         .from('server_settings')
