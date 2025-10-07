@@ -107,9 +107,15 @@ export default function KeybindsManager() {
           description: 'Keybind updated successfully',
         });
       } else {
+        // Get current user ID
+        const { data: { user } } = await supabase.auth.getUser();
+        
         const { error } = await supabase
           .from('keybinds')
-          .insert([formData]);
+          .insert([{
+            ...formData,
+            created_by: user?.id
+          }]);
 
         if (error) throw error;
         toast({
