@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Keyboard, Info } from 'lucide-react';
@@ -24,47 +23,104 @@ interface Keybind {
   order_index: number;
 }
 
-const KeyboardKey = ({ keybind }: { keybind: Keybind }) => {
-  const getCategoryColor = (category: string) => {
+// Keyboard layout definition - each row of keys
+const keyboardLayout = [
+  // Number row
+  ['Esc', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
+  // Top letter row
+  ['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
+  // Home row
+  ['Caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'Enter'],
+  // Bottom row
+  ['Left Shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'Right Shift'],
+  // Space row
+  ['Ctrl', 'Alt', 'Space', 'Alt', 'Ctrl']
+];
+
+const KeyboardKey = ({ 
+  keyName, 
+  keybind, 
+  isWide = false, 
+  isExtraWide = false 
+}: { 
+  keyName: string; 
+  keybind?: Keybind; 
+  isWide?: boolean;
+  isExtraWide?: boolean;
+}) => {
+  const getCategoryColor = (category?: string) => {
+    if (!category) return 'bg-gaming-darker/50 border-gaming-border hover:border-gaming-border/80';
+    
     const colors: Record<string, string> = {
-      general: 'bg-blue-500/20 border-blue-500/50 hover:border-blue-500',
-      vehicle: 'bg-green-500/20 border-green-500/50 hover:border-green-500',
-      communication: 'bg-purple-500/20 border-purple-500/50 hover:border-purple-500',
-      emotes: 'bg-pink-500/20 border-pink-500/50 hover:border-pink-500',
-      movement: 'bg-orange-500/20 border-orange-500/50 hover:border-orange-500',
+      general: 'bg-blue-500/20 border-blue-500/50 hover:border-blue-500 hover:shadow-blue-500/50',
+      vehicle: 'bg-green-500/20 border-green-500/50 hover:border-green-500 hover:shadow-green-500/50',
+      communication: 'bg-purple-500/20 border-purple-500/50 hover:border-purple-500 hover:shadow-purple-500/50',
+      emotes: 'bg-pink-500/20 border-pink-500/50 hover:border-pink-500 hover:shadow-pink-500/50',
+      movement: 'bg-orange-500/20 border-orange-500/50 hover:border-orange-500 hover:shadow-orange-500/50',
     };
-    return colors[category] || 'bg-gray-500/20 border-gray-500/50 hover:border-gray-500';
+    return colors[category] || 'bg-gray-500/20 border-gray-500/50 hover:border-gray-500 hover:shadow-gray-500/50';
   };
 
+  const getKeyWidth = () => {
+    if (keyName === 'Space') return 'w-64';
+    if (keyName === 'Backspace' || keyName === 'Enter') return 'w-20';
+    if (keyName === 'Tab' || keyName === 'Caps') return 'w-16';
+    if (keyName.includes('Shift')) return 'w-24';
+    if (isExtraWide) return 'w-24';
+    if (isWide) return 'w-16';
+    return 'w-12';
+  };
+
+  const KeyContent = (
+    <div 
+      className={`
+        relative rounded border-2 transition-all duration-200 cursor-pointer
+        h-12 flex items-center justify-center
+        ${getKeyWidth()}
+        ${getCategoryColor(keybind?.category)}
+        ${keybind ? 'hover:scale-105 hover:shadow-lg animate-fade-in' : 'opacity-50'}
+      `}
+    >
+      <div className="text-center">
+        <div className={`font-bold ${keyName.length > 3 ? 'text-xs' : 'text-sm'} text-foreground`}>
+          {keyName}
+        </div>
+        {keybind && (
+          <div className="text-[10px] text-muted-foreground font-medium mt-0.5 truncate max-w-full px-1">
+            {keybind.action_name}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (!keybind) {
+    return KeyContent;
+  }
+
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div 
-            className={`
-              relative p-4 rounded-lg border-2 transition-all cursor-pointer
-              min-w-[100px] flex flex-col items-center justify-center gap-2
-              ${getCategoryColor(keybind.category)}
-              hover:scale-105 hover:shadow-lg
-            `}
-          >
-            <div className="text-2xl font-bold text-foreground">
-              {keybind.key_name}
-            </div>
-            <div className="text-xs text-center text-muted-foreground font-medium">
-              {keybind.action_name}
-            </div>
-          </div>
+          {KeyContent}
         </TooltipTrigger>
-        <TooltipContent className="max-w-xs">
-          <div className="space-y-1">
-            <p className="font-semibold">{keybind.action_name}</p>
+        <TooltipContent 
+          side="top" 
+          className="max-w-xs p-4 bg-gaming-card border-gaming-border shadow-xl animate-scale-in"
+        >
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-foreground">{keyName}</span>
+              <Badge variant="outline" className="capitalize">
+                {keybind.category}
+              </Badge>
+            </div>
+            <p className="font-semibold text-primary">{keybind.action_name}</p>
             {keybind.description && (
-              <p className="text-sm text-muted-foreground">{keybind.description}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {keybind.description}
+              </p>
             )}
-            <Badge variant="outline" className="mt-2">
-              {keybind.category}
-            </Badge>
           </div>
         </TooltipContent>
       </Tooltip>
@@ -119,11 +175,17 @@ export default function Keybinds() {
     };
   }, []);
 
-  const categories = Array.from(new Set(keybinds.map(k => k.category)));
+  // Create a map for quick keybind lookup
+  const keybindMap = new Map(
+    keybinds.map(kb => [kb.key_name.toLowerCase(), kb])
+  );
 
-  const getKeybindsByCategory = (category: string) => {
-    return keybinds.filter(k => k.category === category);
+  // Get keybind for a key name
+  const getKeybind = (keyName: string): Keybind | undefined => {
+    return keybindMap.get(keyName.toLowerCase());
   };
+
+  const categories = Array.from(new Set(keybinds.map(k => k.category)));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gaming-dark via-background to-gaming-dark">
@@ -140,61 +202,98 @@ export default function Keybinds() {
           </p>
         </div>
 
-        <Card className="p-6 bg-gaming-card border-gaming-border">
+        <Card className="p-8 bg-gaming-card border-gaming-border overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : (
-            <Tabs defaultValue="all" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 mb-6">
-                <TabsTrigger value="all">Alle Taster</TabsTrigger>
-                {categories.slice(0, 2).map((category) => (
-                  <TabsTrigger key={category} value={category} className="capitalize">
-                    {category}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+            <div className="space-y-6">
+              {/* Legend */}
+              <div className="flex flex-wrap items-center justify-center gap-4 mb-8 pb-6 border-b border-gaming-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-blue-500/20 border-2 border-blue-500/50"></div>
+                  <span className="text-sm text-muted-foreground">General</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-green-500/20 border-2 border-green-500/50"></div>
+                  <span className="text-sm text-muted-foreground">Vehicle</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-purple-500/20 border-2 border-purple-500/50"></div>
+                  <span className="text-sm text-muted-foreground">Communication</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-pink-500/20 border-2 border-pink-500/50"></div>
+                  <span className="text-sm text-muted-foreground">Emotes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-orange-500/20 border-2 border-orange-500/50"></div>
+                  <span className="text-sm text-muted-foreground">Movement</span>
+                </div>
+              </div>
 
-              <TabsContent value="all" className="space-y-6">
-                {categories.map((category) => {
-                  const categoryKeybinds = getKeybindsByCategory(category);
-                  return (
-                    <div key={category}>
-                      <h3 className="text-xl font-semibold mb-4 capitalize flex items-center gap-2">
-                        <Badge variant="outline">{category}</Badge>
-                        <span className="text-muted-foreground text-sm">
-                          ({categoryKeybinds.length} taster)
-                        </span>
-                      </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        {categoryKeybinds.map((keybind) => (
-                          <KeyboardKey key={keybind.id} keybind={keybind} />
-                        ))}
-                      </div>
+              {/* Keyboard Layout */}
+              <div className="inline-block mx-auto">
+                <div className="space-y-2 p-6 bg-gaming-darker/30 rounded-xl border border-gaming-border/50">
+                  {keyboardLayout.map((row, rowIndex) => (
+                    <div key={rowIndex} className="flex gap-2 justify-center">
+                      {row.map((key, keyIndex) => (
+                        <KeyboardKey
+                          key={`${rowIndex}-${keyIndex}`}
+                          keyName={key}
+                          keybind={getKeybind(key)}
+                          isWide={key === 'Tab' || key === 'Caps'}
+                          isExtraWide={key.includes('Shift') || key === 'Backspace' || key === 'Enter'}
+                        />
+                      ))}
                     </div>
-                  );
-                })}
-              </TabsContent>
+                  ))}
+                </div>
+              </div>
 
-              {categories.map((category) => (
-                <TabsContent key={category} value={category}>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {getKeybindsByCategory(category).map((keybind) => (
-                      <KeyboardKey key={keybind.id} keybind={keybind} />
-                    ))}
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
+              {/* Active Keybinds List */}
+              <div className="mt-8 space-y-4">
+                <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                  <Keyboard className="h-5 w-5 text-primary" />
+                  Aktive Keybinds
+                  <Badge variant="outline">{keybinds.length} taster</Badge>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {categories.map((category) => {
+                    const categoryKeybinds = keybinds.filter(k => k.category === category);
+                    return categoryKeybinds.map((keybind) => (
+                      <div 
+                        key={keybind.id}
+                        className="p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border hover:border-primary/50 transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="px-3 py-1.5 bg-gaming-card rounded font-bold text-sm border border-gaming-border">
+                            {keybind.key_name}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-foreground truncate">
+                              {keybind.action_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {keybind.category}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })}
+                </div>
+              </div>
+            </div>
           )}
 
-          <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+          <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg animate-fade-in">
             <div className="flex items-start gap-3">
               <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-200">
                 <p className="font-semibold mb-1">Tip:</p>
-                <p>Hover over hver tast for at se detaljeret information om funktionen. Tasterne er opdelt i kategorier for lettere navigation.</p>
+                <p>Hold musen over tasterne på keyboardet for at se detaljeret information. Farverne indikerer forskellige kategorier af keybinds.</p>
               </div>
             </div>
           </div>
