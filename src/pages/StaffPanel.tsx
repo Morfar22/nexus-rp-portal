@@ -86,6 +86,7 @@ import ConsolidatedServerManager from "@/components/ConsolidatedServerManager";
 import TeamManager from "@/components/TeamManager";
 import RoleManager from "@/components/RoleManager";
 import SupportersManager from "@/components/SupportersManager";
+import KeybindsManager from "@/components/KeybindsManager";
 
 // New comprehensive overview components
 import { ServerPerformanceOverview } from "@/components/ServerPerformanceOverview";
@@ -925,6 +926,7 @@ const StaffPanel = () => {
                     {activeTab === "application-settings" && "Application Settings"}
                     {activeTab === "rules" && "Rules Management"}
                     {activeTab === "laws" && "Laws Management"}
+                    {activeTab === "keybinds" && "Keybinds Management"}
                     {activeTab === "custom-roles" && "Roller & Staff Management"}
                     {activeTab === "users" && "User Management"}
                     {activeTab === "partners" && "Partners Management"}
@@ -1046,6 +1048,12 @@ const StaffPanel = () => {
               {activeTab === "laws" && (
                 <div className="space-y-6">
                   <LawsManager />
+                </div>
+              )}
+
+              {activeTab === "keybinds" && (
+                <div className="space-y-6">
+                  <KeybindsManager />
                 </div>
               )}
 

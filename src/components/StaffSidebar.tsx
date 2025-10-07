@@ -35,7 +35,8 @@ import {
   Instagram,
   Zap,
   Crown,
-  Heart
+  Heart,
+  Keyboard
 } from "lucide-react";
 
 interface StaffSidebarProps {
@@ -66,6 +67,7 @@ const navigationItems = [
     items: [
       { id: "rules", label: "Rules", icon: FileSearch },
       { id: "laws", label: "Laws", icon: Scale },
+      { id: "keybinds", label: "Keybinds", icon: Keyboard },
       { id: "content", label: "Homepage", icon: Layout },
       { id: "design", label: "Design & Appearance", icon: Palette },
       { id: "packages", label: "Packages", icon: CreditCard },

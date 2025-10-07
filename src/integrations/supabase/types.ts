@@ -1083,6 +1083,56 @@ export type Database = {
           },
         ]
       }
+      keybinds: {
+        Row: {
+          action_name: string
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          key_code: string
+          key_name: string
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          action_name: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key_code: string
+          key_name: string
+          order_index?: number
+          updated_at?: string
+        }
+        Update: {
+          action_name?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key_code?: string
+          key_name?: string
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keybinds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       laws: {
         Row: {
           category: string
