@@ -18,6 +18,9 @@ interface NavbarItem {
   order: number;
   visible: boolean;
   staffOnly: boolean;
+  userOnly: boolean;
+  icon?: string;
+  group?: string;
 }
 
 const NavbarManager = () => {
@@ -31,7 +34,10 @@ const NavbarManager = () => {
     label: "",
     order: 0,
     visible: true,
-    staffOnly: false
+    staffOnly: false,
+    userOnly: false,
+    icon: "Home",
+    group: "Navigation"
   });
   const { toast } = useToast();
 
@@ -51,15 +57,15 @@ const NavbarManager = () => {
       if (error) throw error;
 
       const defaultItems: NavbarItem[] = [
-        { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false },
-        { id: 'apply', label: 'Apply', path: '/application-form', visible: true, order: 1, staffOnly: false },
-        { id: 'rules', label: 'Rules', path: '/rules', visible: true, order: 2, staffOnly: false },
-        { id: 'team', label: 'Our Team', path: '/team', visible: true, order: 3, staffOnly: false },
-        { id: 'partners', label: 'Partners', path: '/partners', visible: true, order: 4, staffOnly: false },
-        { id: 'live', label: 'Live', path: '/live', visible: true, order: 5, staffOnly: false },
-        { id: 'staff', label: 'Staff Panel', path: '/staff', visible: true, order: 6, staffOnly: true },
-        { id: 'servers', label: 'Servers', path: '/servers', visible: true, order: 7, staffOnly: true },
-        { id: 'users', label: 'Users', path: '/users', visible: true, order: 8, staffOnly: true },
+        { id: 'home', label: 'Home', path: '/', visible: true, order: 0, staffOnly: false, userOnly: false, icon: 'Home', group: 'Public' },
+        { id: 'apply', label: 'Apply', path: '/application-form', visible: true, order: 1, staffOnly: false, userOnly: true, icon: 'FileText', group: 'User Features' },
+        { id: 'rules', label: 'Rules', path: '/rules', visible: true, order: 2, staffOnly: false, userOnly: false, icon: 'FileSearch', group: 'Public' },
+        { id: 'team', label: 'Our Team', path: '/team', visible: true, order: 3, staffOnly: false, userOnly: false, icon: 'UsersIcon', group: 'Community' },
+        { id: 'partners', label: 'Partners', path: '/partners', visible: true, order: 4, staffOnly: false, userOnly: false, icon: 'Globe', group: 'Community' },
+        { id: 'live', label: 'Live', path: '/live', visible: true, order: 5, staffOnly: false, userOnly: false, icon: 'Tv', group: 'Public' },
+        { id: 'staff', label: 'Staff Panel', path: '/staff', visible: true, order: 6, staffOnly: true, userOnly: false, icon: 'Shield', group: 'Staff Tools' },
+        { id: 'servers', label: 'Servers', path: '/servers', visible: true, order: 7, staffOnly: true, userOnly: false, icon: 'Server', group: 'Staff Tools' },
+        { id: 'analytics', label: 'Analytics', path: '/analytics', visible: true, order: 8, staffOnly: true, userOnly: false, icon: 'BarChart3', group: 'Staff Tools' },
       ];
       
       const config = data?.setting_value as any;
@@ -138,7 +144,10 @@ const NavbarManager = () => {
       label: "",
       order: 0,
       visible: true,
-      staffOnly: false
+      staffOnly: false,
+      userOnly: false,
+      icon: "Home",
+      group: "Navigation"
     });
   };
 
@@ -248,6 +257,34 @@ const NavbarManager = () => {
                   onCheckedChange={(checked) => setNewItem({ ...newItem, staffOnly: checked })}
                 />
                 <Label className="text-foreground">Staff Only</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={newItem.userOnly}
+                  onCheckedChange={(checked) => setNewItem({ ...newItem, userOnly: checked })}
+                />
+                <Label className="text-foreground">User Only</Label>
+              </div>
+
+              <div>
+                <Label className="text-foreground">Icon Name</Label>
+                <Input
+                  value={newItem.icon}
+                  onChange={(e) => setNewItem({ ...newItem, icon: e.target.value })}
+                  placeholder="Home, Shield, etc."
+                  className="bg-gaming-dark border-gaming-border text-foreground"
+                />
+              </div>
+
+              <div>
+                <Label className="text-foreground">Group</Label>
+                <Input
+                  value={newItem.group}
+                  onChange={(e) => setNewItem({ ...newItem, group: e.target.value })}
+                  placeholder="Navigation, Community, etc."
+                  className="bg-gaming-dark border-gaming-border text-foreground"
+                />
               </div>
             </div>
             

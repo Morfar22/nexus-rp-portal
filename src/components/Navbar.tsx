@@ -4,8 +4,17 @@ import {
   Server, LogIn, LogOut, User, Menu, X,
   Home, FileSearch, Scale, CreditCard, Users as UsersIcon, 
   Globe, Heart, Tv, UserCheck, Trophy, Calendar, 
-  Vote, FileText, BarChart3, Palette, Shield, Settings
+  Vote, FileText, BarChart3, Palette, Shield, Settings,
+  type LucideIcon
 } from "lucide-react";
+
+// Icon mapping for dynamic icon support
+const iconMap: Record<string, LucideIcon> = {
+  Home, FileSearch, Scale, CreditCard, UsersIcon, 
+  Globe, Heart, Tv, UserCheck, Trophy, Calendar, 
+  Vote, FileText, BarChart3, Palette, Shield, Settings,
+  Server, User
+};
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,51 +34,20 @@ const Navbar = () => {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [serverName, setServerName] = useState("adventure rp");
-  // Navigation groups structure like the staff sidebar
-  const navigationGroups = [
-    {
-      group: "Public",
-      items: [
-        { id: 'home', label: t('navigation.home'), path: '/', icon: Home, visible: true, order: 0, staffOnly: false, userOnly: false },
-        { id: 'rules', label: t('navigation.rules'), path: '/rules', icon: FileSearch, visible: true, order: 1, staffOnly: false, userOnly: false },
-        { id: 'laws', label: t('navigation.laws'), path: '/laws', icon: Scale, visible: true, order: 2, staffOnly: false, userOnly: false },
-        { id: 'packages', label: t('navigation.packages'), path: '/packages', icon: CreditCard, visible: true, order: 3, staffOnly: false, userOnly: false },
-        { id: 'live', label: t('navigation.live'), path: '/live', icon: Tv, visible: true, order: 7, staffOnly: false, userOnly: false },
-      ]
-    },
-    {
-      group: "Community", 
-      items: [
-        { id: 'team', label: t('navigation.team'), path: '/team', icon: UsersIcon, visible: true, order: 4, staffOnly: false, userOnly: false },
-        { id: 'partners', label: t('navigation.partners'), path: '/partners', icon: Globe, visible: true, order: 5, staffOnly: false, userOnly: false },
-        { id: 'supporters', label: t('navigation.supporters'), path: '/supporters', icon: Heart, visible: true, order: 6, staffOnly: false, userOnly: false },
-        { id: 'characters', label: t('navigation.characters'), path: '/characters', icon: UserCheck, visible: true, order: 8, staffOnly: false, userOnly: false },
-        { id: 'events', label: t('navigation.events'), path: '/events', icon: Calendar, visible: true, order: 9, staffOnly: false, userOnly: false },
-        { id: 'voting', label: t('navigation.voting'), path: '/voting', icon: Vote, visible: true, order: 10, staffOnly: false, userOnly: false },
-        { id: 'achievements', label: t('navigation.achievements'), path: '/achievements', icon: Trophy, visible: true, order: 11, staffOnly: false, userOnly: false },
-      ]
-    },
-    {
-      group: "User Features",
-      items: [
-        { id: 'apply', label: t('navigation.apply'), path: '/application-form', icon: FileText, visible: true, order: 12, staffOnly: false, userOnly: true },
-        { id: 'profile', label: t('navigation.profile'), path: '/profile', icon: User, visible: true, order: 13, staffOnly: false, userOnly: true },
-      ]
-    },
-    {
-      group: "Staff Tools",
-      items: [
-        { id: 'staff', label: t('navigation.staff_panel'), path: '/staff', icon: Shield, visible: true, order: 14, staffOnly: true, userOnly: false },
-        { id: 'servers', label: t('navigation.server_management'), path: '/servers', icon: Server, visible: true, order: 15, staffOnly: true, userOnly: false },
-        { id: 'analytics', label: t('navigation.analytics'), path: '/analytics', icon: BarChart3, visible: true, order: 16, staffOnly: true, userOnly: false },
-        { id: 'creative-tools', label: t('navigation.creative_tools'), path: '/creative-tools', icon: Palette, visible: true, order: 17, staffOnly: true, userOnly: false }
-      ]
-    }
-  ];
-
-  const [navbarConfig, setNavbarConfig] = useState({
-    items: navigationGroups.flatMap(group => group.items)
-  });
+  
+  const [navbarConfig, setNavbarConfig] = useState<{
+    items: Array<{
+      id: string;
+      label: string;
+      path: string;
+      icon?: string;
+      visible: boolean;
+      order: number;
+      staffOnly: boolean;
+      userOnly: boolean;
+      group?: string;
+    }>;
+  }>({ items: [] });
   const isMobile = useIsMobile();
 
   // Get visible navigation items with proper permission filtering
@@ -215,19 +193,10 @@ const Navbar = () => {
           
         if (data?.setting_value) {
           console.log('Loading navbar config from database:', data.setting_value);
-          // Merge database config with our navigation groups structure
           const dbConfig = data.setting_value as any;
           if (dbConfig.items && Array.isArray(dbConfig.items)) {
-            const mergedItems = navigationGroups.flatMap(group => 
-              group.items.map(item => {
-                const dbItem = dbConfig.items.find((db: any) => db.id === item.id);
-                return dbItem ? { ...item, ...dbItem, icon: item.icon } : item;
-              })
-            );
-            setNavbarConfig({ items: mergedItems });
+            setNavbarConfig({ items: dbConfig.items });
           }
-        } else {
-          console.log('No navbar config found in database, using default');
         }
         setConfigLoaded(true);
       } catch (error) {
@@ -271,13 +240,7 @@ const Navbar = () => {
           if (payload.new && (payload.new as any).setting_value) {
             const dbConfig = (payload.new as any).setting_value as any;
             if (dbConfig.items && Array.isArray(dbConfig.items)) {
-              const mergedItems = navigationGroups.flatMap(group => 
-                group.items.map(item => {
-                  const dbItem = dbConfig.items.find((db: any) => db.id === item.id);
-                  return dbItem ? { ...item, ...dbItem, icon: item.icon } : item;
-                })
-              );
-              setNavbarConfig({ items: mergedItems });
+              setNavbarConfig({ items: dbConfig.items });
             }
           }
         }
@@ -312,33 +275,6 @@ const Navbar = () => {
     };
   }, []);
 
-  // Update navbar config items with translations when language changes
-  useEffect(() => {
-    if (!configLoaded) return; // Prevent updates before config is loaded
-    
-    const getTranslationKey = (itemId: string) => {
-      switch (itemId) {
-        case 'staff': return 'navigation.staff_panel';
-        case 'servers': return 'navigation.server_management';
-        case 'users': return 'staff.user_management';
-        case 'characters': return 'navigation.characters';
-        case 'events': return 'navigation.events';
-        case 'voting': return 'navigation.voting';
-        case 'achievements': return 'navigation.achievements';
-        case 'analytics': return 'navigation.analytics';
-        case 'creative-tools': return 'navigation.creative_tools';
-        default: return `navigation.${itemId}`;
-      }
-    };
-
-    setNavbarConfig(prev => ({
-      ...prev,
-      items: prev.items.map(item => ({
-        ...item,
-        label: t(getTranslationKey(item.id)) || item.label
-      }))
-    }));
-  }, [t, configLoaded]); // Added configLoaded dependency
 
   const NavLinks = ({ forceVertical = false }: { forceVertical?: boolean } = {}) => {
     const location = useLocation();
@@ -348,27 +284,30 @@ const Navbar = () => {
       return null;
     }
 
+    // Group items by their group property
+    const groupedItems: Record<string, typeof visibleItems> = {};
+    visibleItems.forEach(item => {
+      const groupName = item.group || 'Navigation';
+      if (!groupedItems[groupName]) {
+        groupedItems[groupName] = [];
+      }
+      groupedItems[groupName].push(item);
+    });
+
     if (forceVertical || shouldUseHamburgerMenu) {
-      // Render grouped navigation for mobile/vertical layout (like sidebar)
+      // Render grouped navigation for mobile/vertical layout
       return (
         <>
-          {navigationGroups.map((group) => {
-            const groupItems = group.items.filter(item => {
-              if (!item.visible) return false;
-              if (item.staffOnly && !isStaff) return false;
-              if (item.userOnly && !user) return false;
-              return true;
-            });
-
-            if (groupItems.length === 0) return null;
-
-            return (
-              <div key={group.group} className="py-4">
-                <div className="text-primary font-bold px-4 py-3 text-xs uppercase tracking-[0.1em] bg-gaming-darker/30 rounded-lg mb-2 border-l-3 border-primary/50">
-                  {group.group}
-                </div>
-                <div className="space-y-1.5 px-1">
-                  {groupItems.map((item) => (
+          {Object.entries(groupedItems).map(([groupName, items]) => (
+            <div key={groupName} className="py-4">
+              <div className="text-primary font-bold px-4 py-3 text-xs uppercase tracking-[0.1em] bg-gaming-darker/30 rounded-lg mb-2 border-l-3 border-primary/50">
+                {groupName}
+              </div>
+              <div className="space-y-1.5 px-1">
+                {items.map((item) => {
+                  const IconComponent = item.icon ? iconMap[item.icon] || Home : Home;
+                  
+                  return (
                     <Link 
                       key={item.id}
                       to={item.path} 
@@ -386,7 +325,7 @@ const Navbar = () => {
                           ? "bg-primary/30 text-primary shadow-md" 
                           : "group-hover:bg-primary/20 group-hover:text-primary group-hover:shadow-md"
                       }`}>
-                        <item.icon className="h-4 w-4" />
+                        <IconComponent className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-semibold relative z-10 tracking-wide">
                         {item.label}
@@ -395,23 +334,20 @@ const Navbar = () => {
                         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 animate-pulse" />
                       )}
                     </Link>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </>
       );
     }
 
     // Render horizontal navigation for desktop (simplified, no groups)
-    const items = visibleItems;
     return (
       <>
-        {items.map((item) => {
-          const IconComponent = navigationGroups
-            .flatMap(g => g.items)
-            .find(navItem => navItem.id === item.id)?.icon || Home;
+        {visibleItems.map((item) => {
+          const IconComponent = item.icon ? iconMap[item.icon] || Home : Home;
             
           return (
             <Link 
