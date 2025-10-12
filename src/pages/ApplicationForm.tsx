@@ -211,8 +211,14 @@ const ApplicationForm = () => {
             data: {
               user_id: user.id,
               application_type: selectedType.name,
-              applicant_name: formData.karakternavn || user.username || 'Applicant',
+              applicant_name: formData.karakternavn || formData.steam_name || user.username || user.full_name || 'Applicant',
+              steam_name: formData.steam_name || '',
+              fivem_name: formData.fivem_name || '',
               discord_name: discordName,
+              discord_tag: discordName,
+              user_email: user.email,
+              applicantEmail: user.email,
+              age: formData.age || formData.alder || '',
               form_data: formData
             }
           }

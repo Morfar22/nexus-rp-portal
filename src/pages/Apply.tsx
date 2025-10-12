@@ -277,16 +277,21 @@ const Apply = () => {
           body: {
             type: 'application_submitted',
             data: {
-              user_id: user.id, // Add user_id for profile lookup
+              user_id: user.id,
               steam_name: applicationData.steam_name || '',
-              discord_tag: applicationData.discord_tag || '',
-              discord_name: applicationData.discord_name || '',
-              fivem_name: applicationData.fivem_name || '',
-              form_data: formData // Include the complete form data for fallback
+              discord_tag: applicationData.discord_tag || applicationData.discord_name || '',
+              discord_name: applicationData.discord_name || applicationData.discord_tag || '',
+              fivem_name: applicationData.fivem_name || applicationData.steam_name || '',
+              age: applicationData.age || applicationData.alder || '',
+              user_email: user.email,
+              applicantEmail: user.email,
+              applicant_name: applicationData.steam_name || 'Applicant',
+              application_type: 'RP Application',
+              form_data: formData
             }
           }
         });
-        console.log('Discord notification attempted');
+        console.log('Discord notification sent successfully');
       } catch (discordError) {
         console.error('Discord notification failed:', discordError);
         // Don't fail the whole operation if Discord fails

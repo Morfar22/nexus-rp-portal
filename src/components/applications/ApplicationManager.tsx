@@ -173,6 +173,7 @@ const ApplicationManager = () => {
             // Extract steam_name and fivem_name from form_data
             const steamName = application.form_data?.steam_name || application.form_data?.steamName || '';
             const fivemName = application.form_data?.fivem_name || application.form_data?.fivemName || '';
+            const discordName = application.form_data?.discord_name || application.form_data?.discord_tag || application.discord_name || '';
             
             const emailPayload = {
               applicationId,
@@ -181,7 +182,7 @@ const ApplicationManager = () => {
               applicantName: application.profiles?.username || application.profiles?.full_name || 'Applicant',
               applicationType: application.application_types?.name || 'Application',
               reviewNotes: notes,
-              discordName: application.discord_name,
+              discordName,
               steamName,
               fivemName
             };
@@ -196,6 +197,36 @@ const ApplicationManager = () => {
             
             if (emailResult.error) {
               throw new Error(`Email function error: ${emailResult.error.message}`);
+            }
+            
+            // Send Discord notification
+            try {
+              const discordEventType = status === 'approved' ? 'application_approved' : 'application_denied';
+              const discordResult = await supabase.functions.invoke('discord-logger', {
+                body: {
+                  type: discordEventType,
+                  data: {
+                    steam_name: steamName,
+                    fivem_name: fivemName,
+                    discord_name: discordName,
+                    discord_tag: discordName,
+                    applicant_name: emailPayload.applicantName,
+                    user_email: application.profiles?.email,
+                    applicantEmail: application.profiles?.email,
+                    application_type: emailPayload.applicationType,
+                    review_notes: notes,
+                    form_data: application.form_data
+                  }
+                }
+              });
+              
+              if (discordResult.error) {
+                console.error('Discord notification error:', discordResult.error);
+              } else {
+                console.log('ApplicationManager: Discord notification sent successfully');
+              }
+            } catch (discordError) {
+              console.error('Failed to send Discord notification:', discordError);
             }
             
             console.log('ApplicationManager: Email sent successfully');
