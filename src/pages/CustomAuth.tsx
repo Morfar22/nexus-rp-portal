@@ -520,7 +520,7 @@ const CustomAuth = () => {
                   <div className="flex justify-center py-4">
                     <HCaptcha
                       ref={captchaRef}
-                      sitekey="10000000-ffff-ffff-ffff-000000000001"
+                      sitekey="daba5502-dfbc-40c8-9b56-0bc676d83b98"
                       onVerify={setCaptchaToken}
                       onExpire={() => setCaptchaToken(null)}
                       onError={() => setCaptchaToken(null)}
@@ -660,7 +660,7 @@ const CustomAuth = () => {
                   <div className="flex justify-center py-4">
                     <HCaptcha
                       ref={captchaRef}
-                      sitekey="10000000-ffff-ffff-ffff-000000000001"
+                      sitekey="daba5502-dfbc-40c8-9b56-0bc676d83b98"
                       onVerify={setCaptchaToken}
                       onExpire={() => setCaptchaToken(null)}
                       onError={() => setCaptchaToken(null)}

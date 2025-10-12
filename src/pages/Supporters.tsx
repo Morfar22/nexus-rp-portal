@@ -57,7 +57,7 @@ export default function Supporters() {
           message,
           is_anonymous,
           is_featured,
-          profiles (
+          custom_users (
             username,
             avatar_url
           )
@@ -72,7 +72,7 @@ export default function Supporters() {
       
       const typedData = (data || []).map(item => ({
         ...item,
-        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
+        profiles: Array.isArray(item.custom_users) ? item.custom_users[0] : item.custom_users
       })) as Supporter[];
       
       const featured = typedData.filter(s => s.is_featured);

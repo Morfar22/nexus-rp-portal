@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import ActiveUsersTracker from "./ActiveUsersTracker";
+import { SyncDiscordProfilesButton } from "./SyncDiscordProfilesButton";
 
 const UserManagementSection = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -64,7 +65,7 @@ const UserManagementSection = () => {
       }
 
       // Map custom_users to the expected format
-      const usersWithData = data?.map(user => ({
+      const usersWithData = data?.map((user: any) => ({
         id: user.id,
         email: user.email,
         username: user.username,
@@ -78,6 +79,11 @@ const UserManagementSection = () => {
         banned_by: user.banned_by,
         email_verified: user.email_verified,
         last_login: user.last_login,
+        // Discord information
+        discord_id: user.discord_id || null,
+        discord_username: user.discord_username || null,
+        discord_discriminator: user.discord_discriminator || null,
+        discord_connected_at: user.discord_connected_at || null,
         // Keep compatibility with existing code
         user_roles: [{ user_id: user.id, role: user.role }],
         staff_roles: [],
@@ -664,9 +670,12 @@ const handleUpdateUser = async (userId: string, data: z.infer<typeof userEditSch
       <Card className="p-6 bg-gaming-card border-gaming-border">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
           <h2 className="text-xl font-semibold text-foreground">User Management</h2>
-          <Badge variant="outline" className="text-foreground w-fit">
-            {filteredUsers.length} Users
-          </Badge>
+          <div className="flex items-center gap-2">
+            <SyncDiscordProfilesButton />
+            <Badge variant="outline" className="text-foreground w-fit">
+              {filteredUsers.length} Users
+            </Badge>
+          </div>
         </div>
 
         {/* Search and Filter */}

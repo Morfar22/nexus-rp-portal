@@ -1926,13 +1926,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "supporters_user_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "supporters_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -2427,6 +2420,10 @@ export type Database = {
           banned_at: string
           banned_by: string
           created_at: string
+          discord_connected_at: string
+          discord_discriminator: string
+          discord_id: string
+          discord_username: string
           email: string
           email_verified: boolean
           full_name: string

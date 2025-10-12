@@ -299,6 +299,45 @@ async function updateRolePermissions(supabaseClient: any, roleId: string, permis
 async function assignRoleToUser(supabaseClient: any, assignmentData: any) {
   logStep("Assigning role to user", assignmentData);
   
+  // Check if user already has this role
+  const { data: existingAssignment } = await supabaseClient
+    .from('user_role_assignments')
+    .select('*')
+    .eq('user_id', assignmentData.user_id)
+    .eq('role_id', assignmentData.role_id)
+    .maybeSingle();
+
+  if (existingAssignment) {
+    // If assignment exists but is inactive, reactivate it
+    if (!existingAssignment.is_active) {
+      const { data, error } = await supabaseClient
+        .from('user_role_assignments')
+        .update({
+          is_active: true,
+          expires_at: assignmentData.expires_at || null
+        })
+        .eq('id', existingAssignment.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      logStep("Reactivated existing role assignment", data);
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } else {
+      // Role is already assigned and active - return success anyway
+      logStep("Role already assigned and active", existingAssignment);
+      return new Response(JSON.stringify(existingAssignment), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+  }
+
+  // Create new assignment
   const { data, error } = await supabaseClient
     .from('user_role_assignments')
     .insert([{
@@ -312,6 +351,7 @@ async function assignRoleToUser(supabaseClient: any, assignmentData: any) {
 
   if (error) throw error;
 
+  logStep("Created new role assignment", data);
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
     status: 200,
@@ -343,7 +383,12 @@ async function getUserData(supabaseClient: any) {
     .eq('banned', false)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    logStep("Error fetching user data", { error: error.message });
+    throw error;
+  }
+
+  logStep("Fetched user data", { count: data?.length || 0 });
 
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },

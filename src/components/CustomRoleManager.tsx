@@ -259,11 +259,26 @@ const CustomRoleManager = () => {
   };
 
   const fetchUsers = async () => {
-    const { data, error } = await supabase.functions.invoke('custom-role-management', {
-      body: { action: 'get_user_data' }
-    });
-    if (error) throw error;
-    setUsers(data || []);
+    try {
+      const { data, error } = await supabase.functions.invoke('custom-role-management', {
+        body: { action: 'get_user_data' }
+      });
+      
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
+      
+      console.log('Fetched users:', data);
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke hente brugere",
+        variant: "destructive"
+      });
+    }
   };
 
   const createRole = async () => {
@@ -389,7 +404,9 @@ const CustomRoleManager = () => {
 
   const assignRoleToUser = async () => {
     try {
-      const { error } = await supabase.functions.invoke('custom-role-management', {
+      console.log('Assigning role:', assignRole);
+      
+      const { data, error } = await supabase.functions.invoke('custom-role-management', {
         body: { 
           action: 'assign_role_to_user',
           data: {
@@ -399,6 +416,8 @@ const CustomRoleManager = () => {
           }
         }
       });
+
+      console.log('Assign role response:', { data, error });
 
       if (error) throw error;
 
@@ -411,6 +430,7 @@ const CustomRoleManager = () => {
         description: "Rollen er blevet tildelt brugeren.",
       });
     } catch (error: any) {
+      console.error('Error assigning role:', error);
       toast({
         title: "Fejl",
         description: `Kunne ikke tildele rolle: ${error.message}`,

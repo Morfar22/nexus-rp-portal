@@ -143,6 +143,11 @@ async function exchangeCodeForTokens(code: string, redirectUri: string, userId?:
 
   // If userId is provided, update the custom_users table with Discord info
   if (userId) {
+    // Build Discord avatar URL
+    const avatarUrl = discordUser.avatar 
+      ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+      : null;
+
     const { error } = await supabase
       .from('custom_users')
       .update({
@@ -152,6 +157,9 @@ async function exchangeCodeForTokens(code: string, redirectUri: string, userId?:
         discord_access_token: tokens.access_token,
         discord_refresh_token: tokens.refresh_token,
         discord_connected_at: new Date().toISOString(),
+        // Automatically set username and avatar from Discord
+        username: discordUser.username,
+        avatar_url: avatarUrl,
       })
       .eq('id', userId);
 
