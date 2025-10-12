@@ -432,11 +432,11 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Discord logger error:', error)
+    console.error('Discord logger error:', error instanceof Error ? error.message : 'Unknown error')
     return new Response(
       JSON.stringify({ 
         error: 'Failed to send Discord message', 
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error' 
       }), 
       { 
         status: 500, 

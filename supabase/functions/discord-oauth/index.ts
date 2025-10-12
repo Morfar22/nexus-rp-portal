@@ -70,11 +70,13 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    logStep("ERROR in discord-oauth", { message: error.message, stack: error.stack });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    logStep("ERROR in discord-oauth", { message: errorMessage, stack: errorStack });
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: errorMessage 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

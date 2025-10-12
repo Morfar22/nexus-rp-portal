@@ -59,11 +59,11 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Discord staff sync error:', error);
+    console.error('Discord staff sync error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -120,8 +120,9 @@ async function fetchGuildMembers(guildId: string): Promise<DiscordMember[]> {
   try {
     await makeDiscordRequest(`/guilds/${guildId}`);
   } catch (error) {
-    console.error('Failed to access guild:', error);
-    throw new Error(`Cannot access Discord server with ID ${guildId}. ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Failed to access guild:', errorMessage);
+    throw new Error(`Cannot access Discord server with ID ${guildId}. ${errorMessage}`);
   }
   
   const members = await makeDiscordRequest(`/guilds/${guildId}/members?limit=1000`);
@@ -141,6 +142,11 @@ async function syncStaffMembers(guildId: string) {
     .single();
 
   console.log('Discord settings retrieved:', JSON.stringify(settings, null, 2));
+
+  if (!settings) {
+    console.log('No Discord settings found, aborting sync');
+    return { success: false, message: 'Discord settings not configured' };
+  }
 
   // Get staff role mappings from Discord settings
   let staffRoleMappings = settings.setting_value.staff_role_mappings;

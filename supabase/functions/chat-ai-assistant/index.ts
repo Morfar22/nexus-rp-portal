@@ -371,66 +371,68 @@ Men jeg er også bare glad for at snakke! Hvad bringer dig forbi i dag? Ny på s
     console.log('AI interaction stored successfully:', interactionData?.id);
 
     // Insert AI response as a chat message so it appears in the chat
-    console.log('Attempting to insert AI message with data:', {
-      session_id: sessionId,
-      message: aiResponse.substring(0, 100) + '...',
-      sender_type: 'ai',
-      sender_name: 'AI Assistant',
-      sender_id: null
-    });
-
-    const { data: messageData, error: messageError } = await supabase
-      .from('chat_messages')
-      .insert({
+    if (aiResponse) {
+      console.log('Attempting to insert AI message with data:', {
         session_id: sessionId,
-        message: aiResponse,
+        message: aiResponse.substring(0, 100) + '...',
         sender_type: 'ai',
         sender_name: 'AI Assistant',
         sender_id: null
-      })
-      .select()
-      .single();
-
-    if (messageError) {
-      console.error('Error storing AI message:', messageError);
-      console.error('Full error details:', JSON.stringify(messageError, null, 2));
-      // Don't throw error here - still return successful AI response even if message storage fails
-    } else {
-      console.log('AI message stored successfully:', messageData?.id);
-    }
-
-    // Record analytics
-    await supabase
-      .from('chat_analytics')
-      .insert({
-        session_id: sessionId,
-        metric_type: 'ai_handled',
-        metric_value: confidenceScore,
-        metadata: {
-          question_length: message.length,
-          response_length: aiResponse.length,
-          escalated: shouldEscalate
-        }
       });
+
+      const { data: messageData, error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: sessionId,
+          message: aiResponse,
+          sender_type: 'ai',
+          sender_name: 'AI Assistant',
+          sender_id: null
+        })
+        .select()
+        .single();
+
+      if (messageError) {
+        console.error('Error storing AI message:', messageError);
+        console.error('Full error details:', JSON.stringify(messageError, null, 2));
+        // Don't throw error here - still return successful AI response even if message storage fails
+      } else {
+        console.log('AI message stored successfully:', messageData?.id);
+      }
+
+      // Record analytics
+      await supabase
+        .from('chat_analytics')
+        .insert({
+          session_id: sessionId,
+          metric_type: 'ai_handled',
+          metric_value: confidenceScore,
+          metadata: {
+            question_length: message.length,
+            response_length: aiResponse.length,
+            escalated: shouldEscalate
+          }
+        });
+    }
 
     console.log('AI response generated successfully', { confidenceScore, escalated: shouldEscalate });
 
     return new Response(JSON.stringify({
-      response: aiResponse,
+      response: aiResponse || "Jeg kunne desværre ikke generere et svar. Lad mig få fat i staff.",
       confidence: confidenceScore,
-      shouldEscalate,
+      shouldEscalate: shouldEscalate || !aiResponse,
       metadata: {
         helpful: hasHelpfulContent,
-        responseLength: aiResponse.length
+        responseLength: aiResponse?.length || 0
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in chat AI assistant:', error);
+    console.error('Error in chat AI assistant:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       response: "Ah damn, jeg har lige fået nogle tekniske problemer her! 😅 Men rolig, det sker - lad mig bare få fat i en af vores staff folk, så de kan hjælpe dig i stedet. De er ret gode til den slags!",
       shouldEscalate: true,
       confidence: 0

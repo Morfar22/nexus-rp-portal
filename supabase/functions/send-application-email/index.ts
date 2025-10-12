@@ -317,18 +317,18 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
 
-  } catch (error: any) {
-    console.error("❌ ERROR in send-application-email function:", error);
-    console.error("Error stack:", error.stack);
-    console.error("Error details:", {
-      name: error.name,
-      message: error.message,
-      cause: error.cause
-    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error("❌ ERROR in send-application-email function:", errorMessage);
+    if (errorStack) {
+      console.error("Error stack:", errorStack);
+    }
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: errorMessage,
         success: false 
       }),
       {
@@ -438,8 +438,8 @@ const handleLegacyRequest = async (requestBody: EmailRequest) => {
         ...corsHeaders,
       },
     });
-  } catch (error: any) {
-    console.error('Error in legacy email handler:', error);
+  } catch (error) {
+    console.error('Error in legacy email handler:', error instanceof Error ? error.message : 'Unknown error');
     throw error; // Re-throw to be caught by main handler
   }
 };

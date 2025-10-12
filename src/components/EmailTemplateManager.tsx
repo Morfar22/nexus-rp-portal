@@ -27,9 +27,75 @@ export const EmailTemplateManager = () => {
   const { toast } = useToast();
 
   const templateTypes = [
-    { key: 'application_submitted', label: 'Application Submitted', description: 'Sent when someone submits an application' },
-    { key: 'application_accepted', label: 'Application Accepted', description: 'Sent when an application is approved' },
-    { key: 'application_denied', label: 'Application Denied', description: 'Sent when an application is rejected' }
+    { 
+      key: 'application_submitted', 
+      label: 'Application Submitted', 
+      description: 'Sent when someone submits an application',
+      defaultSubject: 'Application Received - {{server_name}}',
+      defaultBody: `Hello {{applicant_name}},
+
+Thank you for submitting your application for {{application_type}} at {{server_name}}.
+
+We have received your application and our team will review it shortly. You should hear back from us within 48 hours.
+
+Application Details:
+- Discord: {{discord_name}}
+- Steam: {{steam_name}}
+- FiveM: {{fivem_name}}
+- Submitted: {{today_date}}
+
+If you have any questions in the meantime, feel free to reach out to us on Discord.
+
+Best regards,
+{{server_name}} Team`
+    },
+    { 
+      key: 'application_accepted', 
+      label: 'Application Accepted', 
+      description: 'Sent when an application is approved',
+      defaultSubject: '🎉 Application Approved - Welcome to {{server_name}}!',
+      defaultBody: `Congratulations {{applicant_name}}!
+
+We are pleased to inform you that your application for {{application_type}} has been APPROVED!
+
+Welcome to {{server_name}}! You can now join our server and start your adventure.
+
+{{#if review_notes}}
+Staff Notes: {{review_notes}}
+{{/if}}
+
+Next Steps:
+1. Join our Discord server if you haven't already
+2. Read our server rules carefully
+3. Connect to the FiveM server and start playing!
+
+We look forward to seeing you in the city!
+
+Best regards,
+{{server_name}} Team`
+    },
+    { 
+      key: 'application_denied', 
+      label: 'Application Denied', 
+      description: 'Sent when an application is rejected',
+      defaultSubject: 'Application Update - {{server_name}}',
+      defaultBody: `Hello {{applicant_name}},
+
+Thank you for your interest in {{application_type}} at {{server_name}}.
+
+Unfortunately, after careful review, we are unable to approve your application at this time.
+
+{{#if review_notes}}
+Feedback: {{review_notes}}
+{{/if}}
+
+You are welcome to reapply in the future. Please take the staff feedback into consideration and feel free to reach out if you have any questions.
+
+We appreciate your understanding.
+
+Best regards,
+{{server_name}} Team`
+    }
   ];
 
   useEffect(() => {
@@ -120,8 +186,9 @@ export const EmailTemplateManager = () => {
 
   const TemplateForm = ({ templateType, label }: { templateType: string; label: string }) => {
     const template = getTemplate(templateType);
-    const [subject, setSubject] = useState(template?.subject || '');
-    const [body, setBody] = useState(template?.body || '');
+    const templateConfig = templateTypes.find(t => t.key === templateType);
+    const [subject, setSubject] = useState(template?.subject || templateConfig?.defaultSubject || '');
+    const [body, setBody] = useState(template?.body || templateConfig?.defaultBody || '');
 
     useEffect(() => {
       if (template) {
@@ -129,6 +196,13 @@ export const EmailTemplateManager = () => {
         setBody(template.body);
       }
     }, [template]);
+
+    const handleReset = () => {
+      if (templateConfig) {
+        setSubject(templateConfig.defaultSubject || '');
+        setBody(templateConfig.defaultBody || '');
+      }
+    };
 
     const handleSave = () => {
       updateTemplate(templateType, subject, body);
@@ -144,6 +218,13 @@ export const EmailTemplateManager = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+            >
+              Reset to Default
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -187,20 +268,26 @@ export const EmailTemplateManager = () => {
             />
           </div>
 
-          <div className="bg-muted p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="bg-muted p-4 rounded-lg space-y-3">
+            <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-blue-500" />
               <span className="font-medium text-sm">Available Variables</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-3 gap-2 text-sm">
               <Badge variant="secondary">{'{{applicant_name}}'}</Badge>
               <Badge variant="secondary">{'{{application_type}}'}</Badge>
               <Badge variant="secondary">{'{{review_notes}}'}</Badge>
               <Badge variant="secondary">{'{{discord_name}}'}</Badge>
+              <Badge variant="secondary">{'{{steam_name}}'}</Badge>
+              <Badge variant="secondary">{'{{fivem_name}}'}</Badge>
+              <Badge variant="secondary">{'{{server_name}}'}</Badge>
+              <Badge variant="secondary">{'{{today_date}}'}</Badge>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              These variables will be replaced with actual values when emails are sent.
-            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>• Variables will be replaced with actual values when emails are sent</p>
+              <p>• Use {'{{'} and {'}}'}  to wrap variable names</p>
+              <p>• Line breaks will be preserved in plain text emails</p>
+            </div>
           </div>
         </div>
       </div>

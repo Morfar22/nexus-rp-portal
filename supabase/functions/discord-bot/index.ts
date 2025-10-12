@@ -81,11 +81,11 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Discord bot error:', error);
+    console.error('Discord bot error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
