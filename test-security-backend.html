@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Security Backend</title>
+</head>
+<body>
+    <h1>Security Backend Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const supabaseUrl = 'https://vqvluqwadoaerghwyohk.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdmx1cXdhZG9hZXJnaHd5b2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4ODc4NDksImV4cCI6MjA3MTQ2Mzg0OX0.ItCgdk_h-5fgz2LYN9tGHgmWJLHvXYuZREVeYJnoBMw';
+        
+        async function testSecurityFunction(action, data = {}) {
+            try {
+                const response = await fetch(`${supabaseUrl}/functions/v1/security-manager`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action, data })
+                });
+                
+                const result = await response.json();
+                return { success: response.ok, data: result };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function testSecurityAnalytics(action, data = {}) {
+            try {
+                const response = await fetch(`${supabaseUrl}/functions/v1/security-analytics`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action, data })
+                });
+                
+                const result = await response.json();
+                return { success: response.ok, data: result };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function runTests() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>Testing Security Backend...</h2>';
+            
+            // Test security-manager functions
+            console.log('Testing security-manager functions...');
+            
+            // Test get_security_stats
+            const statsTest = await testSecurityFunction('get_security_stats');
+            results.innerHTML += `<h3>Security Stats:</h3><pre>${JSON.stringify(statsTest, null, 2)}</pre>`;
+            
+            // Test get_audit_logs
+            const auditTest = await testSecurityFunction('get_audit_logs', { limit: 10 });
+            results.innerHTML += `<h3>Audit Logs:</h3><pre>${JSON.stringify(auditTest, null, 2)}</pre>`;
+            
+            // Test check_rate_limit
+            const rateLimitTest = await testSecurityFunction('check_rate_limit', { 
+                ipAddress: '192.168.1.1', 
+                type: 'application' 
+            });
+            results.innerHTML += `<h3>Rate Limit Check:</h3><pre>${JSON.stringify(rateLimitTest, null, 2)}</pre>`;
+            
+            // Test security-analytics functions
+            console.log('Testing security-analytics functions...');
+            
+            // Test getSecurityMetrics
+            const metricsTest = await testSecurityAnalytics('getSecurityMetrics');
+            results.innerHTML += `<h3>Security Metrics:</h3><pre>${JSON.stringify(metricsTest, null, 2)}</pre>`;
+            
+            // Test getAuditLogs
+            const analyticsAuditTest = await testSecurityAnalytics('getAuditLogs', { limit: 5 });
+            results.innerHTML += `<h3>Analytics Audit Logs:</h3><pre>${JSON.stringify(analyticsAuditTest, null, 2)}</pre>`;
+            
+            // Test getSecurityAlerts
+            const alertsTest = await testSecurityAnalytics('getSecurityAlerts');
+            results.innerHTML += `<h3>Security Alerts:</h3><pre>${JSON.stringify(alertsTest, null, 2)}</pre>`;
+            
+            results.innerHTML += '<h2>✅ Backend Security Tests Completed!</h2>';
+        }
+        
+        // Run tests when page loads
+        window.onload = runTests;
+    </script>
+</body>
+</html>
