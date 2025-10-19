@@ -117,8 +117,79 @@ serve(async (req) => {
 
       console.log('Kill switch updated successfully');
 
+      // Send webhook to Linux server
+      const webhookUrl = Deno.env.get('LINUX_WEBHOOK_URL');
+      const webhookToken = Deno.env.get('LINUX_WEBHOOK_TOKEN');
+      let linuxServerResponse = { success: false, error: null };
+
+      if (webhookUrl && webhookToken) {
+        try {
+          console.log('Sending webhook to Linux server:', webhookUrl);
+          
+          const webhookResponse = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: active ? 'shutdown' : 'startup',
+              token: webhookToken,
+              timestamp: new Date().toISOString(),
+              triggered_by: userData.email
+            })
+          });
+
+          if (webhookResponse.ok) {
+            console.log('Linux server webhook successful');
+            linuxServerResponse.success = true;
+          } else {
+            const errorText = await webhookResponse.text();
+            console.error('Linux server webhook failed:', errorText);
+            linuxServerResponse.error = `HTTP ${webhookResponse.status}: ${errorText}`;
+          }
+        } catch (webhookError: any) {
+          console.error('Error calling Linux server webhook:', webhookError);
+          linuxServerResponse.error = webhookError.message;
+        }
+      } else {
+        console.log('Linux webhook not configured, skipping...');
+        linuxServerResponse.error = 'Webhook not configured';
+      }
+
+      // Send Discord notification if configured
+      const discordWebhook = Deno.env.get('DISCORD_WEBHOOK_URL');
+      if (discordWebhook) {
+        try {
+          await fetch(discordWebhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              embeds: [{
+                title: `🚨 Kill Switch ${active ? 'ACTIVATED' : 'DEACTIVATED'}`,
+                description: active 
+                  ? '⚠️ Emergency shutdown initiated - All services are being stopped'
+                  : '✅ Services are being restored',
+                color: active ? 15158332 : 3066993, // Red or Green
+                fields: [
+                  { name: 'Triggered by', value: userData.email, inline: true },
+                  { name: 'Website', value: active ? 'Offline' : 'Online', inline: true },
+                  { name: 'Linux Server', value: linuxServerResponse.success ? (active ? 'Shutdown' : 'Starting') : 'Error', inline: true }
+                ],
+                timestamp: new Date().toISOString()
+              }]
+            })
+          });
+        } catch (discordError) {
+          console.error('Failed to send Discord notification:', discordError);
+        }
+      }
+
       return new Response(
-        JSON.stringify({ success: true, active }),
+        JSON.stringify({ 
+          success: true, 
+          active,
+          linux_server: linuxServerResponse
+        }),
         { headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

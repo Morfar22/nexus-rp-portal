@@ -3,7 +3,7 @@ import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Power, Shield, Loader2 } from 'lucide-react';
+import { AlertTriangle, Power, Shield, Loader2, Server } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
 
@@ -12,6 +12,10 @@ const KillSwitchControl = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [killSwitchActive, setKillSwitchActive] = useState(false);
+  const [linuxServerStatus, setLinuxServerStatus] = useState<{
+    success: boolean;
+    error: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -58,6 +62,9 @@ const KillSwitchControl = () => {
 
         if (error) throw error;
         setKillSwitchActive(data.active);
+        if (data.linux_server) {
+          setLinuxServerStatus(data.linux_server);
+        }
       } catch (error) {
         console.error('Error fetching kill switch status:', error);
       }
@@ -84,11 +91,24 @@ const KillSwitchControl = () => {
       if (error) throw error;
 
       setKillSwitchActive(data.active);
+      setLinuxServerStatus(data.linux_server || null);
+      
+      const linuxStatus = data.linux_server?.success 
+        ? '✅ Linux server updated' 
+        : data.linux_server?.error 
+          ? `⚠️ Linux server: ${data.linux_server.error}`
+          : '⚠️ Linux server not configured';
+      
       toast({
         title: data.active ? 'Kill Switch Activated' : 'Kill Switch Deactivated',
-        description: data.active 
-          ? 'The site is now completely shut down for all users except admins.'
-          : 'The site is now accessible to all users.',
+        description: (
+          <div className="space-y-1">
+            <p>{data.active 
+              ? 'Website is now offline for all users.' 
+              : 'Website is now accessible to all users.'}</p>
+            <p className="text-sm text-muted-foreground">{linuxStatus}</p>
+          </div>
+        ),
       });
     } catch (error: any) {
       console.error('Error toggling kill switch:', error);
@@ -142,29 +162,66 @@ const KillSwitchControl = () => {
             <div>
               <h3 className="text-lg font-semibold text-red-400 mb-2">Warning</h3>
               <p className="text-muted-foreground">
-                Activating the kill switch will immediately shut down the entire site for all users.
-                Only administrators will be able to access this control panel.
+                Activating the kill switch will immediately shut down the website and send shutdown commands to the Linux server.
                 Use this only in emergency situations.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-center space-y-6">
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-2">Current Status:</p>
-            <div className={`inline-flex items-center px-4 py-2 rounded-full ${
-              killSwitchActive 
-                ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
-                : 'bg-green-500/20 text-green-400 border border-green-500/30'
-            }`}>
-              <Power className="h-5 w-5 mr-2" />
-              <span className="font-semibold">
-                {killSwitchActive ? 'SITE OFFLINE' : 'SITE ONLINE'}
-              </span>
+        {/* Status Cards */}
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          <div className={`p-4 rounded-lg border ${
+            killSwitchActive 
+              ? 'bg-red-500/10 border-red-500/30' 
+              : 'bg-green-500/10 border-green-500/30'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Website Status</p>
+                <p className={`font-semibold ${killSwitchActive ? 'text-red-400' : 'text-green-400'}`}>
+                  {killSwitchActive ? 'OFFLINE' : 'ONLINE'}
+                </p>
+              </div>
+              <Power className={`h-8 w-8 ${killSwitchActive ? 'text-red-400' : 'text-green-400'}`} />
             </div>
           </div>
 
+          <div className={`p-4 rounded-lg border ${
+            linuxServerStatus?.success 
+              ? (killSwitchActive ? 'bg-red-500/10 border-red-500/30' : 'bg-green-500/10 border-green-500/30')
+              : 'bg-yellow-500/10 border-yellow-500/30'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Linux Server</p>
+                <p className={`font-semibold ${
+                  linuxServerStatus?.success 
+                    ? (killSwitchActive ? 'text-red-400' : 'text-green-400')
+                    : 'text-yellow-400'
+                }`}>
+                  {linuxServerStatus?.success ? (
+                    killSwitchActive ? 'SHUTDOWN' : 'RUNNING'
+                  ) : linuxServerStatus?.error ? (
+                    'ERROR'
+                  ) : (
+                    'NOT CONFIGURED'
+                  )}
+                </p>
+                {linuxServerStatus?.error && (
+                  <p className="text-xs text-yellow-400 mt-1">{linuxServerStatus.error}</p>
+                )}
+              </div>
+              <Server className={`h-8 w-8 ${
+                linuxServerStatus?.success 
+                  ? (killSwitchActive ? 'text-red-400' : 'text-green-400')
+                  : 'text-yellow-400'
+              }`} />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center space-y-6">
           <Button
             onClick={toggleKillSwitch}
             disabled={loading}
@@ -180,17 +237,19 @@ const KillSwitchControl = () => {
             ) : (
               <>
                 <Power className="h-5 w-5 mr-2" />
-                {killSwitchActive ? 'Restore Site' : 'Activate Kill Switch'}
+                {killSwitchActive ? 'Restore All Services' : 'Activate Kill Switch'}
               </>
             )}
           </Button>
         </div>
 
         <div className="mt-8 pt-6 border-t border-gaming-border">
-          <p className="text-xs text-muted-foreground text-center">
-            This action is logged and can only be performed by administrators.
-            The kill switch overrides maintenance mode.
-          </p>
+          <div className="space-y-2 text-xs text-muted-foreground">
+            <p>• This action is logged and requires administrator privileges</p>
+            <p>• Website shutdown is immediate</p>
+            <p>• Linux server commands are sent via webhook</p>
+            <p>• Discord notifications are sent (if configured)</p>
+          </div>
         </div>
       </Card>
     </div>
