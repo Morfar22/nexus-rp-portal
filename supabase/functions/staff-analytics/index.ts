@@ -21,12 +21,21 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // Try to get user, but allow unauthenticated read-only operations
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    let userData = null;
+    
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data, error: userError } = await supabaseClient.auth.getUser(token);
+      if (!userError && data) {
+        userData = data;
+      } else {
+        logStep("Authentication warning", { error: userError?.message });
+      }
+    } else {
+      logStep("Processing request without authentication");
+    }
 
     const { action, data } = await req.json();
     logStep("Request parsed", { action });
@@ -44,7 +53,7 @@ serve(async (req) => {
           status: dbError ? 'error' : 'healthy',
           response_time_ms: dbResponseTime,
           error_message: dbError?.message,
-          metadata: { checked_by: userData.user.id }
+          metadata: { checked_by: userData?.user?.id || 'anonymous' }
         });
 
         // Get recent health checks
@@ -129,7 +138,7 @@ serve(async (req) => {
           network_latency_ms: Math.floor(Math.random() * 50) + 10,
           uptime_seconds: latestMetrics?.uptime_seconds ? latestMetrics.uptime_seconds + 300 : 86400,
           status: Math.random() > 0.1 ? 'online' : 'maintenance',
-          metadata: { monitored_by: userData.user.id }
+          metadata: { monitored_by: userData?.user?.id || 'anonymous' }
         };
 
         await supabaseClient.from('server_performance_metrics').insert(newMetrics);
@@ -208,7 +217,11 @@ serve(async (req) => {
       }
 
       case 'logActivity': {
-        // Log a new activity
+        // Log a new activity - requires authentication
+        if (!userData) {
+          throw new Error("Authentication required for logging activities");
+        }
+        
         const { activity_type, title, description, severity, target_id, target_type, metadata } = data;
         
         await supabaseClient.from('audit_activity_logs').insert({
