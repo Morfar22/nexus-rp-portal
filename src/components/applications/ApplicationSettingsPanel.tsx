@@ -121,9 +121,8 @@ export const ApplicationSettingsPanel = () => {
       </CardContent>
     </Card>
 
-    <PermissionGate permission="applications.types_manage" showFallback={false}>
-      <ApplicationPermissionsManager />
-    </PermissionGate>
+    {/* Show to all staff members, not just those with specific permission */}
+    <ApplicationPermissionsManager />
     </div>
   );
 };
