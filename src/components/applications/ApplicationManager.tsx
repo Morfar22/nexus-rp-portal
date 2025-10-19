@@ -10,48 +10,61 @@ import ApplicationTypesManager from "../ApplicationTypesManager";
 import ClosedApplications from "../ClosedApplications";
 import { Application } from "./types";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
+import { PermissionGate } from "@/components/PermissionGate";
 
 const ApplicationManager = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { roleAssignments } = usePermissions();
+  const { roleAssignments, permissions } = usePermissions();
   const { user } = useCustomAuth();
 
   useEffect(() => {
     fetchApplications();
   }, []);
 
+  // Filter applications based on user permissions
   useEffect(() => {
-    // If user has admin role in custom_users table, show all applications
-    if (user?.role === 'admin' || user?.role === 'staff') {
-      setFilteredApplications(applications);
-      return;
-    }
-
-    // Filter applications based on user's staff roles from role assignments
-    if (roleAssignments.length === 0) {
-      // If no role assignments but user has staff role in custom_users, show all
-      if (user?.role === 'moderator') {
-        setFilteredApplications(applications);
-        return;
-      }
+    if (!applications || applications.length === 0) {
       setFilteredApplications([]);
       return;
     }
 
-    const userRoleNames = roleAssignments.map(ra => ra.staff_roles?.name).filter(Boolean);
-    
-    const filtered = applications.filter(app => {
-      if (!app.required_permissions || app.required_permissions.length === 0) {
-        return true;
-      }
-      return app.required_permissions.some(requiredRole => userRoleNames.includes(requiredRole));
-    });
+    // If user has applications.view permission, show all
+    if (permissions.includes('applications.view')) {
+      setFilteredApplications(applications);
+      return;
+    }
 
-    setFilteredApplications(filtered);
-  }, [applications, roleAssignments, user?.role]);
+    // If user is admin or has admin role assignments, show all
+    if (user?.role === 'admin' || roleAssignments.some(ra => ra.staff_roles?.name === 'admin')) {
+      setFilteredApplications(applications);
+      return;
+    }
+
+    // If user is staff or has staff role assignments, show all
+    if (user?.role === 'staff' || roleAssignments.some(ra => ra.staff_roles?.name === 'staff')) {
+      setFilteredApplications(applications);
+      return;
+    }
+
+    // If user has role assignments with specific permissions
+    if (roleAssignments.length > 0) {
+      const userRoleNames = roleAssignments.map(ra => ra.staff_roles?.name).filter(Boolean);
+      
+      const filtered = applications.filter(app => {
+        if (!app.required_permissions || app.required_permissions.length === 0) {
+          return true; // Show apps with no required permissions
+        }
+        return app.required_permissions.some(perm => userRoleNames.includes(perm));
+      });
+      setFilteredApplications(filtered);
+      return;
+    }
+
+    setFilteredApplications([]);
+  }, [applications, user, roleAssignments, permissions]);
 
   const fetchApplications = async () => {
     try {
@@ -314,9 +327,11 @@ const ApplicationManager = () => {
           />
         </TabsContent>
 
-        <TabsContent value="types">
-          <ApplicationTypesManager />
-        </TabsContent>
+            <TabsContent value="types">
+              <PermissionGate permission="applications.types_manage">
+                <ApplicationTypesManager />
+              </PermissionGate>
+            </TabsContent>
 
         <TabsContent value="closed">
           <ClosedApplications />

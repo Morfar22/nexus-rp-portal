@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Settings } from "lucide-react";
 import { useServerSettings } from "@/hooks/useServerSettings";
+import { ApplicationPermissionsManager } from "./ApplicationPermissionsManager";
+import { PermissionGate } from "@/components/PermissionGate";
 
 export const ApplicationSettingsPanel = () => {
   const [loading, setLoading] = useState(false);
@@ -36,14 +38,15 @@ export const ApplicationSettingsPanel = () => {
   };
 
   return (
-    <Card className="bg-gaming-card border-gaming-border">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Settings className="h-5 w-5 text-neon-purple" />
-          <span>Application Settings</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="space-y-6">
+      <Card className="bg-gaming-card border-gaming-border">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Settings className="h-5 w-5 text-neon-purple" />
+            <span>Application Settings</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label className="text-base text-foreground">Accept Applications</Label>
@@ -117,5 +120,10 @@ export const ApplicationSettingsPanel = () => {
         </div>
       </CardContent>
     </Card>
+
+    <PermissionGate permission="applications.types_manage" showFallback={false}>
+      <ApplicationPermissionsManager />
+    </PermissionGate>
+    </div>
   );
 };
