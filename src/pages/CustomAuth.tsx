@@ -685,8 +685,14 @@ const CustomAuth = () => {
   );
 };
 
-export default () => (
-  <AuthContextWrapper>
-    <CustomAuth />
-  </AuthContextWrapper>
-);
+// Export with proper named component for better lazy loading
+const CustomAuthWithWrapper = () => {
+  // This ensures the component only renders when Router context is available
+  return (
+    <AuthContextWrapper>
+      <CustomAuth />
+    </AuthContextWrapper>
+  );
+};
+
+export default CustomAuthWithWrapper;
