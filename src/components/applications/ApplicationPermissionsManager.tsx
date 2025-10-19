@@ -37,12 +37,19 @@ export const ApplicationPermissionsManager = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  console.log('ApplicationPermissionsManager: Component rendered', { 
+    rolesCount: applicationRoles.length, 
+    usersCount: users.length 
+  });
+
   useEffect(() => {
+    console.log('ApplicationPermissionsManager: Fetching data');
     fetchApplicationRoles();
     fetchUsersWithRoles();
   }, []);
 
   const fetchApplicationRoles = async () => {
+    console.log('ApplicationPermissionsManager: Fetching roles');
     const { data, error } = await supabase
       .from('staff_roles')
       .select('id, name, display_name, color')
@@ -51,9 +58,15 @@ export const ApplicationPermissionsManager = () => {
 
     if (error) {
       console.error('Error fetching application roles:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load application roles",
+        variant: "destructive",
+      });
       return;
     }
 
+    console.log('ApplicationPermissionsManager: Roles fetched', data);
     setApplicationRoles(data || []);
   };
 
