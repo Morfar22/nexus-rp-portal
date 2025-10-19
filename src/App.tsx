@@ -129,21 +129,21 @@ const AppContent = () => {
               
               
               <Route path="/application-form" element={
-                <CustomProtectedRoute>
-                  <ApplicationGate>
-                    <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<PageLoader />}>
+                  <CustomProtectedRoute>
+                    <ApplicationGate>
                       <LazyApplicationForm />
-                    </Suspense>
-                  </ApplicationGate>
-                </CustomProtectedRoute>
+                    </ApplicationGate>
+                  </CustomProtectedRoute>
+                </Suspense>
               } />
               
               <Route path="/staff" element={
-                <StaffProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<PageLoader />}>
+                  <StaffProtectedRoute>
                     <LazyStaffPanel />
-                  </Suspense>
-                </StaffProtectedRoute>
+                  </StaffProtectedRoute>
+                </Suspense>
               } />
               
               
@@ -202,19 +202,19 @@ const AppContent = () => {
               } />
               
               <Route path="/analytics" element={
-                <StaffProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<PageLoader />}>
+                  <StaffProtectedRoute>
                     <LazyAnalytics />
-                  </Suspense>
-                </StaffProtectedRoute>
+                  </StaffProtectedRoute>
+                </Suspense>
               } />
               
               <Route path="/creative-tools" element={
-                <StaffProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<PageLoader />}>
+                  <StaffProtectedRoute>
                     <LazyCreativeTools />
-                  </Suspense>
-                </StaffProtectedRoute>
+                  </StaffProtectedRoute>
+                </Suspense>
               } />
               
               <Route path="/keybinds" element={
@@ -224,11 +224,11 @@ const AppContent = () => {
               } />
               
               <Route path="/profile" element={
-                <CustomProtectedRoute>
-                  <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<PageLoader />}>
+                  <CustomProtectedRoute>
                     <LazyProfile />
-                  </Suspense>
-                </CustomProtectedRoute>
+                  </CustomProtectedRoute>
+                </Suspense>
               } />
               
               {/* Catch-all route - keep at the end */}
