@@ -712,19 +712,19 @@ const StaffPanel = () => {
         return;
       }
 
-      // Get user profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, email, full_name')
+      // Get user data from custom_users (not profiles)
+      const { data: customUsers, error: usersError } = await supabase
+        .from('custom_users')
+        .select('id, username, email, full_name, avatar_url, role, banned')
         .in('id', allUserIds);
 
-      if (profilesError) throw profilesError;
+      if (usersError) throw usersError;
 
-      // Combine new role assignments with profiles
+      // Combine new role assignments with user data
       const newStaff = roleAssignments?.map(assignment => ({
         ...assignment,
         role: assignment.staff_roles.name, // Map to expected structure
-        profiles: profiles?.find(profile => profile.id === assignment.user_id),
+        profiles: customUsers?.find(user => user.id === assignment.user_id),
         isLegacy: false
       })) || [];
 
@@ -732,7 +732,7 @@ const StaffPanel = () => {
       const legacyStaff = oldRoles?.map(role => ({
         ...role,
         role: role.role, // This already has the role in the right format
-        profiles: profiles?.find(profile => profile.id === role.user_id),
+        profiles: customUsers?.find(user => user.id === role.user_id),
         isLegacy: true
       })) || [];
 

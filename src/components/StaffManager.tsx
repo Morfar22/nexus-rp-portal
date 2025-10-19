@@ -79,18 +79,18 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
       const oldRoleUserIds = oldRoles?.map(role => role.user_id) || [];
       const allUserIds = [...new Set([...assignmentUserIds, ...oldRoleUserIds])];
 
-      // Get user profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, email, full_name')
+      // Get user data from custom_users (not profiles)
+      const { data: customUsers, error: usersError } = await supabase
+        .from('custom_users')
+        .select('id, username, email, full_name, avatar_url, role, banned')
         .in('id', allUserIds);
 
-      if (profilesError) throw profilesError;
+      if (usersError) throw usersError;
 
-      // Combine new role assignments with profiles
+      // Combine new role assignments with user data
       const newStaff = roleAssignments?.map(assignment => ({
         ...assignment,
-        profiles: profiles?.find(profile => profile.id === assignment.user_id),
+        profiles: customUsers?.find(user => user.id === assignment.user_id),
         isLegacy: false
       })) || [];
 
@@ -110,7 +110,7 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
           color: role.role === 'admin' ? '#7c3aed' : '#2563eb',
           hierarchy_level: role.role === 'admin' ? 80 : 60
         },
-        profiles: profiles?.find(profile => profile.id === role.user_id),
+        profiles: customUsers?.find(user => user.id === role.user_id),
         isLegacy: true
       })) || [];
 
@@ -136,9 +136,10 @@ const StaffManager = ({ onRefresh }: StaffManagerProps) => {
     
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
+        .from('custom_users')
+        .select('id, username, email, full_name, avatar_url')
         .ilike('email', `%${searchEmail}%`)
+        .eq('banned', false)
         .limit(10);
 
       if (error) throw error;
