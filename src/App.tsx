@@ -19,8 +19,7 @@ import PrivacyNotice from "@/components/PrivacyNotice";
 import Footer from "@/components/Footer";
 import KillSwitch from "@/components/KillSwitch";
 import Index from "./pages/Index";
-
-const LazyKillSwitchControl = lazy(() => import("./pages/KillSwitchControl"));
+import KillSwitchControl from "./pages/KillSwitchControl";
 
 // Lazy load heavy pages for better Core Web Vitals
 const LazyCustomAuth = lazy(() => import("./pages/CustomAuth"));
@@ -92,12 +91,8 @@ const AppContent = () => {
         <div className="min-h-screen flex flex-col">
           <div className="flex-1">
             <Routes>
-              {/* Emergency kill switch control - admin only */}
-              <Route path="/emergency-control" element={
-                <Suspense fallback={<PageLoader />}>
-                  <LazyKillSwitchControl />
-                </Suspense>
-              } />
+              {/* Emergency kill switch control - admin only, not lazy-loaded for reliability */}
+              <Route path="/emergency-control" element={<KillSwitchControl />} />
               
               {/* Keep Index non-lazy as it's the main landing page for LCP optimization */}
               <Route path="/" element={<Index />} />
