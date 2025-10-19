@@ -37,19 +37,12 @@ export const ApplicationPermissionsManager = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  console.log('ApplicationPermissionsManager: Component rendered', { 
-    rolesCount: applicationRoles.length, 
-    usersCount: users.length 
-  });
-
   useEffect(() => {
-    console.log('ApplicationPermissionsManager: Fetching data');
     fetchApplicationRoles();
     fetchUsersWithRoles();
   }, []);
 
   const fetchApplicationRoles = async () => {
-    console.log('ApplicationPermissionsManager: Fetching roles');
     const { data, error } = await supabase
       .from('staff_roles')
       .select('id, name, display_name, color')
@@ -66,7 +59,6 @@ export const ApplicationPermissionsManager = () => {
       return;
     }
 
-    console.log('ApplicationPermissionsManager: Roles fetched', data);
     setApplicationRoles(data || []);
   };
 

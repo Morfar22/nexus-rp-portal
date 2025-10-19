@@ -121,11 +121,7 @@ export const ApplicationSettingsPanel = () => {
       </CardContent>
     </Card>
 
-    {/* Show to all staff members, not just those with specific permission */}
-    <div className="border-2 border-red-500 p-4">
-      <p className="text-red-500 font-bold mb-2">DEBUG: ApplicationPermissionsManager should appear below</p>
-      <ApplicationPermissionsManager />
-    </div>
+    <ApplicationPermissionsManager />
     </div>
   );
 };

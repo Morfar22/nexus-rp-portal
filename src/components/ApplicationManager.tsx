@@ -14,6 +14,7 @@ import { Eye, CheckCircle, XCircle, Clock, Trash2, Webhook, Settings, Shield } f
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ApplicationPermissionsManager } from "@/components/applications/ApplicationPermissionsManager";
 
 const ApplicationSettingsPanel = () => {
   const [applicationSettings, setApplicationSettings] = useState<any>({});
@@ -175,6 +176,11 @@ const ApplicationSettingsPanel = () => {
             className="w-32 bg-gaming-dark border-gaming-border text-foreground"
           />
         </div>
+      </div>
+      
+      {/* Application Permissions Manager */}
+      <div className="mt-6">
+        <ApplicationPermissionsManager />
       </div>
     </Card>
   );
