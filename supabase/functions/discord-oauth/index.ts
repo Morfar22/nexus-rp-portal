@@ -142,14 +142,17 @@ async function exchangeCodeForTokens(code: string, redirectUri: string, userId?:
   }
 
   const discordUser = await userResponse.json();
+  
+  // Build Discord avatar URL
+  const avatarUrl = discordUser.avatar 
+    ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+    : null;
 
-  // If userId is provided, update the custom_users table with Discord info
+  // Get email from Discord
+  const discordEmail = discordUser.email || `${discordUser.id}@discord.user`;
+
+  // If userId is provided, just update existing user with Discord info
   if (userId) {
-    // Build Discord avatar URL
-    const avatarUrl = discordUser.avatar 
-      ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
-      : null;
-
     const { error } = await supabase
       .from('custom_users')
       .update({
@@ -159,7 +162,6 @@ async function exchangeCodeForTokens(code: string, redirectUri: string, userId?:
         discord_access_token: tokens.access_token,
         discord_refresh_token: tokens.refresh_token,
         discord_connected_at: new Date().toISOString(),
-        // Automatically set username and avatar from Discord
         username: discordUser.username,
         avatar_url: avatarUrl,
       })
@@ -168,13 +170,138 @@ async function exchangeCodeForTokens(code: string, redirectUri: string, userId?:
     if (error) {
       throw new Error(`Failed to save Discord connection: ${error.message}`);
     }
+
+    return {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresIn: tokens.expires_in,
+      user: {
+        id: discordUser.id,
+        username: discordUser.username,
+        discriminator: discordUser.discriminator,
+        avatar: discordUser.avatar,
+      },
+    };
   }
+
+  // No userId provided - this is a login/signup flow
+  // Check if user exists by Discord ID first
+  let { data: existingUser } = await supabase
+    .from('custom_users')
+    .select('*')
+    .eq('discord_id', discordUser.id)
+    .maybeSingle();
+
+  // If not found by Discord ID, try by email
+  if (!existingUser && discordUser.email) {
+    const { data: emailUser } = await supabase
+      .from('custom_users')
+      .select('*')
+      .eq('email', discordUser.email.toLowerCase())
+      .maybeSingle();
+    
+    if (emailUser) {
+      existingUser = emailUser;
+    }
+  }
+
+  let customUser;
+
+  if (existingUser) {
+    // User exists - update with Discord info if not already connected
+    if (!existingUser.discord_id) {
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('custom_users')
+        .update({
+          discord_id: discordUser.id,
+          discord_username: discordUser.username,
+          discord_discriminator: discordUser.discriminator,
+          discord_access_token: tokens.access_token,
+          discord_refresh_token: tokens.refresh_token,
+          discord_connected_at: new Date().toISOString(),
+          username: existingUser.username || discordUser.username,
+          avatar_url: existingUser.avatar_url || avatarUrl,
+          email_verified: true, // Auto-verify if coming from Discord
+        })
+        .eq('id', existingUser.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw new Error(`Failed to update user: ${updateError.message}`);
+      }
+      customUser = updatedUser;
+    } else {
+      customUser = existingUser;
+    }
+
+    // Check if user is banned
+    if (customUser.banned) {
+      throw new Error('Account suspended');
+    }
+  } else {
+    // User doesn't exist - create new account
+    const { data: newUser, error: createError } = await supabase
+      .from('custom_users')
+      .insert({
+        email: discordEmail.toLowerCase(),
+        username: discordUser.username,
+        discord_id: discordUser.id,
+        discord_username: discordUser.username,
+        discord_discriminator: discordUser.discriminator,
+        discord_access_token: tokens.access_token,
+        discord_refresh_token: tokens.refresh_token,
+        discord_connected_at: new Date().toISOString(),
+        avatar_url: avatarUrl,
+        email_verified: true, // Auto-verify Discord users
+        password_hash: crypto.randomUUID(), // Random password - they'll use Discord to login
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      throw new Error(`Failed to create user: ${createError.message}`);
+    }
+    customUser = newUser;
+  }
+
+  // Create session for the user
+  const sessionToken = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  const { error: sessionError } = await supabase
+    .from('custom_sessions')
+    .insert({
+      user_id: customUser.id,
+      session_token: sessionToken,
+      expires_at: expiresAt.toISOString(),
+    });
+
+  if (sessionError) {
+    throw new Error(`Failed to create session: ${sessionError.message}`);
+  }
+
+  // Update last login
+  await supabase
+    .from('custom_users')
+    .update({ last_login: new Date().toISOString() })
+    .eq('id', customUser.id);
 
   return {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
     expiresIn: tokens.expires_in,
-    user: {
+    sessionToken: sessionToken,
+    customUser: {
+      id: customUser.id,
+      email: customUser.email,
+      username: customUser.username,
+      role: customUser.role,
+      avatar_url: customUser.avatar_url,
+      email_verified: customUser.email_verified,
+      created_at: customUser.created_at,
+    },
+    discordUser: {
       id: discordUser.id,
       username: discordUser.username,
       discriminator: discordUser.discriminator,
