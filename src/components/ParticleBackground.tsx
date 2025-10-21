@@ -35,7 +35,7 @@ const ParticleBackground = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {/* Cyber Grid Background */}
       <div className="absolute inset-0 cyber-grid opacity-20" />
       
