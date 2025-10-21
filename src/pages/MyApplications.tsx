@@ -126,15 +126,15 @@ const MyApplications = () => {
     <div className="min-h-screen bg-gaming-dark">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
                 My Applications
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-muted-foreground text-sm sm:text-base lg:text-lg">
                 Track and manage your application submissions
               </p>
             </div>
@@ -142,7 +142,7 @@ const MyApplications = () => {
               onClick={fetchApplications}
               variant="outline"
               size="sm"
-              className="hover:border-neon-blue/50"
+              className="hover:border-neon-blue/50 w-full sm:w-auto"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -150,15 +150,15 @@ const MyApplications = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Statistics Overview */}
           <div className="lg:col-span-1">
             <ApplicationsOverview applications={applications} />
             
             {/* Quick Stats */}
-            <Card className="mt-6 bg-gaming-card border-gaming-border">
+            <Card className="mt-4 sm:mt-6 bg-gaming-card border-gaming-border">
               <CardHeader>
-                <CardTitle className="text-lg">Quick Stats</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Quick Stats</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
@@ -183,15 +183,16 @@ const MyApplications = () => {
           <div className="lg:col-span-2">
             <Card className="bg-gaming-card border-gaming-border">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5 text-neon-blue" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-neon-blue" />
                     <span>Your Applications</span>
                   </CardTitle>
                   <Button
                     onClick={() => navigate('/application-form')}
                     variant="neon"
                     size="sm"
+                    className="w-full sm:w-auto"
                   >
                     New Application
                   </Button>
@@ -199,7 +200,7 @@ const MyApplications = () => {
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                  <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6">
                     <TabsTrigger value="all">
                       All ({applications.length})
                     </TabsTrigger>
@@ -211,7 +212,7 @@ const MyApplications = () => {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value={activeTab} className="space-y-4">
+                  <TabsContent value={activeTab} className="space-y-3 sm:space-y-4">
                     {isLoading ? (
                       <div className="space-y-3">
                         {[1, 2, 3].map((i) => (
@@ -221,7 +222,7 @@ const MyApplications = () => {
                     ) : filteredApplications.length === 0 ? (
                       <Alert>
                         <FileText className="h-4 w-4" />
-                        <AlertDescription>
+                        <AlertDescription className="text-sm">
                           {activeTab === "all" 
                             ? "You haven't submitted any applications yet."
                             : activeTab === "open"
@@ -239,11 +240,11 @@ const MyApplications = () => {
                             key={app.id} 
                             className="bg-gaming-dark border-gaming-border hover:border-gaming-border/60 transition-all"
                           >
-                            <CardContent className="p-6">
-                              <div className="flex items-start justify-between mb-4">
+                            <CardContent className="p-4 sm:p-6">
+                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
                                 <div className="flex-1">
-                                  <div className="flex items-center space-x-2 mb-2">
-                                    <h3 className="font-semibold text-foreground text-lg">
+                                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    <h3 className="font-semibold text-foreground text-base sm:text-lg">
                                       {app.application_types?.name || 'Application'}
                                     </h3>
                                     {app.closed && (
@@ -254,23 +255,23 @@ const MyApplications = () => {
                                     )}
                                   </div>
                                   {app.application_types?.description && (
-                                    <p className="text-sm text-muted-foreground mb-3">
+                                    <p className="text-xs sm:text-sm text-muted-foreground mb-3">
                                       {app.application_types.description}
                                     </p>
                                   )}
                                 </div>
-                                <Badge className={statusColor}>
+                                <Badge className={`${statusColor} whitespace-nowrap`}>
                                   <StatusIcon className="h-3 w-3 mr-1" />
-                                  {app.status.replace('_', ' ')}
+                                  <span className="text-xs">{app.status.replace('_', ' ')}</span>
                                 </Badge>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-sm">
                                 <div className="flex items-center space-x-2 text-muted-foreground">
-                                  <Calendar className="h-4 w-4" />
+                                  <Calendar className="h-4 w-4 flex-shrink-0" />
                                   <div>
                                     <p className="text-xs text-muted-foreground">Submitted</p>
-                                    <p className="font-medium text-foreground">
+                                    <p className="font-medium text-foreground text-xs sm:text-sm">
                                       {formatRelativeTime(app.created_at)}
                                     </p>
                                   </div>
@@ -278,10 +279,10 @@ const MyApplications = () => {
                                 
                                 {app.reviewed_at && (
                                   <div className="flex items-center space-x-2 text-muted-foreground">
-                                    <Eye className="h-4 w-4" />
+                                    <Eye className="h-4 w-4 flex-shrink-0" />
                                     <div>
                                       <p className="text-xs text-muted-foreground">Reviewed</p>
-                                      <p className="font-medium text-foreground">
+                                      <p className="font-medium text-foreground text-xs sm:text-sm">
                                         {formatRelativeTime(app.reviewed_at)}
                                       </p>
                                     </div>
@@ -290,10 +291,10 @@ const MyApplications = () => {
 
                                 {app.closed_at && (
                                   <div className="flex items-center space-x-2 text-muted-foreground">
-                                    <Lock className="h-4 w-4" />
+                                    <Lock className="h-4 w-4 flex-shrink-0" />
                                     <div>
                                       <p className="text-xs text-muted-foreground">Closed</p>
-                                      <p className="font-medium text-foreground">
+                                      <p className="font-medium text-foreground text-xs sm:text-sm">
                                         {formatRelativeTime(app.closed_at)}
                                       </p>
                                     </div>
@@ -304,7 +305,7 @@ const MyApplications = () => {
                               {app.notes && (
                                 <div className="mt-4 p-3 bg-gaming-darker rounded-lg border border-gaming-border">
                                   <p className="text-xs text-muted-foreground mb-1 font-medium">Staff Notes:</p>
-                                  <p className="text-sm text-foreground">{app.notes}</p>
+                                  <p className="text-xs sm:text-sm text-foreground break-words">{app.notes}</p>
                                 </div>
                               )}
                             </CardContent>

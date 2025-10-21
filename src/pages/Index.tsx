@@ -297,35 +297,35 @@ const Index = () => {
             {settings.general_settings?.tagline || '#1 PREMIUM FIVEM EXPERIENCE'}
           </Badge>
           
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold mb-6 px-4 font-orbitron">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold mb-6 px-4 font-orbitron">
             <span className="bg-gradient-to-r from-golden-light via-neon-gold to-neon-teal bg-clip-text text-transparent text-glow animate-fade-in">
               {settings.general_settings?.server_name || 'Adventure rp'}
             </span>
           </h1>
           
-          <p className="text-lg sm:text-xl md:text-2xl text-foreground/90 mb-8 max-w-3xl mx-auto px-4 font-inter">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-foreground/90 mb-8 max-w-3xl mx-auto px-4 font-inter leading-relaxed">
             {settings.general_settings?.welcome_message || 'Experience the ultimate GTA V roleplay in our cyberpunk-themed city. Professional staff, custom content, and endless possibilities await.'}
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 px-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 px-4">
             <Button 
               variant="hero" 
               size="lg" 
-              className="text-xl px-10 py-4 font-orbitron font-bold text-white bg-gradient-to-r from-golden-light to-golden-dark hover:from-golden-dark hover:to-golden-light border-2 border-golden-light/50 hover:border-golden-light shadow-lg hover:shadow-golden-light/50 hover:scale-105 transition-all duration-300"
+              className="text-base sm:text-lg lg:text-xl px-6 sm:px-8 lg:px-10 py-3 sm:py-4 font-orbitron font-bold text-white bg-gradient-to-r from-golden-light to-golden-dark hover:from-golden-dark hover:to-golden-light border-2 border-golden-light/50 hover:border-golden-light shadow-lg hover:shadow-golden-light/50 hover:scale-105 transition-all duration-300 w-full sm:w-auto"
               onClick={handleConnectNow}
             >
-              <PlayCircle className="h-6 w-6 mr-2" />
-              {t('homepage.connect_now')}
+              <PlayCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              <span className="truncate">{t('homepage.connect_now')}</span>
             </Button>
             <Button 
               variant="hero" 
               size="lg" 
-              className="text-xl px-10 py-4 font-orbitron font-bold text-white bg-gradient-to-r from-teal-primary to-teal-light hover:from-teal-light hover:to-teal-primary border-2 border-teal-primary/50 hover:border-teal-primary shadow-lg hover:shadow-teal-primary/50 hover:scale-105 transition-all duration-300"
+              className="text-base sm:text-lg lg:text-xl px-6 sm:px-8 lg:px-10 py-3 sm:py-4 font-orbitron font-bold text-white bg-gradient-to-r from-teal-primary to-teal-light hover:from-teal-light hover:to-teal-primary border-2 border-teal-primary/50 hover:border-teal-primary shadow-lg hover:shadow-teal-primary/50 hover:scale-105 transition-all duration-300 w-full sm:w-auto"
               asChild
             >
               <Link to="/application-form">
-                <Zap className="h-6 w-6 mr-2" />
-                {t('homepage.apply_whitelist')}
+                <Zap className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+                <span className="truncate">{t('homepage.apply_whitelist')}</span>
               </Link>
             </Button>
           </div>
@@ -352,19 +352,19 @@ const Index = () => {
             </p>
           </div>
           
-           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-fr justify-items-center place-content-center">
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 auto-rows-fr justify-items-center place-content-center">
             {homepageFeatures.map((feature, index) => (
                 <Card 
                   key={index} 
-                  className="group p-6 bg-gaming-card/80 backdrop-blur-sm border-2 border-gaming-border hover:border-golden-light hover:bg-gaming-card transition-all duration-300 hover:shadow-lg hover:shadow-golden-light/30 hover:scale-105 animate-fade-in flex flex-col h-full cursor-pointer"
+                  className="group p-4 sm:p-6 bg-gaming-card/80 backdrop-blur-sm border-2 border-gaming-border hover:border-golden-light hover:bg-gaming-card transition-all duration-300 hover:shadow-lg hover:shadow-golden-light/30 hover:scale-105 animate-fade-in flex flex-col h-full cursor-pointer w-full"
                   style={{ animationDelay: `${index * 200}ms` }}
                 >
                   <div className="flex flex-col items-center text-center flex-grow">
-                    <div className="mb-4 p-4 rounded-full bg-gaming-darker/50 group-hover:bg-golden-light/20 transition-all duration-300 border border-golden-light/30 group-hover:border-golden-light">
-                      <DynamicIcon name={feature.icon} className={`h-8 w-8 ${feature.color} group-hover:scale-125 group-hover:text-golden-light transition-all duration-300`} />
+                    <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-full bg-gaming-darker/50 group-hover:bg-golden-light/20 transition-all duration-300 border border-golden-light/30 group-hover:border-golden-light">
+                      <DynamicIcon name={feature.icon} className={`h-6 w-6 sm:h-8 sm:w-8 ${feature.color} group-hover:scale-125 group-hover:text-golden-light transition-all duration-300`} />
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-3 group-hover:text-golden-light transition-colors duration-300 font-orbitron">{feature.title}</h3>
-                    <p className="text-muted-foreground group-hover:text-foreground/90 leading-relaxed font-inter transition-colors duration-300">{feature.description}</p>
+                    <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground mb-2 sm:mb-3 group-hover:text-golden-light transition-colors duration-300 font-orbitron">{feature.title}</h3>
+                    <p className="text-xs sm:text-sm lg:text-base text-muted-foreground group-hover:text-foreground/90 leading-relaxed font-inter transition-colors duration-300">{feature.description}</p>
                   </div>
                 </Card>
             ))}
@@ -373,11 +373,11 @@ const Index = () => {
       </section>
 
       {/* Server Info Section */}
-      <section className="py-12 sm:py-16 lg:py-20 relative z-10">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+      <section className="py-8 sm:py-12 lg:py-16 xl:py-20 relative z-10">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
             <div className="text-center lg:text-left">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-6 font-orbitron">
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4 sm:mb-6 font-orbitron">
                 {homepageCta.title?.includes("Future") ? (
                   <>
                     {homepageCta.title.split("Future")[0]}
@@ -388,37 +388,37 @@ const Index = () => {
                   homepageCta.title
                 )}
               </h2>
-              <p className="text-base sm:text-lg text-muted-foreground mb-8 font-inter leading-relaxed">
+              <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mb-6 sm:mb-8 font-inter leading-relaxed">
                 {homepageCta.description}
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {homepageCta.features?.map((feature: string, index: number) => (
                   <div key={index} className="flex items-center space-x-3 group">
-                    <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-300 flex-shrink-0 ${
                       index % 3 === 0 ? 'bg-neon-teal shadow-[0_0_10px_hsl(var(--neon-teal))]' : 
                       index % 3 === 1 ? 'bg-neon-gold shadow-[0_0_10px_hsl(var(--neon-gold))]' : 'bg-neon-blue shadow-[0_0_10px_hsl(var(--neon-blue))]'
                     } group-hover:scale-125`} />
-                    <span className="text-foreground font-inter group-hover:text-golden-primary transition-colors">{feature}</span>
+                    <span className="text-sm sm:text-base text-foreground font-inter group-hover:text-golden-primary transition-colors">{feature}</span>
                   </div>
                 ))}
               </div>
             </div>
             
-            <Card className="group p-8 bg-gaming-card/80 backdrop-blur-sm border-2 border-gaming-border hover:border-teal-primary hover:bg-gaming-card transition-all duration-300 hover:shadow-lg hover:shadow-teal-primary/30 hover:scale-105 cursor-pointer">
+            <Card className="group p-4 sm:p-6 lg:p-8 bg-gaming-card/80 backdrop-blur-sm border-2 border-gaming-border hover:border-teal-primary hover:bg-gaming-card transition-all duration-300 hover:shadow-lg hover:shadow-teal-primary/30 hover:scale-105 cursor-pointer">
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-foreground mb-6 font-orbitron flex items-center justify-center group-hover:text-teal-primary transition-colors duration-300">
-                  <Gamepad2 className="h-6 w-6 mr-2 text-teal-primary group-hover:scale-110 transition-transform duration-300" />
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-4 sm:mb-6 font-orbitron flex items-center justify-center group-hover:text-teal-primary transition-colors duration-300">
+                  <Gamepad2 className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-teal-primary group-hover:scale-110 transition-transform duration-300" />
                   {t('homepage.server_information')}
                 </h3>
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <span className="text-muted-foreground font-inter">{t('homepage.server_ip')}:</span>
-                    <code className="bg-gaming-dark px-4 py-2 rounded font-mono text-teal-primary border border-teal-primary/30">
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
+                    <span className="text-xs sm:text-sm text-muted-foreground font-inter">{t('homepage.server_ip')}:</span>
+                    <code className="bg-gaming-dark px-3 sm:px-4 py-2 rounded font-mono text-xs sm:text-sm text-teal-primary border border-teal-primary/30 break-all">
                       {serverInfo.displayIp}
                     </code>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <span className="text-muted-foreground font-inter">{t('homepage.discord')}:</span>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
+                    <span className="text-xs sm:text-sm text-muted-foreground font-inter">{t('homepage.discord')}:</span>
                     <Button 
                       variant="neon" 
                       size="sm"
