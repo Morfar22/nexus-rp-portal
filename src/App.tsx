@@ -25,6 +25,7 @@ import KillSwitchControl from "./pages/KillSwitchControl";
 const LazyCustomAuth = lazy(() => import("./pages/CustomAuth"));
 
 const LazyApplicationForm = lazy(() => import("./pages/ApplicationForm"));
+const LazyMyApplications = lazy(() => import("./pages/MyApplications"));
 const LazyRules = lazy(() => import("./pages/Rules"));
 const LazyLaws = lazy(() => import("./pages/Laws"));
 const LazyStaffPanel = lazy(() => import("./pages/StaffPanel"));
@@ -129,6 +130,14 @@ const AppContent = () => {
                     <ApplicationGate>
                       <LazyApplicationForm />
                     </ApplicationGate>
+                  </CustomProtectedRoute>
+                </Suspense>
+              } />
+              
+              <Route path="/my-applications" element={
+                <Suspense fallback={<PageLoader />}>
+                  <CustomProtectedRoute>
+                    <LazyMyApplications />
                   </CustomProtectedRoute>
                 </Suspense>
               } />
