@@ -464,7 +464,7 @@ const Navbar = () => {
                 <Menu className="h-6 w-6 text-foreground" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[380px] bg-gaming-card/95 border-gaming-border backdrop-blur-xl">
+            <SheetContent side="right" className="w-[90vw] sm:w-[380px] max-w-[380px] bg-gaming-card/95 border-gaming-border backdrop-blur-xl overflow-y-auto">
               <div className="flex flex-col mt-8">
                 <div className="border-b border-gaming-border pb-6 mb-2">
                   <div className="flex items-center space-x-4">
