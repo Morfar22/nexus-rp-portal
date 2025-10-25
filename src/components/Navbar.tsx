@@ -443,11 +443,11 @@ const Navbar = () => {
   };
 
   const UserSection = () => (
-    <div className="flex flex-col md:flex-row items-start md:items-center space-y-3 md:space-y-0 md:space-x-4">
+    <div className="flex flex-col md:flex-row items-start md:items-center space-y-3 md:space-y-0 md:space-x-3 lg:space-x-4">
       {user ? (
         <>
-          <Link to="/profile" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-            <Avatar className="h-8 w-8">
+          <Link to="/profile" className="flex items-center space-x-2 sm:space-x-3 hover:opacity-80 transition-opacity">
+            <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
               <AvatarImage 
                 src={userProfile?.avatar_url || user.avatar_url} 
                 alt={userProfile?.username || user.username || user.email || 'User'} 
@@ -456,7 +456,7 @@ const Navbar = () => {
                 {(userProfile?.username || user.username || user.email || 'U').charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm text-foreground">
+            <span className="text-xs sm:text-sm text-foreground hidden sm:block">
               {userProfile?.username || user.username || user.full_name || user.email}
             </span>
           </Link>
@@ -467,10 +467,10 @@ const Navbar = () => {
               signOut();
               setIsOpen(false);
             }}
-            className="hover:border-neon-purple/50 w-full md:w-auto"
+            className="hover:border-neon-purple/50 w-full md:w-auto text-xs sm:text-sm px-2 sm:px-3"
           >
-            <LogOut className="h-4 w-4 mr-1" />
-            {t('common.logout')}
+            <LogOut className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+            <span className="hidden sm:inline">{t('common.logout')}</span>
           </Button>
         </>
       ) : (
@@ -478,11 +478,11 @@ const Navbar = () => {
           variant="neon" 
           size="sm" 
           asChild 
-          className="w-full md:w-auto"
+          className="w-full md:w-auto text-xs sm:text-sm px-2 sm:px-3"
         >
           <Link to="/auth" onClick={() => setIsOpen(false)}>
-            <LogIn className="h-4 w-4 mr-1" />
-            {t('common.login')}
+            <LogIn className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+            <span className="hidden sm:inline">{t('common.login')}</span>
           </Link>
         </Button>
       )}
@@ -491,20 +491,20 @@ const Navbar = () => {
 
   return (
      <nav className="border-b border-gaming-border bg-gaming-card/95 backdrop-blur-xl sticky top-0 z-50 shadow-xl shadow-gaming-darker/20">
-      <div ref={containerRef} className="container mx-auto px-6 h-18 flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-3 group">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-primary via-primary/90 to-secondary transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-primary/25">
-            <Server className="h-7 w-7 text-white" />
+      <div ref={containerRef} className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 h-16 sm:h-17 md:h-18 flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
+        <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group shrink-0">
+          <div className="p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary via-primary/90 to-secondary transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-primary/25">
+            <Server className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
           </div>
-          <div className="animate-fade-in relative">
+          <div className="animate-fade-in relative hidden sm:block">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 rounded-lg blur-xl opacity-60 animate-pulse" />
             <div className="relative z-10">
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent tracking-tight drop-shadow-sm">
+              <span className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent tracking-tight drop-shadow-sm">
                 {serverName}
               </span>
-              <div className="flex items-center space-x-2 -mt-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-primary to-secondary animate-pulse" />
-                <p className="text-xs text-muted-foreground/90 tracking-wider uppercase font-semibold bg-gradient-to-r from-muted-foreground/60 to-muted-foreground/90 bg-clip-text text-transparent">
+              <div className="flex items-center space-x-1.5 sm:space-x-2 -mt-0.5">
+                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-gradient-to-r from-primary to-secondary animate-pulse" />
+                <p className="text-[10px] sm:text-xs text-muted-foreground/90 tracking-wider uppercase font-semibold bg-gradient-to-r from-muted-foreground/60 to-muted-foreground/90 bg-clip-text text-transparent">
                   {t('common.dashboard')}
                 </p>
               </div>
@@ -563,11 +563,11 @@ const Navbar = () => {
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="bg-gaming-card/80 border-gaming-border/60 hover:bg-gaming-darker/70 backdrop-blur-md shadow-lg px-6"
+                  className="bg-gaming-card/80 border-gaming-border/60 hover:bg-gaming-darker/70 backdrop-blur-md shadow-lg px-3 sm:px-4 md:px-6 text-xs sm:text-sm"
                 >
-                  <Menu className="h-5 w-5 mr-2" />
-                  Navigation
-                  <ChevronDown className="h-4 w-4 ml-2" />
+                  <Menu className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
+                  <span className="hidden sm:inline">Navigation</span>
+                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -578,9 +578,13 @@ const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            <div className="flex items-center space-x-4">
-              <CFXStatusIndicator />
-              <LanguageSwitcher />
+            <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
+              <div className="hidden lg:block">
+                <CFXStatusIndicator />
+              </div>
+              <div className="hidden md:block">
+                <LanguageSwitcher />
+              </div>
               <UserSection />
             </div>
           </>
