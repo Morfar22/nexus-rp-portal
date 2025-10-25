@@ -213,7 +213,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           severity: string
           target_id: string | null
@@ -228,7 +228,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           severity?: string
           target_id?: string | null
@@ -243,7 +243,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           severity?: string
           target_id?: string | null
@@ -258,7 +258,7 @@ export type Database = {
           action: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_values: Json | null
           old_values: Json | null
           resource_id: string | null
@@ -270,7 +270,7 @@ export type Database = {
           action: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           resource_id?: string | null
@@ -282,7 +282,7 @@ export type Database = {
           action?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           resource_id?: string | null
@@ -442,7 +442,7 @@ export type Database = {
           banned_by: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           reason: string | null
           user_id: string | null
           visitor_email: string | null
@@ -453,7 +453,7 @@ export type Database = {
           banned_by: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           reason?: string | null
           user_id?: string | null
           visitor_email?: string | null
@@ -464,7 +464,7 @@ export type Database = {
           banned_by?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           reason?: string | null
           user_id?: string | null
           visitor_email?: string | null
@@ -729,7 +729,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           last_accessed: string
           session_token: string
           user_agent: string | null
@@ -739,7 +739,7 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_accessed?: string
           session_token: string
           user_agent?: string | null
@@ -749,7 +749,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_accessed?: string
           session_token?: string
           user_agent?: string | null
@@ -2174,7 +2174,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           last_activity: string
           session_token: string
           user_agent: string | null
@@ -2184,7 +2184,7 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_activity?: string
           session_token: string
           user_agent?: string | null
@@ -2194,7 +2194,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_activity?: string
           session_token?: string
           user_agent?: string | null
@@ -2243,7 +2243,7 @@ export type Database = {
           duration_seconds: number | null
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           page_path: string
           recorded_at: string
@@ -2259,7 +2259,7 @@ export type Database = {
           duration_seconds?: number | null
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           page_path: string
           recorded_at?: string
@@ -2275,7 +2275,7 @@ export type Database = {
           duration_seconds?: number | null
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           page_path?: string
           recorded_at?: string
@@ -2336,18 +2336,12 @@ export type Database = {
       }
     }
     Functions: {
-      analytics_query_deprecated: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      analytics_query_deprecated: { Args: never; Returns: Json }
       calculate_supporter_tier: {
         Args: { total_amount: number }
         Returns: string
       }
-      check_missed_chats: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_missed_chats: { Args: never; Returns: undefined }
       check_role_for_user: {
         Args: { required_role: string; user_uuid: string }
         Returns: boolean
@@ -2364,20 +2358,11 @@ export type Database = {
         Args: { required_role?: string; user_id: string }
         Returns: boolean
       }
-      get_all_permissions_for_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
-      get_current_custom_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_all_permissions_for_admin: { Args: never; Returns: string[] }
+      get_current_custom_user_id: { Args: never; Returns: string }
+      get_current_user_role: { Args: never; Returns: string }
       get_permissions_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           category: string
           created_at: string
@@ -2394,7 +2379,7 @@ export type Database = {
         }[]
       }
       get_staff_roles_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           color: string
           created_at: string
@@ -2408,10 +2393,7 @@ export type Database = {
           updated_at: string
         }[]
       }
-      get_user_current_role: {
-        Args: { user_uuid?: string }
-        Returns: string
-      }
+      get_user_current_role: { Args: { user_uuid?: string }; Returns: string }
       get_user_data: {
         Args: { user_uuid?: string }
         Returns: {
@@ -2434,12 +2416,9 @@ export type Database = {
           username: string
         }[]
       }
-      get_user_role: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      get_user_role: { Args: { user_id: string }; Returns: string }
       get_user_role_assignments_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           assigned_at: string
           assigned_by: string
@@ -2485,22 +2464,10 @@ export type Database = {
         Args: { check_user_uuid?: string }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_moderator_or_above: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_staff: {
-        Args: { check_user_uuid?: string }
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
+      is_current_user_admin: { Args: never; Returns: boolean }
+      is_moderator_or_above: { Args: never; Returns: boolean }
+      is_staff: { Args: { check_user_uuid?: string }; Returns: boolean }
       log_analytics_event: {
         Args: {
           event_type: string
