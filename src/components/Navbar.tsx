@@ -1,12 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { 
-  Server, LogIn, LogOut, User, Menu, X,
+  Server, LogIn, LogOut, User, Menu, X, ChevronDown,
   Home, FileSearch, Scale, CreditCard, Users as UsersIcon, 
   Globe, Heart, Tv, UserCheck, Trophy, Calendar, 
   Vote, FileText, BarChart3, Palette, Shield, Settings,
   type LucideIcon
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 // Icon mapping for dynamic icon support
 const iconMap: Record<string, LucideIcon> = {
@@ -276,6 +284,7 @@ const Navbar = () => {
   }, []);
 
 
+
   const NavLinks = ({ forceVertical = false }: { forceVertical?: boolean } = {}) => {
     const location = useLocation();
     
@@ -378,6 +387,57 @@ const Navbar = () => {
             </Link>
           );
         })}
+      </>
+    );
+  };
+
+  const DropdownNavLinks = () => {
+    const location = useLocation();
+    
+    if (!configLoaded) {
+      return null;
+    }
+
+    // Group items by their group property
+    const groupedItems: Record<string, typeof visibleItems> = {};
+    visibleItems.forEach(item => {
+      const groupName = item.group || 'Navigation';
+      if (!groupedItems[groupName]) {
+        groupedItems[groupName] = [];
+      }
+      groupedItems[groupName].push(item);
+    });
+
+    return (
+      <>
+        {Object.entries(groupedItems).map(([groupName, items], groupIndex) => (
+          <div key={groupName}>
+            {groupIndex > 0 && <DropdownMenuSeparator className="bg-gaming-border/50" />}
+            <DropdownMenuLabel className="text-primary font-bold text-xs uppercase tracking-wider px-3 py-2">
+              {groupName}
+            </DropdownMenuLabel>
+            {items.map((item) => {
+              const IconComponent = item.icon ? iconMap[item.icon] || Home : Home;
+              
+              return (
+                <DropdownMenuItem 
+                  key={item.id} 
+                  asChild
+                  className={`cursor-pointer ${
+                    location.pathname === item.path 
+                      ? "bg-primary/20 text-primary" 
+                      : "hover:bg-gaming-darker/60"
+                  }`}
+                >
+                  <Link to={item.path} className="flex items-center px-3 py-2">
+                    <IconComponent className="h-4 w-4 mr-3" />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
+          </div>
+        ))}
       </>
     );
   };
@@ -497,13 +557,26 @@ const Navbar = () => {
             </SheetContent>
           </Sheet>
         ) : (
-          /* Desktop navigation when not overflowing */
+          /* Desktop navigation with dropdown menu */
           <>
-            <div ref={contentRef} className="flex items-center space-x-2 bg-gaming-card/80 rounded-2xl px-4 py-3 border border-gaming-border/60 overflow-x-auto navbar-scrollbar max-w-[60vw] backdrop-blur-md shadow-lg shadow-gaming-darker/10">
-              <div className="flex items-center space-x-2 min-w-max">
-                <NavLinks />
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="bg-gaming-card/80 border-gaming-border/60 hover:bg-gaming-darker/70 backdrop-blur-md shadow-lg px-6"
+                >
+                  <Menu className="h-5 w-5 mr-2" />
+                  Navigation
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="start" 
+                className="w-[280px] bg-gaming-card/95 border-gaming-border backdrop-blur-xl max-h-[70vh] overflow-y-auto z-[60]"
+              >
+                <DropdownNavLinks />
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <div className="flex items-center space-x-4">
               <CFXStatusIndicator />
