@@ -459,7 +459,7 @@ const Navbar = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="hover:bg-gaming-darker/80 hover:scale-110 transition-all duration-300 rounded-lg"
+                className="hover:bg-gaming-darker/80 hover:scale-110 transition-all duration-300 rounded-lg relative z-[60]"
               >
                 <Menu className="h-6 w-6 text-foreground" />
               </Button>
