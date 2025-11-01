@@ -49,20 +49,29 @@ serve(async (req) => {
     const results = await Promise.allSettled(
       servers.map(async (server) => {
         try {
-          const response = await supabase.functions.invoke('fetch-individual-server-stats', {
-            body: { 
+          // Call the edge function with proper authorization
+          const functionUrl = `${supabaseUrl}/functions/v1/fetch-individual-server-stats`;
+          const response = await fetch(functionUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({ 
               serverId: server.id, 
               serverIp: server.ip_address, 
               port: server.port 
-            }
+            })
           });
 
-          if (response.error) {
-            console.error(`Error updating server ${server.name}:`, response.error);
-            return { serverId: server.id, success: false, error: response.error };
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Error updating server ${server.name}:`, errorText);
+            return { serverId: server.id, success: false, error: errorText };
           }
 
-          return { serverId: server.id, success: true, data: response.data };
+          const data = await response.json();
+          return { serverId: server.id, success: true, data };
         } catch (error) {
           console.error(`Exception updating server ${server.name}:`, error);
           return { serverId: server.id, success: false, error: error.message };

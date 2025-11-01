@@ -47,6 +47,8 @@ const ServerStats = () => {
 
   useEffect(() => {
     fetchServerStats();
+    // Trigger initial stats update from FiveM servers
+    updateAllServerStats();
 
     // Set up real-time subscription with better error handling
     const channel = supabase
@@ -75,13 +77,19 @@ const ServerStats = () => {
         }
       });
 
-    // Auto-refresh every 30 seconds regardless of real-time
+    // Auto-refresh every 30 seconds - fetch from database
     const refreshInterval = setInterval(() => {
       fetchServerStats();
     }, 30000);
 
+    // Update live stats from FiveM server every 2 minutes
+    const liveStatsInterval = setInterval(() => {
+      updateAllServerStats();
+    }, 120000);
+
     return () => {
       clearInterval(refreshInterval);
+      clearInterval(liveStatsInterval);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -92,6 +100,25 @@ const ServerStats = () => {
     }, 10000); // Poll every 10 seconds as fallback
 
     return () => clearInterval(pollingInterval);
+  };
+
+  const updateAllServerStats = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('update-all-server-stats', {
+        method: 'POST',
+        body: {}
+      });
+
+      if (error) {
+        console.error("Error updating server stats:", error);
+      } else {
+        console.log("Server stats updated successfully");
+        // Fetch updated stats after a short delay
+        setTimeout(() => fetchServerStats(), 2000);
+      }
+    } catch (error) {
+      console.error("Error updating server stats:", error);
+    }
   };
 
   const fetchServerStats = async () => {
