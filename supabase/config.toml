@@ -56,3 +56,9 @@ verify_jwt = false
 
 [functions.kill-switch]
 verify_jwt = false
+
+[functions.fetch-individual-server-stats]
+verify_jwt = false
+
+[functions.update-all-server-stats]
+verify_jwt = false

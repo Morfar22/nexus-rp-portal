@@ -114,7 +114,7 @@ serve(async (req) => {
       .from('individual_server_stats')
       .select('id')
       .eq('server_id', serverId)
-      .single();
+      .maybeSingle();
 
     let result;
     if (existingStats) {
