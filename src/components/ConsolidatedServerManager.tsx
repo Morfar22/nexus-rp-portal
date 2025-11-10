@@ -26,6 +26,7 @@ import {
   Settings,
   BarChart3
 } from "lucide-react";
+import CFXServerSettings from "@/components/CFXServerSettings";
 
 interface ServerData {
   id: string;
@@ -383,6 +384,9 @@ export default function ConsolidatedServerManager() {
 
   return (
     <div className="space-y-6">
+      {/* CFX.re Server Settings */}
+      <CFXServerSettings />
+
       {/* Server Configuration */}
       <Card className="bg-gaming-card border-gaming-border">
         <CardHeader>
