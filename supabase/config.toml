@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.update-all-server-stats]
 verify_jwt = false
+
+[functions.translation-sync]
+verify_jwt = false

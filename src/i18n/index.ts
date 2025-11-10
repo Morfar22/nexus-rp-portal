@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 // Import translations
 import en from './locales/en.json';
@@ -19,11 +19,6 @@ const resources = {
   pt: { translation: pt },
   da: { translation: da }
 };
-
-// Initialize Supabase client for translation overrides
-const supabaseUrl = "https://vqvluqwadoaerghwyohk.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdmx1cXdhZG9hZXJnaHd5b2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4ODc4NDksImV4cCI6MjA3MTQ2Mzg0OX0.ItCgdk_h-5fgz2LYN9tGHgmWJLHvXYuZREVeYJnoBMw";
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Load translation overrides from database
 const loadTranslationOverrides = async () => {
