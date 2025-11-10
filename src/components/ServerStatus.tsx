@@ -120,7 +120,17 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
     }
   };
 
-  const getStatusBadge = (playersOnline: number) => {
+  const getStatusBadge = (server: ServerData, playersOnline: number) => {
+    // If no CFX code and no way to verify, show unknown status
+    if (!server.cfx_server_code) {
+      return (
+        <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
+          Status Unknown
+        </Badge>
+      );
+    }
+
+    // If we have stats, server is online
     if (playersOnline > 0) {
       return (
         <Badge className="bg-neon-green/20 text-neon-green border-neon-green/30">
@@ -199,6 +209,7 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
           const live = liveStats[server.id];
           const playersOnline = live?.clients || 0;
           const maxPlayers = live?.sv_maxclients || server.max_players;
+          const hasStats = !!live;
 
           return (
             <Card key={server.id} className="p-6 bg-gaming-card/90 backdrop-blur-sm border-2 border-gaming-border hover:border-neon-teal/50 transition-all duration-300 hover:shadow-lg hover:shadow-neon-teal/20">
@@ -206,7 +217,11 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
                 {/* Server Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Wifi className="h-4 w-4 text-neon-green" />
+                    {hasStats || server.cfx_server_code ? (
+                      <Wifi className="h-4 w-4 text-neon-green" />
+                    ) : (
+                      <WifiOff className="h-4 w-4 text-gray-400" />
+                    )}
                     <div>
                       <h3 className="text-xl font-semibold text-foreground font-orbitron">
                         {server.hostname || server.name}
@@ -217,7 +232,7 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {getStatusBadge(playersOnline)}
+                    {getStatusBadge(server, playersOnline)}
                     <span className="text-xs text-muted-foreground">
                       Updated: {new Date().toLocaleTimeString()}
                     </span>
@@ -261,33 +276,35 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
 
                   {/* Status */}
                   <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <Activity className="h-6 w-6 text-neon-green" />
+                    <Activity className={`h-6 w-6 ${hasStats || server.cfx_server_code ? 'text-neon-green' : 'text-gray-400'}`} />
                     <div>
                       <p className="text-lg font-semibold text-foreground">
-                        Online
+                        {hasStats || server.cfx_server_code ? 'Online' : 'Unknown'}
                       </p>
                       <p className="text-xs text-muted-foreground">Status</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Player Capacity Bar */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Server Capacity</span>
-                    <span>
-                      {Math.round((playersOnline / maxPlayers) * 100)}%
-                    </span>
+                {/* Player Capacity Bar - Only show if we have stats */}
+                {hasStats && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Server Capacity</span>
+                      <span>
+                        {Math.round((playersOnline / maxPlayers) * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gaming-dark rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-neon-green to-neon-teal h-2 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${(playersOnline / maxPlayers) * 100}%`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full bg-gaming-dark rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-neon-green to-neon-teal h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(playersOnline / maxPlayers) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
+                )}
 
                 {/* Server Connection Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gaming-border/30">
@@ -299,9 +316,15 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gaming-darker/30 rounded-lg">
                     <span className="text-sm text-muted-foreground">Status:</span>
-                    <Badge className="bg-neon-green/20 text-neon-green border-neon-green/30">
-                      ONLINE
-                    </Badge>
+                    {hasStats || server.cfx_server_code ? (
+                      <Badge className="bg-neon-green/20 text-neon-green border-neon-green/30">
+                        ONLINE
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
+                        UNKNOWN
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
