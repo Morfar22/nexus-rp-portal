@@ -6,19 +6,26 @@ import { Users, Server, Clock, Zap, Globe, Activity, Wifi, WifiOff } from "lucid
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+interface CFXServerStats {
+  hostname: string;
+  clients: number;
+  sv_maxclients: number;
+  players: any[];
+  gametype: string;
+  mapname: string;
+  server: string;
+  connectEndPoint: string;
+}
+
 interface ServerData {
-  id: string;
-  name: string;
-  ip_address: string;
-  port: number;
-  is_active: boolean;
-  stats?: {
+  hostname: string;
+  connectEndPoint: string;
+  stats: {
     players_online: number;
     max_players: number;
-    queue_count: number;
-    uptime_percentage: number;
-    ping_ms: number;
     server_online: boolean;
+    gametype: string;
+    mapname: string;
     last_updated: string;
   };
 }
@@ -29,183 +36,81 @@ interface ServerDashboardProps {
 }
 
 const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashboardProps) => {
-  const [servers, setServers] = useState<ServerData[]>([]);
+  const [serverData, setServerData] = useState<ServerData | null>(null);
   const [serverInfo, setServerInfo] = useState({
     displayIp: 'connect adventure-rp.com',
     discordUrl: 'https://discord.gg/adventure-rp',
     status: 'online'
   });
+  const [cfxServerCode, setCfxServerCode] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchServers();
+    fetchCFXSettings();
     fetchServerInfo();
-    
-    // Set up 30-second interval for updates
-    const interval = setInterval(fetchServers, 30000);
-
-    // Set up realtime subscriptions
-    const serverStatsChannel = supabase
-      .channel("server-stats-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "server_stats",
-        },
-        (payload) => {
-          console.log("Server stats updated:", payload);
-          fetchServers(); // Refresh all data when stats change
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "individual_server_stats",
-        },
-        (payload) => {
-          console.log("Individual server stats updated:", payload);
-          fetchServers(); // Refresh all data when individual stats change
-        }
-      )
-      .subscribe();
-
-    return () => {
-      clearInterval(interval);
-      supabase.removeChannel(serverStatsChannel);
-    };
   }, []);
 
-  const fetchServers = async () => {
+  useEffect(() => {
+    if (cfxServerCode) {
+      fetchServerStats();
+      const interval = setInterval(fetchServerStats, 60000); // Update every minute
+      return () => clearInterval(interval);
+    }
+  }, [cfxServerCode]);
+
+  const fetchCFXSettings = async () => {
     try {
-      // Fetch servers from database
-      const { data: serversData, error: serversError } = await supabase
-        .from("servers")
-        .select("*")
-        .eq("is_active", true)
-        .order("name");
+      const { data, error } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'cfxre_server_code')
+        .maybeSingle();
 
-      if (serversError) throw serversError;
-
-      // If no servers in database, create a default server entry
-      if (!serversData || serversData.length === 0) {
-        const defaultServer = {
-          id: 'main-server',
-          name: 'Adventure RP Main Server',
-          ip_address: '95.216.29.189',
-          port: 30120,
-          is_active: true
-        };
-
-        // Try to get real stats from enhanced-server-stats function
-        try {
-          const { data: statsData, error: statsError } = await supabase.functions.invoke('enhanced-server-stats', {
-            body: { server_id: 'main' }
-          });
-
-          if (statsError) throw statsError;
-
-          const serverStats = statsData?.success && statsData.data ? {
-            players_online: statsData.data.players_online || 0,
-            max_players: statsData.data.max_players || 64,
-            queue_count: 0,
-            uptime_percentage: statsData.data.uptime_percentage || 0,
-            ping_ms: statsData.data.response_time || 0,
-            server_online: statsData.data.status === 'online',
-            last_updated: new Date().toISOString(),
-          } : {
-            players_online: 0,
-            max_players: 64,
-            queue_count: 0,
-            uptime_percentage: 0,
-            ping_ms: 0,
-            server_online: false,
-            last_updated: new Date().toISOString(),
-          };
-
-          setServers([{
-            ...defaultServer,
-            stats: serverStats
-          }]);
-        } catch (error) {
-          console.error("Error fetching stats:", error);
-          setServers([{
-            ...defaultServer,
-            stats: {
-              players_online: 0,
-              max_players: 64,
-              queue_count: 0,
-              uptime_percentage: 0,
-              ping_ms: 0,
-              server_online: false,
-              last_updated: new Date().toISOString(),
-            }
-          }]);
-        }
-      } else {
-        // Use enhanced-server-stats function for real data
-        const serversWithStats = await Promise.all(
-          serversData.map(async (server) => {
-            try {
-              const { data: statsData, error: statsError } = await supabase.functions.invoke('enhanced-server-stats', {
-                body: { server_id: server.id }
-              });
-
-              if (statsError) throw statsError;
-
-              const serverStats = statsData?.success && statsData.data ? {
-                players_online: statsData.data.players_online || 0,
-                max_players: statsData.data.max_players || 64,
-                queue_count: 0,
-                uptime_percentage: statsData.data.uptime_percentage || 0,
-                ping_ms: statsData.data.response_time || 0,
-                server_online: statsData.data.status === 'online',
-                last_updated: new Date().toISOString(),
-              } : {
-                players_online: 0,
-                max_players: 64,
-                queue_count: 0,
-                uptime_percentage: 0,
-                ping_ms: 0,
-                server_online: false,
-                last_updated: new Date().toISOString(),
-              };
-
-              return {
-                ...server,
-                stats: serverStats
-              };
-            } catch (error) {
-              console.error(`Error fetching stats for server ${server.id}:`, error);
-              return {
-                ...server,
-                stats: {
-                  players_online: 0,
-                  max_players: 64,
-                  queue_count: 0,
-                  uptime_percentage: 0,
-                  ping_ms: 0,
-                  server_online: false,
-                  last_updated: new Date().toISOString(),
-                }
-              };
-            }
-          })
-        );
-
-        setServers(serversWithStats);
+      if (error) throw error;
+      if (data?.setting_value) {
+        setCfxServerCode(String(data.setting_value));
       }
     } catch (error) {
-      console.error("Error fetching servers:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch server data",
-        variant: "destructive",
-      });
+      console.error('Error fetching CFX settings:', error);
+    }
+  };
+
+  const fetchServerStats = async () => {
+    if (!cfxServerCode) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://servers-frontend.fivem.net/api/servers/single/${cfxServerCode}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data?.Data) {
+        const cfxData: CFXServerStats = data.Data;
+        setServerData({
+          hostname: cfxData.hostname,
+          connectEndPoint: cfxData.connectEndPoint || '',
+          stats: {
+            players_online: cfxData.clients,
+            max_players: cfxData.sv_maxclients,
+            server_online: true,
+            gametype: cfxData.gametype || 'N/A',
+            mapname: cfxData.mapname || 'N/A',
+            last_updated: new Date().toISOString(),
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching server stats:', error);
+      setServerData(null);
     } finally {
       setLoading(false);
     }
@@ -242,8 +147,7 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
 
   const handleRefreshStats = async () => {
     try {
-      // Simply refresh the data by calling fetchServers
-      await fetchServers();
+      await fetchServerStats();
       await fetchServerInfo();
       
       toast({
@@ -318,6 +222,18 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
     );
   }
 
+  if (!cfxServerCode && !loading) {
+    return (
+      <Card className="p-8 bg-gaming-card/50 border-gaming-border text-center">
+        <Server className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-muted-foreground mb-2">No CFX Server Configured</h3>
+        <p className="text-sm text-muted-foreground">
+          Configure your CFX.re server code in Server Management to display live statistics.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {showTitle && (
@@ -339,32 +255,26 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
       )}
 
       <div className="grid gap-6">
-        {servers.map((server) => (
-          <Card
-            key={server.id}
-            className="p-6 bg-gaming-card/90 backdrop-blur-sm border-2 border-gaming-border hover:border-neon-teal/50 transition-all duration-300 hover:shadow-lg hover:shadow-neon-teal/20"
-          >
+        {serverData && (
+          <Card className="p-6 bg-gaming-card/90 backdrop-blur-sm border-2 border-gaming-border hover:border-neon-teal/50 transition-all duration-300 hover:shadow-lg hover:shadow-neon-teal/20">
             <div className="space-y-4">
               {/* Server Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  {getServerStatusIcon(server.stats?.server_online || false)}
+                  {getServerStatusIcon(serverData.stats.server_online)}
                   <div>
                     <h3 className="text-xl font-semibold text-foreground font-orbitron">
-                      {server.name}
+                      {serverData.hostname}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {server.ip_address}:{server.port}
+                      {serverData.connectEndPoint || 'FiveM Server'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {getStatusBadge(server.stats?.server_online || false, server.stats?.players_online || 0)}
+                  {getStatusBadge(serverData.stats.server_online, serverData.stats.players_online)}
                   <span className="text-xs text-muted-foreground">
-                    Updated: {server.stats?.last_updated ? 
-                      new Date(server.stats.last_updated).toLocaleTimeString() : 
-                      'Unknown'
-                    }
+                    Updated: {new Date(serverData.stats.last_updated).toLocaleTimeString()}
                   </span>
                 </div>
               </div>
@@ -376,113 +286,105 @@ const ServerDashboard = ({ showTitle = true, compactMode = false }: ServerDashbo
                   <Users className="h-6 w-6 text-neon-green" />
                   <div>
                     <p className="text-lg font-semibold text-foreground">
-                      {server.stats?.players_online || 0}/{server.stats?.max_players || 48}
+                      {serverData.stats.players_online}/{serverData.stats.max_players}
                     </p>
                     <p className="text-xs text-muted-foreground">Players</p>
                   </div>
                 </div>
 
-                {/* Uptime */}
+                {/* Gametype */}
                 <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                  <Clock className="h-6 w-6 text-neon-blue" />
+                  <Zap className="h-6 w-6 text-neon-blue" />
                   <div>
-                    <p className="text-lg font-semibold text-foreground">
-                      {server.stats?.uptime_percentage || 0}%
+                    <p className="text-lg font-semibold text-foreground truncate">
+                      {serverData.stats.gametype}
                     </p>
-                    <p className="text-xs text-muted-foreground">Uptime</p>
+                    <p className="text-xs text-muted-foreground">Gametype</p>
                   </div>
                 </div>
 
-                {/* Queue */}
+                {/* Map */}
                 <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
                   <Globe className="h-6 w-6 text-neon-purple" />
                   <div>
-                    <p className="text-lg font-semibold text-foreground">
-                      {server.stats?.queue_count || 0}
+                    <p className="text-lg font-semibold text-foreground truncate">
+                      {serverData.stats.mapname}
                     </p>
-                    <p className="text-xs text-muted-foreground">Queue</p>
+                    <p className="text-xs text-muted-foreground">Map</p>
                   </div>
                 </div>
 
-                {/* Ping */}
+                {/* Status */}
                 <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                  <Zap
-                    className={`h-6 w-6 ${
-                      (server.stats?.ping_ms || 0) < 50
-                        ? "text-neon-green"
-                        : (server.stats?.ping_ms || 0) < 100
-                        ? "text-yellow-400"
-                        : "text-red-400"
-                    }`}
-                  />
+                  <Activity className="h-6 w-6 text-neon-green" />
                   <div>
                     <p className="text-lg font-semibold text-foreground">
-                      {server.stats?.ping_ms || 0}ms
+                      Online
                     </p>
-                    <p className="text-xs text-muted-foreground">Ping</p>
+                    <p className="text-xs text-muted-foreground">Status</p>
                   </div>
                 </div>
               </div>
 
               {/* Player Capacity Bar */}
-              {server.stats?.players_online !== undefined && server.stats?.max_players && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Server Capacity</span>
-                    <span>
-                      {Math.round((server.stats.players_online / server.stats.max_players) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gaming-dark rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-neon-green to-neon-teal h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(server.stats.players_online / server.stats.max_players) * 100}%`,
-                      }}
-                    />
-                  </div>
-                 </div>
-               )}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Server Capacity</span>
+                  <span>
+                    {Math.round((serverData.stats.players_online / serverData.stats.max_players) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gaming-dark rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-neon-green to-neon-teal h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${(serverData.stats.players_online / serverData.stats.max_players) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
 
-               {/* Server Connection Info */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gaming-border/30">
-                 <div className="flex items-center justify-between p-3 bg-gaming-darker/30 rounded-lg">
-                   <span className="text-sm text-muted-foreground">Server IP:</span>
-                   <code className="text-sm bg-gaming-dark px-2 py-1 rounded text-neon-teal border border-neon-teal/30">
-                     {serverInfo.displayIp}
-                   </code>
-                 </div>
-                 <div className="flex items-center justify-between p-3 bg-gaming-darker/30 rounded-lg">
-                   <span className="text-sm text-muted-foreground">Status:</span>
-                   <Badge className={
-                     serverInfo.status === 'online' ? 'bg-neon-green/20 text-neon-green border-neon-green/30' :
-                     serverInfo.status === 'maintenance' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' :
-                     'bg-red-500/20 text-red-500 border-red-500/30'
-                   }>
-                     {serverInfo.status.toUpperCase()}
-                   </Badge>
-                 </div>
-               </div>
-             </div>
-           </Card>
-         ))}
+              {/* Server Connection Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gaming-border/30">
+                <div className="flex items-center justify-between p-3 bg-gaming-darker/30 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Server IP:</span>
+                  <code className="text-sm bg-gaming-dark px-2 py-1 rounded text-neon-teal border border-neon-teal/30">
+                    {serverInfo.displayIp}
+                  </code>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gaming-darker/30 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  <Badge className={
+                    serverInfo.status === 'online' ? 'bg-neon-green/20 text-neon-green border-neon-green/30' :
+                    serverInfo.status === 'maintenance' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' :
+                    'bg-red-500/20 text-red-500 border-red-500/30'
+                  }>
+                    {serverInfo.status.toUpperCase()}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
-         {servers.length === 0 && (
+        {!serverData && !loading && (
           <Card className="p-8 bg-gaming-card/50 border-gaming-border text-center">
             <Server className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Servers Found</h3>
+            <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Server Data</h3>
             <p className="text-sm text-muted-foreground">
-              No active servers are currently configured.
+              Unable to fetch server statistics. Please check your CFX.re server code.
             </p>
           </Card>
         )}
       </div>
 
       {/* Auto-refresh indicator */}
-      <div className="flex items-center justify-center text-xs text-muted-foreground">
-        <Activity className="h-3 w-3 mr-1 animate-pulse" />
-        Auto-refreshes every 30 seconds
-      </div>
+      {cfxServerCode && (
+        <div className="flex items-center justify-center text-xs text-muted-foreground">
+          <Activity className="h-3 w-3 mr-1 animate-pulse" />
+          Auto-refreshes every 60 seconds
+        </div>
+      )}
     </div>
   );
 };
