@@ -147,17 +147,16 @@ serve(async (req) => {
           color: 0x3498db, // Blue
           fields: [
             { name: "Steam Name", value: steamName, inline: true },
-            { name: "Application Type", value: applicationType, inline: true },
-            { name: "Email", value: applicantEmail, inline: true },
             { name: "Discord Tag", value: discordTag, inline: true },
             { name: "FiveM Name", value: fivemName, inline: true },
+            { name: "Application Type", value: applicationType, inline: true },
             { name: "Age", value: age.toString(), inline: true },
             { name: "Status", value: "⏳ Pending Review", inline: false }
           ],
           timestamp: new Date().toISOString(),
           footer: { text: "Application Management System" }
         }
-        content = `📋 **New ${applicationType}** from **${steamName}** (${applicantEmail})`
+        content = `📋 **New ${applicationType}** from **${steamName}**`
         break
 
       case 'application_approved':
@@ -174,7 +173,6 @@ serve(async (req) => {
             { name: "Steam Name", value: approvedSteamName, inline: true },
             { name: "Discord Tag", value: approvedDiscordTag, inline: true },
             { name: "FiveM Name", value: approvedFivemName, inline: true },
-            { name: "Email", value: approvedEmail, inline: true },
             { name: "Review Notes", value: data.review_notes || "No notes provided", inline: false }
           ],
           timestamp: new Date().toISOString(),
@@ -197,7 +195,6 @@ serve(async (req) => {
             { name: "Steam Name", value: deniedSteamName, inline: true },
             { name: "Discord Tag", value: deniedDiscordTag, inline: true },
             { name: "FiveM Name", value: deniedFivemName, inline: true },
-            { name: "Email", value: deniedEmail, inline: true },
             { name: "Reason", value: data.review_notes || data.reason || "No reason provided", inline: false }
           ],
           timestamp: new Date().toISOString(),
