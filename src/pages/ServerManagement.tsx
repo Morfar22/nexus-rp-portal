@@ -342,12 +342,12 @@ export default function ServerManagement() {
           </div>
         )}
 
-        {/* Live Server Management */}
+        {/* Live Server Statistics */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Live Server Management</h2>
-              <p className="text-muted-foreground">Monitor and manage your FiveM server in real-time</p>
+              <h2 className="text-2xl font-bold text-foreground">Live Server Statistics</h2>
+              <p className="text-muted-foreground">Monitor your FiveM server in real-time using CFX.re API</p>
             </div>
             
             <Button
@@ -366,15 +366,10 @@ export default function ServerManagement() {
           <Card className="bg-gaming-card border-gaming-border">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Server className="w-16 h-16 text-muted-foreground/50 mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">Ingen server konfigureret</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Ingen CFX server konfigureret</h3>
               <p className="text-muted-foreground text-center mb-4">
-                Tilføj din CFX.re server kode for at begynde at monitore din server
+                Tilføj din CFX.re server kode i "CFX.re Server Indstillinger" sektionen ovenfor for at se live statistik
               </p>
-              {isStaff && (
-                <p className="text-sm text-muted-foreground">
-                  Brug "CFX.re Server Indstillinger" sektionen ovenfor
-                </p>
-              )}
             </CardContent>
           </Card>
         ) : serverStats ? (
