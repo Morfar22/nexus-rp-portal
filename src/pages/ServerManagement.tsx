@@ -8,12 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
-import { Server, Activity, Users, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
+import { Server, Activity, Users, RefreshCw, Settings as SettingsIcon, Gamepad2, Globe, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import CFXServerSettings from '@/components/CFXServerSettings';
 
-interface ServerStats {
+interface CFXServerStats {
   hostname: string;
   clients: number;
   sv_maxclients: number;
@@ -28,7 +28,7 @@ export default function ServerManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [serverStats, setServerStats] = useState<ServerStats | null>(null);
+  const [serverStats, setServerStats] = useState<CFXServerStats | null>(null);
   const [cfxServerCode, setCfxServerCode] = useState('');
   const [autoFetch, setAutoFetch] = useState(true);
   const [displayIp, setDisplayIp] = useState('');
@@ -378,7 +378,7 @@ export default function ServerManagement() {
             </CardContent>
           </Card>
         ) : serverStats ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Server Card */}
             <Card className="lg:col-span-2 bg-gaming-card border-gaming-border">
               <CardHeader className="pb-3">
@@ -428,6 +428,39 @@ export default function ServerManagement() {
                       <p className="text-sm text-foreground">
                         <span className="text-muted-foreground">Version:</span> {serverStats.server || 'N/A'}
                       </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Stats Grid */}
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gaming-border/30">
+                  <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
+                    <Gamepad2 className="h-6 w-6 text-neon-blue" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {serverStats.gametype}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Gametype</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
+                    <Globe className="h-6 w-6 text-neon-purple" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {serverStats.mapname}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Map</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
+                    <Zap className="h-6 w-6 text-neon-green" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {serverStats.players?.length || 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Active</p>
                     </div>
                   </div>
                 </div>
