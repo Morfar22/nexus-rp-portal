@@ -7,56 +7,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { Server, Plus, Activity, Users, Clock, Zap, Trash2, Settings, FileText } from 'lucide-react';
+import { Server, Activity, Users, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
-import ServerStatsManager from '@/components/ServerStatsManager';
 import CFXServerSettings from '@/components/CFXServerSettings';
 
-interface ServerData {
-  id: string;
-  name: string;
-  ip_address: string;
-  port: number;
-  is_active: boolean;
-  created_at: string;
-}
-
 interface ServerStats {
-  id: string;
-  server_id: string;
-  players_online: number;
-  max_players: number;
-  queue_count: number;
-  uptime_percentage: number;
-  ping_ms: number;
-  server_online: boolean;
-  recorded_at: string;
+  hostname: string;
+  clients: number;
+  sv_maxclients: number;
+  players: any[];
+  gametype: string;
+  mapname: string;
+  server: string;
+  connectEndPoint: string;
 }
 
 export default function ServerManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [servers, setServers] = useState<ServerData[]>([]);
-  const [serverStats, setServerStats] = useState<{ [key: string]: ServerStats }>({});
   const [loading, setLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [serverStats, setServerStats] = useState<ServerStats | null>(null);
+  const [cfxServerCode, setCfxServerCode] = useState('');
+  const [autoFetch, setAutoFetch] = useState(true);
+  const [displayIp, setDisplayIp] = useState('');
+  const [discordUrl, setDiscordUrl] = useState('');
   const [isStaff, setIsStaff] = useState(false);
-  const [checkingStaff, setCheckingStaff] = useState(true);
-  const [showStatsManager, setShowStatsManager] = useState(false);
-  const [newServer, setNewServer] = useState({
-    name: '',
-    ip_address: '',
-    port: 30120
-  });
+  const [isFetching, setIsFetching] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   useEffect(() => {
     const checkStaffRole = async () => {
       if (!user) {
         setIsStaff(false);
-        setCheckingStaff(false);
+        setLoading(false);
         return;
       }
 
@@ -74,185 +59,180 @@ export default function ServerManagement() {
         console.error('Error checking staff role:', error);
         setIsStaff(false);
       } finally {
-        setCheckingStaff(false);
+        setLoading(false);
       }
     };
 
     checkStaffRole();
-    fetchServers();
-    fetchServerStats();
-    
-    // Set up real-time subscriptions
-    const serverChannel = supabase
-      .channel('servers-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'servers' }, () => {
-        fetchServers();
-      })
-      .subscribe();
-
-    const statsChannel = supabase
-      .channel('server-stats-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'individual_server_stats' }, () => {
-        fetchServerStats();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(serverChannel);
-      supabase.removeChannel(statsChannel);
-    };
+    fetchSettings();
   }, [user]);
 
+  useEffect(() => {
+    if (cfxServerCode && autoFetch) {
+      fetchServerStats();
+      const interval = setInterval(fetchServerStats, 60000); // Update every minute
+      return () => clearInterval(interval);
+    }
+  }, [cfxServerCode, autoFetch]);
 
-  const fetchServers = async () => {
+  const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('servers')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Fetch CFX server code
+      const { data: cfxData } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'cfxre_server_code')
+        .maybeSingle();
 
-      if (error) throw error;
-      setServers(data || []);
+      if (cfxData?.setting_value) {
+        setCfxServerCode(String(cfxData.setting_value));
+      }
+
+      // Fetch display IP
+      const { data: ipData } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'server_display_ip')
+        .maybeSingle();
+
+      if (ipData?.setting_value) {
+        setDisplayIp(String(ipData.setting_value));
+      }
+
+      // Fetch Discord URL
+      const { data: discordData } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'discord_url')
+        .maybeSingle();
+
+      if (discordData?.setting_value) {
+        setDiscordUrl(String(discordData.setting_value));
+      }
+
+      // Fetch auto-fetch setting
+      const { data: autoFetchData } = await supabase
+        .from('server_settings')
+        .select('setting_value')
+        .eq('setting_key', 'auto_fetch_stats')
+        .maybeSingle();
+
+      if (autoFetchData?.setting_value !== undefined) {
+        setAutoFetch(Boolean(autoFetchData.setting_value));
+      }
     } catch (error) {
-      console.error('Error fetching servers:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch servers",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error fetching settings:', error);
     }
   };
 
   const fetchServerStats = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('individual_server_stats')
-        .select('*');
+    if (!cfxServerCode) return;
 
-      if (error) throw error;
+    setIsFetching(true);
+    try {
+      const response = await fetch(
+        `https://servers-frontend.fivem.net/api/servers/single/${cfxServerCode}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
       
-      const statsMap: { [key: string]: ServerStats } = {};
-      data?.forEach(stat => {
-        statsMap[stat.server_id] = stat;
-      });
-      setServerStats(statsMap);
+      if (data?.Data) {
+        setServerStats(data.Data);
+        setLastUpdate(new Date());
+      }
     } catch (error) {
       console.error('Error fetching server stats:', error);
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke hente server statistik",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetching(false);
     }
   };
 
-  const addServer = async () => {
+  const saveConfiguration = async () => {
     if (!isStaff) {
       toast({
-        title: "Access Denied",
-        description: "Only staff members can add servers",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!newServer.name || !newServer.ip_address) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Adgang nægtet",
+        description: "Kun staff kan gemme indstillinger",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('servers')
-        .insert([{
-          name: newServer.name,
-          ip_address: newServer.ip_address,
-          port: newServer.port,
-          created_by: user?.id
-        }]);
+      // Save display IP
+      const { data: existingIp } = await supabase
+        .from('server_settings')
+        .select('id')
+        .eq('setting_key', 'server_display_ip')
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingIp) {
+        await supabase
+          .from('server_settings')
+          .update({ setting_value: displayIp })
+          .eq('setting_key', 'server_display_ip');
+      } else {
+        await supabase
+          .from('server_settings')
+          .insert({ setting_key: 'server_display_ip', setting_value: displayIp });
+      }
 
-      toast({
-        title: "Success",
-        description: "Server added successfully",
-      });
+      // Save Discord URL
+      const { data: existingDiscord } = await supabase
+        .from('server_settings')
+        .select('id')
+        .eq('setting_key', 'discord_url')
+        .maybeSingle();
 
-      setNewServer({ name: '', ip_address: '', port: 30120 });
-      setIsAddDialogOpen(false);
-    } catch (error) {
-      console.error('Error adding server:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add server",
-        variant: "destructive",
-      });
-    }
-  };
+      if (existingDiscord) {
+        await supabase
+          .from('server_settings')
+          .update({ setting_value: discordUrl })
+          .eq('setting_key', 'discord_url');
+      } else {
+        await supabase
+          .from('server_settings')
+          .insert({ setting_key: 'discord_url', setting_value: discordUrl });
+      }
 
-  const deleteServer = async (serverId: string) => {
-    if (!isStaff) {
-      toast({
-        title: "Access Denied",
-        description: "Only staff members can delete servers",
-        variant: "destructive",
-      });
-      return;
-    }
+      // Save auto-fetch setting
+      const { data: existingAutoFetch } = await supabase
+        .from('server_settings')
+        .select('id')
+        .eq('setting_key', 'auto_fetch_stats')
+        .maybeSingle();
 
-    try {
-      const { error } = await supabase
-        .from('servers')
-        .delete()
-        .eq('id', serverId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Server deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting server:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete server",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchLiveStats = async (serverId: string, serverIp: string, port: number) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-individual-server-stats', {
-        body: { serverId, serverIp, port }
-      });
-
-      if (error) throw error;
+      if (existingAutoFetch) {
+        await supabase
+          .from('server_settings')
+          .update({ setting_value: autoFetch })
+          .eq('setting_key', 'auto_fetch_stats');
+      } else {
+        await supabase
+          .from('server_settings')
+          .insert({ setting_key: 'auto_fetch_stats', setting_value: autoFetch });
+      }
 
       toast({
-        title: "Success",
-        description: "Live stats fetched successfully",
+        title: "Gemt!",
+        description: "Server indstillinger er opdateret",
       });
     } catch (error) {
-      console.error('Error fetching live stats:', error);
+      console.error('Error saving configuration:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch live stats",
+        title: "Fejl",
+        description: "Kunne ikke gemme indstillinger",
         variant: "destructive",
       });
     }
-  };
-
-  const getStatusColor = (online: boolean) => {
-    return online ? "text-green-500" : "text-red-500";
-  };
-
-  const getPingColor = (ping: number) => {
-    if (ping <= 50) return "text-green-500";
-    if (ping <= 100) return "text-yellow-500";
-    return "text-red-500";
   };
 
   if (loading) {
@@ -263,7 +243,7 @@ export default function ServerManagement() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neon-purple mx-auto mb-4"></div>
-              <p className="text-foreground">Loading servers...</p>
+              <p className="text-foreground">Indlæser...</p>
             </div>
           </div>
         </div>
@@ -277,269 +257,256 @@ export default function ServerManagement() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Server Status</h1>
-            <p className="text-muted-foreground">Monitor live server statistics</p>
-            {isStaff && (
-              <div className="flex items-center mt-2">
-                <Badge variant="secondary" className="bg-neon-purple/20 text-neon-purple border-neon-purple/50">
-                  Staff Access: Full Management
-                </Badge>
-              </div>
-            )}
+            <h1 className="text-4xl font-bold text-foreground mb-2">Server Management</h1>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></div>
+              <p className="text-muted-foreground">Live Dashboard</p>
+            </div>
           </div>
           
           {isStaff && (
-            <div className="flex gap-3">
-              <Button 
-                onClick={() => setShowStatsManager(!showStatsManager)}
-                variant={showStatsManager ? "default" : "outline"}
-                className={showStatsManager ? "bg-neon-green hover:bg-neon-green/80" : ""}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                {showStatsManager ? "Hide Stats Manager" : "Manage Stats"}
-              </Button>
-              
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-neon-purple hover:bg-neon-purple/80">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Server
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="bg-gaming-card border-gaming-border">
-              <DialogHeader>
-                <DialogTitle className="text-foreground">Add New Server</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Add a new server to monitor its status and statistics.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="serverName">Server Name</Label>
-                  <Input
-                    id="serverName"
-                    value={newServer.name}
-                    onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-                    placeholder="e.g., Main Server"
-                    className="bg-background border-input"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="serverIp">IP Address</Label>
-                  <Input
-                    id="serverIp"
-                    value={newServer.ip_address}
-                    onChange={(e) => setNewServer({ ...newServer, ip_address: e.target.value })}
-                    placeholder="e.g., 192.168.1.100"
-                    className="bg-background border-input"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="serverPort">Port</Label>
-                  <Input
-                    id="serverPort"
-                    type="number"
-                    value={newServer.port}
-                    onChange={(e) => setNewServer({ ...newServer, port: parseInt(e.target.value) || 30120 })}
-                    className="bg-background border-input"
-                  />
-                </div>
-                <Button onClick={addServer} className="w-full bg-neon-purple hover:bg-neon-purple/80">
-                  Add Server
-                </Button>
-              </div>
-            </DialogContent>
-            </Dialog>
-            </div>
+            <Badge variant="secondary" className="bg-neon-purple/20 text-neon-purple border-neon-purple/50">
+              Staff Access
+            </Badge>
           )}
         </div>
 
+        {/* Server Configuration */}
+        <Card className="mb-8 bg-gaming-card border-gaming-border">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <SettingsIcon className="h-5 w-5 text-neon-purple" />
+              <CardTitle className="text-foreground">Server Configuration</CardTitle>
+            </div>
+            <CardDescription className="text-muted-foreground">
+              Configure your main server settings and information
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="display-ip" className="text-foreground">Display IP</Label>
+                <Input
+                  id="display-ip"
+                  value={displayIp}
+                  onChange={(e) => setDisplayIp(e.target.value)}
+                  placeholder="connect server.example.com"
+                  className="mt-2 bg-gaming-dark border-gaming-border text-foreground"
+                  disabled={!isStaff}
+                />
+              </div>
 
-        {/* Stats Manager Section */}
-        {isStaff && showStatsManager && (
-          <div className="mb-8 space-y-6">
+              <div>
+                <Label htmlFor="discord-url" className="text-foreground">Discord URL</Label>
+                <Input
+                  id="discord-url"
+                  value={discordUrl}
+                  onChange={(e) => setDiscordUrl(e.target.value)}
+                  placeholder="https://discord.gg/your-server"
+                  className="mt-2 bg-gaming-dark border-gaming-border text-foreground"
+                  disabled={!isStaff}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gaming-dark/50 rounded-lg border border-gaming-border">
+              <div>
+                <Label htmlFor="auto-fetch" className="text-foreground text-base">Auto-fetch Stats</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Automatically fetch server statistics every minute
+                </p>
+              </div>
+              <Switch
+                id="auto-fetch"
+                checked={autoFetch}
+                onCheckedChange={setAutoFetch}
+                disabled={!isStaff}
+              />
+            </div>
+
+            {isStaff && (
+              <Button
+                onClick={saveConfiguration}
+                className="bg-neon-purple hover:bg-neon-purple/80"
+              >
+                Gem Konfiguration
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* CFX.re Server Settings */}
+        {isStaff && (
+          <div className="mb-8">
             <CFXServerSettings />
-            <ServerStatsManager />
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {servers.map((server) => {
-            const stats = serverStats[server.id];
-            const isOnline = stats?.server_online || false;
-            const lastUpdated = stats?.recorded_at ? new Date(stats.recorded_at) : null;
-            const timeSinceUpdate = lastUpdated ? Date.now() - lastUpdated.getTime() : null;
-            const isStale = timeSinceUpdate ? timeSinceUpdate > 5 * 60 * 1000 : true; // 5 minutes
-
-            return (
-              <Card key={server.id} className="bg-gaming-card border-gaming-border">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-foreground flex items-center">
-                      <Server className="w-5 h-5 mr-2" />
-                      {server.name}
-                    </CardTitle>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={isOnline ? "default" : "destructive"}>
-                        <Activity className={`w-3 h-3 mr-1 ${getStatusColor(isOnline)}`} />
-                        {isOnline ? "Online" : "Offline"}
-                      </Badge>
-                      {isStaff && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteServer(server.id)}
-                          className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  <CardDescription className="text-muted-foreground">
-                    {server.ip_address}:{server.port}
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {stats ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Users className="w-4 h-4 mr-1" />
-                            Players
-                          </div>
-                          <div className="text-lg font-semibold text-foreground">
-                            {stats.players_online}/{stats.max_players}
-                          </div>
-                          <Progress 
-                            value={(stats.players_online / stats.max_players) * 100} 
-                            className="h-2" 
-                          />
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Clock className="w-4 h-4 mr-1" />
-                            Queue
-                          </div>
-                          <div className="text-lg font-semibold text-foreground">
-                            {stats.queue_count}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Activity className="w-4 h-4 mr-1" />
-                            Uptime
-                          </div>
-                          <div className="text-lg font-semibold text-green-500">
-                            {stats.uptime_percentage}%
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Zap className="w-4 h-4 mr-1" />
-                            Ping
-                          </div>
-                          <div className={`text-lg font-semibold ${getPingColor(stats.ping_ms)}`}>
-                            {stats.ping_ms}ms
-                          </div>
-                        </div>
-                      </div>
-
-                      {isStale && (
-                        <div className="text-xs text-yellow-500 bg-yellow-500/10 p-2 rounded">
-                          Data may be outdated (last updated: {lastUpdated?.toLocaleTimeString()})
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center py-4">
-                      <div className="text-muted-foreground mb-2">No stats available</div>
-                    </div>
-                  )}
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => fetchLiveStats(server.id, server.ip_address, server.port)}
-                    className="w-full"
-                  >
-                    <Activity className="w-4 h-4 mr-2" />
-                    Fetch Live Stats
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+        {/* Live Server Management */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Live Server Management</h2>
+              <p className="text-muted-foreground">Monitor and manage your FiveM server in real-time</p>
+            </div>
+            
+            <Button
+              onClick={fetchServerStats}
+              disabled={!cfxServerCode || isFetching}
+              className="bg-neon-purple hover:bg-neon-purple/80"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              Opdater
+            </Button>
+          </div>
         </div>
 
-        {servers.length === 0 && (
-          <div className="text-center py-12">
-            <Server className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">No servers added yet</h3>
-            <p className="text-muted-foreground mb-4">
-              {isStaff ? "Add your first server to start monitoring its status" : "No servers are currently being monitored"}
-            </p>
-            {isStaff && (
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-neon-purple hover:bg-neon-purple/80">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Server
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-gaming-card border-gaming-border">
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">Add New Server</DialogTitle>
-                  <DialogDescription className="text-muted-foreground">
-                    Add a new server to monitor its status and statistics.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="serverName">Server Name</Label>
-                    <Input
-                      id="serverName"
-                      value={newServer.name}
-                      onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-                      placeholder="e.g., Main Server"
-                      className="bg-background border-input"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="serverIp">IP Address</Label>
-                    <Input
-                      id="serverIp"
-                      value={newServer.ip_address}
-                      onChange={(e) => setNewServer({ ...newServer, ip_address: e.target.value })}
-                      placeholder="e.g., 192.168.1.100"
-                      className="bg-background border-input"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="serverPort">Port</Label>
-                    <Input
-                      id="serverPort"
-                      type="number"
-                      value={newServer.port}
-                      onChange={(e) => setNewServer({ ...newServer, port: parseInt(e.target.value) || 30120 })}
-                      className="bg-background border-input"
-                    />
-                  </div>
-                  <Button onClick={addServer} className="w-full bg-neon-purple hover:bg-neon-purple/80">
-                    Add Server
-                  </Button>
+        {/* Server Stats Display */}
+        {!cfxServerCode ? (
+          <Card className="bg-gaming-card border-gaming-border">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <Server className="w-16 h-16 text-muted-foreground/50 mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">Ingen server konfigureret</h3>
+              <p className="text-muted-foreground text-center mb-4">
+                Tilføj din CFX.re server kode for at begynde at monitore din server
+              </p>
+              {isStaff && (
+                <p className="text-sm text-muted-foreground">
+                  Brug "CFX.re Server Indstillinger" sektionen ovenfor
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : serverStats ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Server Card */}
+            <Card className="lg:col-span-2 bg-gaming-card border-gaming-border">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-foreground flex items-center">
+                    <Server className="w-5 h-5 mr-2" />
+                    {serverStats.hostname}
+                  </CardTitle>
+                  <Badge variant="default" className="bg-green-500/20 text-green-500 border-green-500/50">
+                    <Activity className="w-3 h-3 mr-1" />
+                    Online
+                  </Badge>
                 </div>
-              </DialogContent>
-            </Dialog>
-            )}
+                <CardDescription className="text-muted-foreground">
+                  {serverStats.connectEndPoint || 'FiveM Server'}
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Users className="w-4 h-4 mr-1" />
+                      Spillere Online
+                    </div>
+                    <div className="text-3xl font-bold text-foreground">
+                      {serverStats.clients}/{serverStats.sv_maxclients}
+                    </div>
+                    <Progress 
+                      value={(serverStats.clients / serverStats.sv_maxclients) * 100} 
+                      className="h-2" 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Server className="w-4 h-4 mr-1" />
+                      Server Info
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-foreground">
+                        <span className="text-muted-foreground">Gametype:</span> {serverStats.gametype || 'N/A'}
+                      </p>
+                      <p className="text-sm text-foreground">
+                        <span className="text-muted-foreground">Map:</span> {serverStats.mapname || 'N/A'}
+                      </p>
+                      <p className="text-sm text-foreground">
+                        <span className="text-muted-foreground">Version:</span> {serverStats.server || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {lastUpdate && (
+                  <div className="text-xs text-muted-foreground bg-gaming-dark/50 p-3 rounded border border-gaming-border">
+                    Sidst opdateret: {lastUpdate.toLocaleTimeString('da-DK')}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Stats */}
+            <div className="space-y-4">
+              <Card className="bg-gaming-card border-gaming-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm text-muted-foreground">Server Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-foreground">Online</span>
+                      <Badge variant="default" className="bg-green-500/20 text-green-500 border-green-500/50">
+                        Aktiv
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-foreground">Players</span>
+                      <span className="text-sm font-semibold text-foreground">{serverStats.clients}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-foreground">Max Players</span>
+                      <span className="text-sm font-semibold text-foreground">{serverStats.sv_maxclients}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gaming-card border-gaming-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm text-muted-foreground">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {displayIp && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => {
+                        navigator.clipboard.writeText(displayIp);
+                        toast({
+                          title: "Kopieret!",
+                          description: "Server IP kopieret til udklipsholder",
+                        });
+                      }}
+                    >
+                      <Server className="w-4 h-4 mr-2" />
+                      Kopier Server IP
+                    </Button>
+                  )}
+                  {discordUrl && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => window.open(discordUrl, '_blank')}
+                    >
+                      Åbn Discord
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
+        ) : (
+          <Card className="bg-gaming-card border-gaming-border">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neon-purple mb-4"></div>
+              <p className="text-foreground">Henter server statistik...</p>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
