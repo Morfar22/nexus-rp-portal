@@ -34,6 +34,13 @@ interface ServerData {
   ip_address: string;
   port: number;
   is_active: boolean;
+  hostname?: string;
+  gametype?: string;
+  mapname?: string;
+  display_ip?: string;
+  discord_url?: string;
+  max_players?: number;
+  cfx_server_code?: string;
   created_at: string;
   updated_at: string;
 }
@@ -58,7 +65,19 @@ export default function ConsolidatedServerManager() {
   const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingServer, setEditingServer] = useState<ServerData | null>(null);
-  const [newServer, setNewServer] = useState({ name: '', ip_address: '', port: 30120, is_active: true });
+  const [newServer, setNewServer] = useState({ 
+    name: '', 
+    ip_address: '', 
+    port: 30120, 
+    is_active: true,
+    hostname: '',
+    gametype: 'N/A',
+    mapname: 'N/A',
+    display_ip: '',
+    discord_url: '',
+    max_players: 48,
+    cfx_server_code: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -169,7 +188,19 @@ export default function ConsolidatedServerManager() {
 
       setIsDialogOpen(false);
       setEditingServer(null);
-      setNewServer({ name: '', ip_address: '', port: 30120, is_active: true });
+      setNewServer({ 
+        name: '', 
+        ip_address: '', 
+        port: 30120, 
+        is_active: true,
+        hostname: '',
+        gametype: 'N/A',
+        mapname: 'N/A',
+        display_ip: '',
+        discord_url: '',
+        max_players: 48,
+        cfx_server_code: ''
+      });
       fetchServers();
     } catch (error) {
       console.error('Error saving server:', error);
@@ -257,18 +288,37 @@ export default function ConsolidatedServerManager() {
 
   const openEditDialog = (server: ServerData) => {
     setEditingServer(server);
-    setNewServer({
-      name: server.name,
-      ip_address: server.ip_address,
+    setNewServer({ 
+      name: server.name, 
+      ip_address: server.ip_address, 
       port: server.port,
-      is_active: server.is_active
+      is_active: server.is_active,
+      hostname: server.hostname || '',
+      gametype: server.gametype || 'N/A',
+      mapname: server.mapname || 'N/A',
+      display_ip: server.display_ip || '',
+      discord_url: server.discord_url || '',
+      max_players: server.max_players || 48,
+      cfx_server_code: server.cfx_server_code || ''
     });
     setIsDialogOpen(true);
   };
 
   const openCreateDialog = () => {
     setEditingServer(null);
-    setNewServer({ name: '', ip_address: '', port: 30120, is_active: true });
+    setNewServer({ 
+      name: '', 
+      ip_address: '', 
+      port: 30120, 
+      is_active: true,
+      hostname: '',
+      gametype: 'N/A',
+      mapname: 'N/A',
+      display_ip: '',
+      discord_url: '',
+      max_players: 48,
+      cfx_server_code: ''
+    });
     setIsDialogOpen(true);
   };
 
@@ -483,44 +533,149 @@ export default function ConsolidatedServerManager() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Server Name</Label>
-              <Input
-                id="name"
-                value={newServer.name}
-                onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-                placeholder="My FiveM Server"
-              />
+          <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
+              
+              <div>
+                <Label htmlFor="name">Internal Server Name</Label>
+                <Input
+                  id="name"
+                  value={newServer.name}
+                  onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
+                  placeholder="My FiveM Server"
+                  className="bg-gaming-dark border-gaming-border"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Used for internal identification</p>
+              </div>
+              
+              <div>
+                <Label htmlFor="hostname">Display Name (Hostname)</Label>
+                <Input
+                  id="hostname"
+                  value={newServer.hostname}
+                  onChange={(e) => setNewServer({ ...newServer, hostname: e.target.value })}
+                  placeholder="change-me built with Obox Project by The Community!"
+                  className="bg-gaming-dark border-gaming-border"
+                />
+                <p className="text-xs text-muted-foreground mt-1">This is shown to users on the website</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-4 border-t border-gaming-border">
+              <h3 className="text-sm font-semibold text-foreground">Connection Details</h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="ip">IP Address</Label>
+                  <Input
+                    id="ip"
+                    value={newServer.ip_address}
+                    onChange={(e) => setNewServer({ ...newServer, ip_address: e.target.value })}
+                    placeholder="192.168.1.100"
+                    className="bg-gaming-dark border-gaming-border"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="port">Port</Label>
+                  <Input
+                    id="port"
+                    type="number"
+                    value={newServer.port}
+                    onChange={(e) => setNewServer({ ...newServer, port: parseInt(e.target.value) || 30120 })}
+                    placeholder="30120"
+                    className="bg-gaming-dark border-gaming-border"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="display_ip">Display Connection String</Label>
+                <Input
+                  id="display_ip"
+                  value={newServer.display_ip}
+                  onChange={(e) => setNewServer({ ...newServer, display_ip: e.target.value })}
+                  placeholder="connect panel.adventurerp.dk:30120"
+                  className="bg-gaming-dark border-gaming-border"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Connection string shown to users</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-4 border-t border-gaming-border">
+              <h3 className="text-sm font-semibold text-foreground">Server Information</h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="gametype">Gametype</Label>
+                  <Input
+                    id="gametype"
+                    value={newServer.gametype}
+                    onChange={(e) => setNewServer({ ...newServer, gametype: e.target.value })}
+                    placeholder="Roleplay"
+                    className="bg-gaming-dark border-gaming-border"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="mapname">Map Name</Label>
+                  <Input
+                    id="mapname"
+                    value={newServer.mapname}
+                    onChange={(e) => setNewServer({ ...newServer, mapname: e.target.value })}
+                    placeholder="Los Santos"
+                    className="bg-gaming-dark border-gaming-border"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="max_players">Max Players</Label>
+                <Input
+                  id="max_players"
+                  type="number"
+                  value={newServer.max_players}
+                  onChange={(e) => setNewServer({ ...newServer, max_players: parseInt(e.target.value) || 48 })}
+                  placeholder="48"
+                  className="bg-gaming-dark border-gaming-border"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-4 border-t border-gaming-border">
+              <h3 className="text-sm font-semibold text-foreground">Integration</h3>
+              
+              <div>
+                <Label htmlFor="cfx_server_code">CFX.re Server Code (Optional)</Label>
+                <Input
+                  id="cfx_server_code"
+                  value={newServer.cfx_server_code}
+                  onChange={(e) => setNewServer({ ...newServer, cfx_server_code: e.target.value })}
+                  placeholder="abc123"
+                  className="bg-gaming-dark border-gaming-border"
+                />
+                <p className="text-xs text-muted-foreground mt-1">For auto-fetching live stats from CFX.re</p>
+              </div>
+
+              <div>
+                <Label htmlFor="discord_url">Discord Invite URL</Label>
+                <Input
+                  id="discord_url"
+                  value={newServer.discord_url}
+                  onChange={(e) => setNewServer({ ...newServer, discord_url: e.target.value })}
+                  placeholder="https://discord.gg/your-server"
+                  className="bg-gaming-dark border-gaming-border"
+                />
+              </div>
             </div>
             
-            <div>
-              <Label htmlFor="ip">IP Address</Label>
-              <Input
-                id="ip"
-                value={newServer.ip_address}
-                onChange={(e) => setNewServer({ ...newServer, ip_address: e.target.value })}
-                placeholder="192.168.1.100"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="port">Port</Label>
-              <Input
-                id="port"
-                type="number"
-                value={newServer.port}
-                onChange={(e) => setNewServer({ ...newServer, port: parseInt(e.target.value) || 30120 })}
-                placeholder="30120"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 pt-4 border-t border-gaming-border">
               <Switch
                 checked={newServer.is_active}
                 onCheckedChange={(checked) => setNewServer({ ...newServer, is_active: checked })}
               />
-              <Label>Active</Label>
+              <Label>Active Server</Label>
             </div>
           </div>
           

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 
-import ServerDashboard from "@/components/ServerDashboard";
+import ServerStatus from "@/components/ServerStatus";
 import ParticleBackground from "@/components/ParticleBackground";
 import { Link } from "react-router-dom";
 import { PlayCircle, Users, Shield, Map, Clock, Star, Zap, Gamepad2, Globe, Award } from "lucide-react";
@@ -333,9 +333,9 @@ const Index = () => {
           {/* Social Media Links in Hero */}
           <SocialMediaLinks variant="hero" className="mt-8" />
           
-          {/* Detailed Server Dashboard */}
+          {/* Detailed Server Status */}
           <div className="max-w-6xl mx-auto mt-12">
-            <ServerDashboard />
+            <ServerStatus />
           </div>
         </div>
       </section>
