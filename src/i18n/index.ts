@@ -39,7 +39,7 @@ i18n
     },
     
     react: {
-      useSuspense: true, // Enable suspense for lazy-loaded components
+      useSuspense: false, // Disable suspense to prevent conflicts with lazy loading
     }
   });
 
