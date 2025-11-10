@@ -693,10 +693,10 @@ const LiveChatSupport = ({ onSelectedSessionChange }: LiveChatSupportProps = {})
               </div>
 
             {/* Messages */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative overflow-hidden">
               <ScrollArea 
                 ref={scrollAreaRef}
-                className="h-full p-4"
+                className="h-[400px] p-4"
                 onScrollCapture={handleScroll}
               >
                 <div className="space-y-4">
