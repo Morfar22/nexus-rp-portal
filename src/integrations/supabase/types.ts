@@ -1760,31 +1760,52 @@ export type Database = {
       }
       servers: {
         Row: {
+          cfx_server_code: string | null
           created_at: string
           created_by: string | null
+          discord_url: string | null
+          display_ip: string | null
+          gametype: string | null
+          hostname: string | null
           id: string
           ip_address: string
           is_active: boolean
+          mapname: string | null
+          max_players: number | null
           name: string
           port: number
           updated_at: string
         }
         Insert: {
+          cfx_server_code?: string | null
           created_at?: string
           created_by?: string | null
+          discord_url?: string | null
+          display_ip?: string | null
+          gametype?: string | null
+          hostname?: string | null
           id?: string
           ip_address: string
           is_active?: boolean
+          mapname?: string | null
+          max_players?: number | null
           name: string
           port?: number
           updated_at?: string
         }
         Update: {
+          cfx_server_code?: string | null
           created_at?: string
           created_by?: string | null
+          discord_url?: string | null
+          display_ip?: string | null
+          gametype?: string | null
+          hostname?: string | null
           id?: string
           ip_address?: string
           is_active?: boolean
+          mapname?: string | null
+          max_players?: number | null
           name?: string
           port?: number
           updated_at?: string
