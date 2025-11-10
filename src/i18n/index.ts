@@ -19,6 +19,7 @@ const resources = {
   da: { translation: da }
 };
 
+// Initialize i18n synchronously before export
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -26,6 +27,7 @@ i18n
     resources,
     fallbackLng: 'en',
     debug: false,
+    lng: 'da', // Set default language
     
     interpolation: {
       escapeValue: false, // React already escapes values
@@ -34,6 +36,10 @@ i18n
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage']
+    },
+    
+    react: {
+      useSuspense: true, // Enable suspense for lazy-loaded components
     }
   });
 
