@@ -13,6 +13,7 @@ import { Server, Plus, Activity, Users, Clock, Zap, Trash2, Settings, FileText }
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import ServerStatsManager from '@/components/ServerStatsManager';
+import CFXServerSettings from '@/components/CFXServerSettings';
 
 interface ServerData {
   id: string;
@@ -356,7 +357,8 @@ export default function ServerManagement() {
 
         {/* Stats Manager Section */}
         {isStaff && showStatsManager && (
-          <div className="mb-8">
+          <div className="mb-8 space-y-6">
+            <CFXServerSettings />
             <ServerStatsManager />
           </div>
         )}

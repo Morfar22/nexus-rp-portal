@@ -26,73 +26,81 @@ serve(async (req) => {
     
     logStep("Fetching server stats", { serverName });
 
-    // Get server connection settings from database
-    const { data: connectInfo } = await supabaseClient
+    // Get CFX.re server code from database settings
+    const { data: cfxSettings } = await supabaseClient
       .from('server_settings')
       .select('setting_value')
-      .eq('setting_key', 'connect_info')
-      .single();
+      .eq('setting_key', 'cfxre_server_code')
+      .maybeSingle();
 
-    // Try to get real FiveM server data if available
+    let cfxServerCode = cfxSettings?.setting_value || '';
+    
+    logStep("Using CFX.re server code", { code: cfxServerCode ? '***' + cfxServerCode.slice(-4) : 'none' });
+
+    // Try to get real FiveM server data from CFX.re API
     let serverData = null;
     
-    // Use the correct server IP - 95.216.29.189:30120
-    const serverIp = "95.216.29.189";
-    const serverPort = 30120;
-    
-    try {
-      logStep("Fetching real server data", { ip: serverIp, port: serverPort });
-      
-      // Fetch real server info from FiveM server endpoints
-      const [playersResponse, infoResponse, dynamicResponse] = await Promise.allSettled([
-        fetch(`http://${serverIp}:${serverPort}/players.json`, { 
-          signal: AbortSignal.timeout(5000) 
-        }),
-        fetch(`http://${serverIp}:${serverPort}/info.json`, { 
-          signal: AbortSignal.timeout(5000) 
-        }),
-        fetch(`http://${serverIp}:${serverPort}/dynamic.json`, { 
-          signal: AbortSignal.timeout(5000) 
-        })
-      ]);
+    if (cfxServerCode) {
+      try {
+        logStep("Fetching server data from FiveM API", { code: cfxServerCode });
+        
+        // Fetch from FiveM's official servers API
+        const response = await fetch(
+          `https://servers-frontend.fivem.net/api/servers/single/${cfxServerCode}`,
+          { 
+            signal: AbortSignal.timeout(10000),
+            headers: {
+              'User-Agent': 'Adventure RP Panel/1.0'
+            }
+          }
+        );
 
-      const playersData = playersResponse.status === 'fulfilled' && playersResponse.value.ok
-        ? await playersResponse.value.json() : [];
-      
-      const infoData = infoResponse.status === 'fulfilled' && infoResponse.value.ok
-        ? await infoResponse.value.json() : {};
-      
-      const dynamicData = dynamicResponse.status === 'fulfilled' && dynamicResponse.value.ok
-        ? await dynamicResponse.value.json() : {};
+        if (!response.ok) {
+          throw new Error(`FiveM API responded with status: ${response.status}`);
+        }
 
-      // Extract real system data from server responses
-      const cpuUsage = dynamicData.cpu?.usage || infoData.vars?.cpu_usage || null;
-      const ramUsage = dynamicData.memory?.usage || infoData.vars?.ram_usage || null;
-      const diskUsage = dynamicData.disk?.usage || infoData.vars?.disk_usage || null;
+        const apiData = await response.json();
+        
+        logStep("FiveM API response received", { 
+          hasData: !!apiData?.Data,
+          serverName: apiData?.Data?.hostname 
+        });
 
-      serverData = {
-        players: Array.isArray(playersData) ? playersData.length : 0,
-        maxPlayers: infoData.vars?.sv_maxClients ? parseInt(infoData.vars.sv_maxClients) : 64,
-        serverName: infoData.vars?.sv_hostname || 'Adventure RP',
-        status: playersResponse.status === 'fulfilled' && playersResponse.value.ok ? 'online' : 'offline',
-        uptime: Date.now() - (infoData.server?.uptime || 0),
-        version: infoData.server?.version || '1.0.0',
-        cpuUsage,
-        ramUsage,
-        diskUsage
-      };
-      
-      logStep("Real server data fetched", { 
-        players: serverData.players, 
-        maxPlayers: serverData.maxPlayers,
-        status: serverData.status
-      });
-    } catch (error) {
-      logStep("FiveM server connection error, using mock data", { error: error.message });
+        if (apiData?.Data) {
+          const data = apiData.Data;
+          
+          serverData = {
+            players: data.clients || 0,
+            maxPlayers: data.sv_maxclients || 64,
+            serverName: data.hostname || 'Adventure RP',
+            status: data.clients !== undefined ? 'online' : 'offline',
+            uptime: data.uptime || 0,
+            version: data.server || '1.0.0',
+            cpuUsage: null,
+            ramUsage: null,
+            diskUsage: null,
+            connectEndPoint: data.connectEndPoint || '',
+            players_list: data.players || []
+          };
+          
+          logStep("Server data extracted from FiveM API", { 
+            players: serverData.players, 
+            maxPlayers: serverData.maxPlayers,
+            status: serverData.status
+          });
+        }
+      } catch (error) {
+        logStep("FiveM API error", { 
+          error: error.message,
+          code: cfxServerCode 
+        });
+      }
+    } else {
+      logStep("No CFX.re server code configured - please add cfxre_server_code in server settings");
     }
     
     if (!serverData) {
-      logStep("No server data available, using mock data");
+      logStep("No server data available, using fallback data");
     }
 
     // Get historical data from our database
