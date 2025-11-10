@@ -45,6 +45,7 @@ const LazyAnalytics = lazy(() => import("./pages/Analytics"));
 const LazyCreativeTools = lazy(() => import("./pages/CreativeTools"));
 const LazyResetPassword = lazy(() => import("./pages/ResetPassword"));
 const LazyKeybinds = lazy(() => import("./pages/Keybinds"));
+const LazyServerManagement = lazy(() => import("./pages/ServerManagement"));
 
 // Optimized loading component for better perceived performance and CLS prevention
 const PageLoader = () => (
@@ -212,6 +213,14 @@ const AppContent = () => {
               <Route path="/keybinds" element={
                 <Suspense fallback={<PageLoader />}>
                   <LazyKeybinds />
+                </Suspense>
+              } />
+              
+              <Route path="/servers" element={
+                <Suspense fallback={<PageLoader />}>
+                  <StaffProtectedRoute>
+                    <LazyServerManagement />
+                  </StaffProtectedRoute>
                 </Suspense>
               } />
               
