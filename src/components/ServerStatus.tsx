@@ -120,7 +120,7 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
     }
   };
 
-  const getStatusBadge = (server: ServerData, playersOnline: number) => {
+  const getStatusBadge = (server: ServerData, playersOnline: number, hasStats: boolean) => {
     // If no CFX code and no way to verify, show unknown status
     if (!server.cfx_server_code) {
       return (
@@ -130,7 +130,16 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
       );
     }
 
-    // If we have stats, server is online
+    // If CFX code exists but no stats received, server is offline
+    if (!hasStats) {
+      return (
+        <Badge className="bg-red-500/20 text-red-500 border-red-500/30">
+          Offline
+        </Badge>
+      );
+    }
+
+    // If we have stats and players online, server is active
     if (playersOnline > 0) {
       return (
         <Badge className="bg-neon-green/20 text-neon-green border-neon-green/30">
@@ -139,6 +148,7 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
       );
     }
     
+    // If we have stats but no players, server is online but empty
     return (
       <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">
         Online
@@ -232,7 +242,7 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {getStatusBadge(server, playersOnline)}
+                    {getStatusBadge(server, playersOnline, hasStats)}
                     <span className="text-xs text-muted-foreground">
                       Updated: {new Date().toLocaleTimeString()}
                     </span>
@@ -276,10 +286,10 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
 
                   {/* Status */}
                   <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <Activity className={`h-6 w-6 ${hasStats || server.cfx_server_code ? 'text-neon-green' : 'text-gray-400'}`} />
+                    <Activity className={`h-6 w-6 ${hasStats ? 'text-neon-green' : 'text-red-500'}`} />
                     <div>
                       <p className="text-lg font-semibold text-foreground">
-                        {hasStats || server.cfx_server_code ? 'Online' : 'Unknown'}
+                        {!server.cfx_server_code ? 'Unknown' : hasStats ? 'Online' : 'Offline'}
                       </p>
                       <p className="text-xs text-muted-foreground">Status</p>
                     </div>
@@ -316,13 +326,17 @@ const ServerStatus = ({ showTitle = true }: ServerStatusProps) => {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gaming-darker/30 rounded-lg">
                     <span className="text-sm text-muted-foreground">Status:</span>
-                    {hasStats || server.cfx_server_code ? (
+                    {!server.cfx_server_code ? (
+                      <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
+                        UNKNOWN
+                      </Badge>
+                    ) : hasStats ? (
                       <Badge className="bg-neon-green/20 text-neon-green border-neon-green/30">
                         ONLINE
                       </Badge>
                     ) : (
-                      <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
-                        UNKNOWN
+                      <Badge className="bg-red-500/20 text-red-500 border-red-500/30">
+                        OFFLINE
                       </Badge>
                     )}
                   </div>
