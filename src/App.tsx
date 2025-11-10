@@ -20,13 +20,13 @@ import Footer from "@/components/Footer";
 import KillSwitch from "@/components/KillSwitch";
 import Index from "./pages/Index";
 import KillSwitchControl from "./pages/KillSwitchControl";
+import Rules from "./pages/Rules";
 
 // Lazy load heavy pages for better Core Web Vitals
 const LazyCustomAuth = lazy(() => import("./pages/CustomAuth"));
 
 const LazyApplicationForm = lazy(() => import("./pages/ApplicationForm"));
 const LazyMyApplications = lazy(() => import("./pages/MyApplications"));
-const LazyRules = lazy(() => import("./pages/Rules"));
 const LazyLaws = lazy(() => import("./pages/Laws"));
 const LazyStaffPanel = lazy(() => import("./pages/StaffPanel"));
 const LazyOurTeam = lazy(() => import("./pages/OurTeam"));
@@ -111,11 +111,7 @@ const AppContent = () => {
                 </Suspense>
               } />
               
-              <Route path="/rules" element={
-                <Suspense fallback={<PageLoader />}>
-                  <LazyRules />
-                </Suspense>
-              } />
+              <Route path="/rules" element={<Rules />} />
               
               <Route path="/laws" element={
                 <Suspense fallback={<PageLoader />}>
