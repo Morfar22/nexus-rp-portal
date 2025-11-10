@@ -8,10 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { Shield, Lock, LogOut, Monitor } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export const ProfileSecurity = () => {
   const { user } = useCustomAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<any[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -49,8 +51,8 @@ export const ProfileSecurity = () => {
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast({
-        title: "Error",
-        description: "New passwords don't match",
+        title: t('common.error'),
+        description: t('profile.passwords_dont_match'),
         variant: "destructive",
       });
       return;
@@ -58,8 +60,8 @@ export const ProfileSecurity = () => {
 
     if (passwordData.newPassword.length < 8) {
       toast({
-        title: "Error",
-        description: "Password must be at least 8 characters long",
+        title: t('common.error'),
+        description: t('profile.password_min_length'),
         variant: "destructive",
       });
       return;
@@ -79,8 +81,8 @@ export const ProfileSecurity = () => {
 
       if (data.success) {
         toast({
-          title: "Success",
-          description: "Password changed successfully",
+          title: t('common.success'),
+          description: t('profile.password_changed'),
         });
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
@@ -88,8 +90,8 @@ export const ProfileSecurity = () => {
       }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to change password",
+        title: t('common.error'),
+        description: error.message || t('profile.password_change_failed'),
         variant: "destructive",
       });
     } finally {
@@ -107,13 +109,13 @@ export const ProfileSecurity = () => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Session logged out successfully",
+        title: t('common.success'),
+        description: t('profile.session_logged_out'),
       });
       fetchSessions();
     } catch (error) {
       toast({
-        title: "Error",
+        title: t('common.error'),
         description: "Failed to logout session",
         variant: "destructive",
       });
@@ -126,12 +128,12 @@ export const ProfileSecurity = () => {
       <Card className="p-6 bg-gaming-card border-gaming-border">
         <div className="flex items-center space-x-3 mb-4">
           <Lock className="h-5 w-5 text-neon-purple" />
-          <h3 className="text-lg font-semibold text-foreground">Change Password</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t('profile.change_password')}</h3>
         </div>
         
         <form onSubmit={handlePasswordChange} className="space-y-4">
           <div>
-            <Label htmlFor="current-password" className="text-foreground">Current Password</Label>
+            <Label htmlFor="current-password" className="text-foreground">{t('profile.current_password')}</Label>
             <Input
               id="current-password"
               type="password"
@@ -143,7 +145,7 @@ export const ProfileSecurity = () => {
           </div>
           
           <div>
-            <Label htmlFor="new-password" className="text-foreground">New Password</Label>
+            <Label htmlFor="new-password" className="text-foreground">{t('profile.new_password')}</Label>
             <Input
               id="new-password"
               type="password"
@@ -155,7 +157,7 @@ export const ProfileSecurity = () => {
           </div>
           
           <div>
-            <Label htmlFor="confirm-password" className="text-foreground">Confirm New Password</Label>
+            <Label htmlFor="confirm-password" className="text-foreground">{t('profile.confirm_password')}</Label>
             <Input
               id="confirm-password"
               type="password"
@@ -168,7 +170,7 @@ export const ProfileSecurity = () => {
           
           <Button type="submit" disabled={changingPassword}>
             <Shield className="h-4 w-4 mr-2" />
-            {changingPassword ? "Changing..." : "Change Password"}
+            {changingPassword ? t('common.saving') : t('profile.change_password')}
           </Button>
         </form>
       </Card>
@@ -177,7 +179,7 @@ export const ProfileSecurity = () => {
       <Card className="p-6 bg-gaming-card border-gaming-border">
         <div className="flex items-center space-x-3 mb-4">
           <Monitor className="h-5 w-5 text-neon-purple" />
-          <h3 className="text-lg font-semibold text-foreground">Active Sessions</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t('profile.active_sessions')}</h3>
         </div>
 
         {loadingSessions ? (
@@ -190,18 +192,18 @@ export const ProfileSecurity = () => {
             ))}
           </div>
         ) : sessions.length === 0 ? (
-          <p className="text-muted-foreground">No active sessions</p>
+          <p className="text-muted-foreground">{t('profile.no_sessions')}</p>
         ) : (
           <div className="space-y-3">
             {sessions.map((session) => (
               <div key={session.id} className="p-4 bg-gaming-dark/30 rounded-lg flex items-start justify-between">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{session.user_agent || 'Unknown Device'}</p>
+                  <p className="text-sm font-medium text-foreground">{session.user_agent || t('profile.session_device')}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    IP: {session.ip_address || 'Unknown'}
+                    {t('profile.session_ip')}: {session.ip_address || 'Unknown'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Last active: {formatDistanceToNow(new Date(session.last_accessed), { addSuffix: true })}
+                    {t('profile.session_last_active')}: {formatDistanceToNow(new Date(session.last_accessed), { addSuffix: true })}
                   </p>
                 </div>
                 <Button

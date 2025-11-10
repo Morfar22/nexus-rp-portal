@@ -3,9 +3,11 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { FileText, Trophy, Vote, CheckCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const ProfileStats = () => {
   const { user } = useCustomAuth();
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     applications: 0,
     achievements: 0,
@@ -56,28 +58,28 @@ export const ProfileStats = () => {
 
   const statCards = [
     {
-      title: "Applications",
+      title: t('profile.applications_count'),
       value: stats.applications,
       icon: FileText,
       color: "text-blue-400",
       bgColor: "bg-blue-500/10",
     },
     {
-      title: "Achievements",
+      title: t('profile.achievements_count'),
       value: stats.achievements,
       icon: Trophy,
       color: "text-yellow-400",
       bgColor: "bg-yellow-500/10",
     },
     {
-      title: "Votes Cast",
+      title: t('profile.votes_count'),
       value: stats.votes,
       icon: Vote,
       color: "text-green-400",
       bgColor: "bg-green-500/10",
     },
     {
-      title: "Characters",
+      title: t('profile.characters_count'),
       value: stats.characters,
       icon: CheckCircle,
       color: "text-purple-400",

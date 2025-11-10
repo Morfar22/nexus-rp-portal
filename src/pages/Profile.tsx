@@ -7,9 +7,11 @@ import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileActivity } from "@/components/profile/ProfileActivity";
 import { ProfileSecurity } from "@/components/profile/ProfileSecurity";
 import { User, BarChart3, Clock, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Profile = () => {
   const { user } = useCustomAuth();
+  const { t } = useTranslation();
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -20,25 +22,25 @@ const Profile = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-foreground mb-8">My Profile</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-8">{t('profile.my_profile')}</h1>
           
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="bg-gaming-card border-gaming-border">
               <TabsTrigger value="profile" className="data-[state=active]:bg-neon-purple">
                 <User className="h-4 w-4 mr-2" />
-                Profile
+                {t('profile.profile_tab')}
               </TabsTrigger>
               <TabsTrigger value="stats" className="data-[state=active]:bg-neon-purple">
                 <BarChart3 className="h-4 w-4 mr-2" />
-                Statistics
+                {t('profile.statistics_tab')}
               </TabsTrigger>
               <TabsTrigger value="activity" className="data-[state=active]:bg-neon-purple">
                 <Clock className="h-4 w-4 mr-2" />
-                Activity
+                {t('profile.activity_tab')}
               </TabsTrigger>
               <TabsTrigger value="security" className="data-[state=active]:bg-neon-purple">
                 <Shield className="h-4 w-4 mr-2" />
-                Security
+                {t('profile.security_tab')}
               </TabsTrigger>
             </TabsList>
 

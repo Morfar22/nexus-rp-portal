@@ -5,6 +5,7 @@ import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { FileText, Trophy, Vote, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ActivityItem {
   id: string;
@@ -16,6 +17,7 @@ interface ActivityItem {
 
 export const ProfileActivity = () => {
   const { user } = useCustomAuth();
+  const { t } = useTranslation();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -134,14 +136,14 @@ export const ProfileActivity = () => {
   if (activities.length === 0) {
     return (
       <Card className="p-6 bg-gaming-card border-gaming-border">
-        <p className="text-center text-muted-foreground">No recent activity</p>
+        <p className="text-center text-muted-foreground">{t('profile.no_activity')}</p>
       </Card>
     );
   }
 
   return (
     <Card className="p-6 bg-gaming-card border-gaming-border">
-      <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-4">{t('profile.recent_activity')}</h3>
       <ScrollArea className="h-[500px] pr-4">
         <div className="space-y-4">
           {activities.map((activity) => {
