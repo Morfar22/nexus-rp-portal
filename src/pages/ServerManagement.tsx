@@ -272,21 +272,30 @@ export default function ServerManagement() {
         </div>
 
         {/* CFX.re Server Settings - PRIMARY CONFIGURATION */}
-        {isStaff && (
-          <div className="mb-8">
+        <Card className="mb-8 bg-gaming-card border-gaming-border">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <Server className="h-5 w-5 text-neon-purple" />
+              <CardTitle className="text-foreground">CFX.re Server Settings</CardTitle>
+            </div>
+            <CardDescription className="text-muted-foreground">
+              Configure your CFX.re server code to display live statistics
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <CFXServerSettings />
-          </div>
-        )}
+          </CardContent>
+        </Card>
 
-        {/* Server Configuration */}
+        {/* Display Settings */}
         <Card className="mb-8 bg-gaming-card border-gaming-border">
           <CardHeader>
             <div className="flex items-center space-x-2">
               <SettingsIcon className="h-5 w-5 text-neon-purple" />
-              <CardTitle className="text-foreground">Server Configuration</CardTitle>
+              <CardTitle className="text-foreground">Display Settings</CardTitle>
             </div>
             <CardDescription className="text-muted-foreground">
-              Configure your main server settings and information
+              Configure how server information is displayed to users
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
