@@ -18,6 +18,7 @@ import ApplicationGate from "@/components/ApplicationGate";
 import PrivacyNotice from "@/components/PrivacyNotice";
 import Footer from "@/components/Footer";
 import KillSwitch from "@/components/KillSwitch";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import KillSwitchControl from "./pages/KillSwitchControl";
 import Rules from "./pages/Rules";
@@ -90,9 +91,10 @@ const AppContent = () => {
         <KillSwitch />
         <MaintenanceMode />
         <PrivacyNotice />
-        <div className="min-h-screen flex flex-col">
-          <div className="flex-1">
-            <Routes>
+        <ErrorBoundary>
+          <div className="min-h-screen flex flex-col">
+            <div className="flex-1">
+              <Routes>
               {/* Emergency kill switch control - admin only, not lazy-loaded for reliability */}
               <Route path="/emergency-control" element={<KillSwitchControl />} />
               
@@ -238,10 +240,11 @@ const AppContent = () => {
                   <LazyNotFound />
                 </Suspense>
               } />
-            </Routes>
+              </Routes>
+            </div>
+            <Footer />
           </div>
-          <Footer />
-        </div>
+        </ErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   );

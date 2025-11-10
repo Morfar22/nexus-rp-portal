@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from "@/components/Navbar";
 import { Shield, Users, Car, Heart, AlertCircle, ChevronDown, Edit3, Save, X, Plus, Info } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -25,6 +26,10 @@ const Rules = () => {
 
   // Check if user is staff
   const [isStaff, setIsStaff] = useState(false);
+  
+  // Search and filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRules();
@@ -179,12 +184,24 @@ const Rules = () => {
     }
   };
 
-  // Group rules by category
-  const ruleCategories = rules.reduce((acc: any, rule: any) => {
+  // Filter and search rules
+  const filteredRules = rules.filter(rule => {
+    const matchesSearch = searchQuery === "" || 
+      rule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rule.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = !selectedCategory || rule.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Group filtered rules by category
+  const ruleCategories = filteredRules.reduce((acc: any, rule: any) => {
     if (!acc[rule.category]) acc[rule.category] = [];
     acc[rule.category].push(rule);
     return acc;
   }, {});
+  
+  // Get all unique categories from all rules (for filter dropdown)
+  const allCategories = Array.from(new Set(rules.map(r => r.category)));
 
   if (isLoading) {
     return (
@@ -211,6 +228,27 @@ const Rules = () => {
             {t('rules.follow_rules')}<br />
             {t('rules.staff_can_update')}
           </p>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
+          <Input
+            placeholder="Søg i regler..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-gaming-card border-gaming-border"
+          />
+          <Select value={selectedCategory || "all"} onValueChange={(val) => setSelectedCategory(val === "all" ? null : val)}>
+            <SelectTrigger className="bg-gaming-card border-gaming-border sm:w-[200px]">
+              <SelectValue placeholder="Alle kategorier" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle kategorier</SelectItem>
+              {allCategories.map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-4">

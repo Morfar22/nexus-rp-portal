@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Crown, Settings } from 'lucide-react';
 import { TeamMemberCard } from '@/components/TeamMemberCard';
@@ -29,6 +30,7 @@ interface TeamMember {
 const OurTeam = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchTeamMembers();
@@ -70,8 +72,16 @@ const OurTeam = () => {
     }
   };
 
+  // Filter members based on search
+  const filteredMembers = teamMembers.filter(member => 
+    searchQuery === "" ||
+    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member.bio?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Group members by role and sort by hierarchy level from staff_roles
-  const groupedMembers = teamMembers.reduce((groups, member) => {
+  const groupedMembers = filteredMembers.reduce((groups, member) => {
     const roleName = member.staff_roles?.display_name || member.role || 'Unknown';
     if (!groups[roleName]) {
       groups[roleName] = [];
@@ -113,13 +123,24 @@ const OurTeam = () => {
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
               Mød de dedikerede medlemmer, der holder vores community kørende og skaber fantastiske oplevelser!
             </p>
+            
+            {/* Search Bar */}
+            <div className="max-w-md mx-auto mb-8">
+              <Input
+                placeholder="Søg efter navn eller rolle..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-gaming-card border-gaming-border"
+              />
+            </div>
+            
             <div className="flex justify-center space-x-8 mt-8">
               <div className="text-center">
-                <div className="text-3xl font-bold text-primary">{teamMembers.length}</div>
+                <div className="text-3xl font-bold text-primary">{filteredMembers.length}</div>
                 <div className="text-sm text-muted-foreground">Team Medlemmer</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-secondary">{teamMembers.filter(m => m.is_active).length}</div>
+                <div className="text-3xl font-bold text-secondary">{filteredMembers.filter(m => m.is_active).length}</div>
                 <div className="text-sm text-muted-foreground">Aktive</div>
               </div>
               <div className="text-center">
