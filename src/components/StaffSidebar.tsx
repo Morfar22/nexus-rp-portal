@@ -36,7 +36,8 @@ import {
   Zap,
   Crown,
   Heart,
-  Keyboard
+  Keyboard,
+  Languages
 } from "lucide-react";
 
 interface StaffSidebarProps {
@@ -70,6 +71,7 @@ const navigationItems = [
       { id: "keybinds", label: "Keybinds", icon: Keyboard },
       { id: "content", label: "Homepage", icon: Layout },
       { id: "design", label: "Design & Appearance", icon: Palette },
+      { id: "translations", label: "Translations", icon: Languages },
       { id: "packages", label: "Packages", icon: CreditCard },
     ]
   },

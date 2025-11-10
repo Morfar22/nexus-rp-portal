@@ -88,6 +88,7 @@ import TeamManager from "@/components/TeamManager";
 import RoleManager from "@/components/RoleManager";
 import SupportersManager from "@/components/SupportersManager";
 import KeybindsManager from "@/components/KeybindsManager";
+import { TranslationsManager } from "@/components/TranslationsManager";
 
 // New comprehensive overview components
 import { ServerPerformanceOverview } from "@/components/ServerPerformanceOverview";
@@ -943,6 +944,7 @@ const StaffPanel = () => {
                     {activeTab === "emails" && "Email Templates"}
                     {activeTab === "email-test" && "Email System Test"}
                     {activeTab === "design" && "Design & Appearance"}
+                    {activeTab === "translations" && "Translation Management"}
                     {activeTab === "social-media" && "Social Media Management"}
                     {activeTab === "chat" && "Live Chat Management"}
                     {activeTab === "security" && "Security Management"}
@@ -1168,6 +1170,12 @@ const StaffPanel = () => {
               {activeTab === "design" && (
                 <div className="space-y-6">
                   <DesignManager />
+                </div>
+              )}
+
+              {activeTab === "translations" && (
+                <div className="space-y-6">
+                  <TranslationsManager />
                 </div>
               )}
 
