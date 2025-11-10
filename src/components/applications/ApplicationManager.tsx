@@ -183,16 +183,43 @@ const ApplicationManager = () => {
           if (application) {
             const templateType = status === 'approved' ? 'application_approved' : 'application_denied';
             
-            // Extract steam_name and fivem_name from form_data
-            const steamName = application.form_data?.steam_name || application.form_data?.steamName || '';
-            const fivemName = application.form_data?.fivem_name || application.form_data?.fivemName || '';
-            const discordName = application.form_data?.discord_name || application.form_data?.discord_tag || application.discord_name || '';
+            // Extract data from form_data - try multiple field name variations
+            const findFieldValue = (formData: any, possibleNames: string[]) => {
+              if (!formData) return '';
+              for (const name of possibleNames) {
+                const value = formData[name];
+                if (value && typeof value === 'string' && value.trim()) {
+                  return value.trim();
+                }
+              }
+              return '';
+            };
+
+            const steamName = findFieldValue(application.form_data, [
+              'steam_name', 'steamName', 'steam', 'Steam Name', 'steamname'
+            ]) || application.profiles?.username || '';
+
+            const fivemName = findFieldValue(application.form_data, [
+              'fivem_name', 'fivemName', 'fivem', 'FiveM Name', 'fivemname', 'fivem_username'
+            ]) || steamName || '';
+
+            const discordName = findFieldValue(application.form_data, [
+              'discord_name', 'discordName', 'discord_tag', 'discordTag', 'discord', 'Discord Tag', 'Discord Name'
+            ]) || application.discord_name || '';
+            
+            const applicantEmail = application.profiles?.email || 
+              findFieldValue(application.form_data, ['email', 'Email', 'e-mail', 'e_mail']) || '';
+
+            const applicantName = application.profiles?.username || 
+              application.profiles?.full_name || 
+              steamName || 
+              'Applicant';
             
             const emailPayload = {
               applicationId,
               templateType,
-              recipientEmail: application.profiles?.email,
-              applicantName: application.profiles?.username || application.profiles?.full_name || 'Applicant',
+              recipientEmail: applicantEmail,
+              applicantName,
               applicationType: application.application_types?.name || 'Application',
               reviewNotes: notes,
               discordName,
@@ -219,15 +246,16 @@ const ApplicationManager = () => {
                 body: {
                   type: discordEventType,
                   data: {
-                    steam_name: steamName,
-                    fivem_name: fivemName,
-                    discord_name: discordName,
-                    discord_tag: discordName,
-                    applicant_name: emailPayload.applicantName,
-                    user_email: application.profiles?.email,
-                    applicantEmail: application.profiles?.email,
+                    steam_name: steamName || 'Not provided',
+                    fivem_name: fivemName || 'Not provided',
+                    discord_name: discordName || 'Not provided',
+                    discord_tag: discordName || 'Not provided',
+                    applicant_name: applicantName,
+                    user_email: applicantEmail,
+                    applicantEmail: applicantEmail,
                     application_type: emailPayload.applicationType,
-                    review_notes: notes,
+                    review_notes: notes || 'No notes provided',
+                    reason: notes || 'No reason provided',
                     form_data: application.form_data
                   }
                 }

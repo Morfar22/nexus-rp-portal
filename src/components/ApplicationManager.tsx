@@ -479,81 +479,61 @@ const ApplicationManager = () => {
         .eq('id', appData.application_type_id)
         .single();
 
-      // Extract applicant data from form_data using the field mapping
+      // Helper function to find field value with multiple possible names
+      const findFieldValue = (formData: any, possibleNames: string[]) => {
+        if (!formData) return '';
+        for (const name of possibleNames) {
+          const value = formData[name];
+          if (value && typeof value === 'string' && value.trim()) {
+            return value.trim();
+          }
+        }
+        return '';
+      };
+
+      // Extract applicant data from form_data using flexible field matching
       let applicantName = 'Applicant';
       let discordName = '';
       let steamName = '';
       let fivemName = '';
+      let userEmail = '';
 
-      if (applicationType?.form_fields && appData.form_data) {
-        let formFields = applicationType.form_fields;
-        
-        // Parse form_fields if it's a string
-        if (typeof formFields === 'string') {
-          try {
-            formFields = JSON.parse(formFields);
-          } catch (parseError) {
-            console.error('Error parsing form_fields:', parseError);
-            formFields = [];
-          }
-        }
-        
-        // Ensure formFields is an array
-        if (!Array.isArray(formFields)) {
-          console.error('form_fields is not an array:', formFields);
-          formFields = [];
-        }
-        
-        const formData = appData.form_data as any;
+      const formData = appData.form_data as any;
 
-        // Extract values using correct field keys
-        formFields.forEach((field: any) => {
-          const fieldKey = field.key || field.id;
-          const fieldValue = formData[fieldKey];
-          
-          if (fieldValue && typeof fieldValue === 'string' && fieldValue.trim() !== '') {
-            const fieldId = field.id || field.key || field.name;
-            
-            if (fieldId === 'discord_name' || fieldId === 'discord_username') {
-              discordName = fieldValue.trim();
-              if (!applicantName || applicantName === 'Applicant') applicantName = fieldValue.trim();
-            } else if (fieldId === 'steam_name') {
-              steamName = fieldValue.trim();
-              if (!applicantName || applicantName === 'Applicant') applicantName = fieldValue.trim();
-            } else if (fieldId === 'fivem_name') {
-              fivemName = fieldValue.trim();
-            } else if (fieldId === 'full_name' || fieldId === 'name') {
-              applicantName = fieldValue.trim();
-            } else if (fieldId === 'karakternavn') {
-              if (!applicantName || applicantName === 'Applicant') applicantName = fieldValue.trim();
-            }
-          }
-        });
-      }
+      // Try to extract from form_data with multiple possible field names
+      steamName = findFieldValue(formData, [
+        'steam_name', 'steamName', 'steam', 'Steam Name', 'steamname', 'Steam'
+      ]) || appData.steam_name || '';
 
-      // Also check the legacy direct fields
-      if (appData.steam_name) {
-        steamName = appData.steam_name;
-        if (!applicantName || applicantName === 'Applicant') applicantName = appData.steam_name;
-      }
-      if (appData.discord_tag) {
-        discordName = appData.discord_tag;
-      }
-      if (appData.fivem_name) {
-        fivemName = appData.fivem_name;
+      fivemName = findFieldValue(formData, [
+        'fivem_name', 'fivemName', 'fivem', 'FiveM Name', 'fivemname', 'fivem_username', 'FiveM'
+      ]) || appData.fivem_name || steamName || '';
+
+      discordName = findFieldValue(formData, [
+        'discord_name', 'discordName', 'discord_tag', 'discordTag', 'discord', 'Discord Tag', 'Discord Name', 'Discord', 'discord_username'
+      ]) || appData.discord_tag || '';
+
+      userEmail = findFieldValue(formData, [
+        'email', 'Email', 'e-mail', 'e_mail', 'Email Address'
+      ]) || '';
+
+      // Try to get a good applicant name from available data
+      applicantName = findFieldValue(formData, [
+        'full_name', 'fullName', 'name', 'Name', 'karakternavn'
+      ]) || steamName || discordName || 'Applicant';
+
+      // Get email from user profile if not in form_data
+      if (!userEmail && appData.user_id) {
+        const { data: userProfile } = await supabase
+          .from('custom_users')
+          .select('email')
+          .eq('id', appData.user_id)
+          .maybeSingle();
+        userEmail = userProfile?.email || '';
       }
 
       // Send email notification
       try {
-        // Get user email from custom_users table
-        const { data: userProfile, error: profileError } = await supabase
-          .from('custom_users')
-          .select('email')
-          .eq('id', appData.user_id)
-          .single();
-
-        if (profileError) throw profileError;
-
         // Update the application manager to use new template system
         let templateType: 'application_approved' | 'application_denied' | 'application_submitted';
         if (status === 'approved') {
@@ -568,7 +548,7 @@ const ApplicationManager = () => {
           body: {
             applicationId: applicationId,
             templateType: templateType,
-            recipientEmail: userProfile?.email,
+            recipientEmail: userEmail,
             applicantName: applicantName,
             applicationType: applicationType?.name || 'Application',
             reviewNotes: notes || '',
@@ -587,40 +567,30 @@ const ApplicationManager = () => {
         const discordType = status === 'approved' ? 'application_approved' : 
                           status === 'rejected' ? 'application_denied' : 
                           'application_under_review';
-
-        // Extract the same data we used for email
-        let discordApplicantName = applicantName || 'Unknown';
-        let discordSteamName = steamName || '';
-        let discordDiscordName = discordName || '';
-        let discordFivemName = fivemName || '';
-
-        // If we still don't have data, try to extract from form_data directly
-        if (!discordDiscordName && appData.form_data) {
-          const formData = appData.form_data as any;
-          discordDiscordName = formData.discord_name || formData.discord_username || '';
-          if (!discordApplicantName || discordApplicantName === 'Unknown') {
-            discordApplicantName = discordDiscordName || formData.karakternavn || formData.name || 'Unknown';
-          }
-        }
         
         await supabase.functions.invoke('discord-logger', {
           body: {
             type: discordType,
             data: {
-              applicant_name: discordApplicantName,
-              steam_name: discordSteamName,
-              discord_tag: discordDiscordName, // Using discord_tag for legacy compatibility
-              discord_name: discordDiscordName,
-              fivem_name: discordFivemName,
-              review_notes: notes || '',
+              applicant_name: applicantName || 'Unknown',
+              steam_name: steamName || 'Not provided',
+              discord_tag: discordName || 'Not provided',
+              discord_name: discordName || 'Not provided',
+              fivem_name: fivemName || 'Not provided',
+              applicantEmail: userEmail || 'Not provided',
+              user_email: userEmail || 'Not provided',
+              review_notes: notes || 'No notes provided',
+              reason: notes || 'No reason provided',
               application_type: applicationType?.name || 'Application',
-              form_data: appData.form_data || {} // Include the form_data for fallback
+              form_data: appData.form_data || {}
             }
           }
         });
         console.log('Discord notification sent successfully with data:', {
-          applicant_name: discordApplicantName,
-          discord_name: discordDiscordName
+          applicant_name: applicantName,
+          discord_name: discordName,
+          steam_name: steamName,
+          fivem_name: fivemName
         });
       } catch (discordError) {
         console.error('Error sending Discord notification:', discordError);
