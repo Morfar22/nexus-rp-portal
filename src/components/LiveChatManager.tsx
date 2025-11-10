@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Alert } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Settings, Users, Save, UserX, Shield, Bell, Bot, Headphones, BarChart3 } from "lucide-react";
+import { MessageSquare, Settings, Users, Save, UserX, Shield, Bell, Bot, Headphones, BarChart3, AlertCircle } from "lucide-react";
 import LiveChatSupport from "./LiveChatSupport";
 import { TranslatedNotificationSettings } from "./TranslatedNotificationSettings";
 import { ChatAIAssistant } from "./chat/ChatAIAssistant";
@@ -338,8 +339,18 @@ const LiveChatManager = () => {
                 <div>
                   <Label className="text-foreground font-medium">Discord Webhook URL</Label>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Discord webhook URL for logging chat events
+                    Discord webhook URL for logging chat events (e.g. chat started, ended, user banned)
                   </p>
+                  {settings.discord_webhook_url && (
+                    <Alert className="mb-2 bg-amber-500/10 border-amber-500/50">
+                      <AlertCircle className="h-4 w-4 text-amber-500" />
+                      <div className="ml-2">
+                        <p className="text-sm text-amber-500">
+                          Hvis du får fejl 404 "Unknown Webhook", skal du oprette en ny webhook i Discord og indsætte den nye URL her.
+                        </p>
+                      </div>
+                    </Alert>
+                  )}
                   <Input
                     type="url"
                     placeholder="https://discord.com/api/webhooks/..."
@@ -347,7 +358,7 @@ const LiveChatManager = () => {
                     onChange={(e) => 
                       setSettings(prev => ({ 
                         ...prev, 
-                        discord_webhook_url: e.target.value 
+                        discord_webhook_url: e.target.value
                       }))
                     }
                     className="bg-gaming-dark border-gaming-border"

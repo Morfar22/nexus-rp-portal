@@ -133,6 +133,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!discordResponse.ok) {
       const errorText = await discordResponse.text();
+      console.error(`Discord webhook failed: ${discordResponse.status} - ${errorText}`);
+      
+      // If webhook is not found (404), log it but don't fail the entire request
+      if (discordResponse.status === 404) {
+        console.warn('Discord webhook URL is invalid or has been deleted. Please update the webhook URL in chat settings.');
+        return new Response(JSON.stringify({ 
+          success: false, 
+          warning: 'Discord webhook is invalid. Please update webhook URL in chat settings.' 
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      
       throw new Error(`Discord webhook failed: ${discordResponse.status} - ${errorText}`);
     }
 
