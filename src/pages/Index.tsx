@@ -16,6 +16,7 @@ import heroImage from "@/assets/hero-image.webp";
 import LiveChatWidget from "@/components/LiveChatWidget";
 import GoogleAd from "@/components/GoogleAds";
 import SocialMediaLinks from "@/components/SocialMediaLinks";
+import ServerStatsHistory from "@/components/ServerStatsHistory";
 import { useTranslation } from 'react-i18next';
 
 const Index = () => {
@@ -441,6 +442,13 @@ const Index = () => {
               </div>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* Server Statistics History */}
+      <section className="py-12 sm:py-16 lg:py-20 relative z-10">
+        <div className="container mx-auto px-4">
+          <ServerStatsHistory />
         </div>
       </section>
       

@@ -83,6 +83,7 @@ import LawsManager from "@/components/LawsManager";
 import SocialMediaManager from "@/components/SocialMediaManager";
 import CustomRoleManager from "@/components/CustomRoleManager";
 import ConsolidatedServerManager from "@/components/ConsolidatedServerManager";
+import ServerStatsHistory from "@/components/ServerStatsHistory";
 import TeamManager from "@/components/TeamManager";
 import RoleManager from "@/components/RoleManager";
 import SupportersManager from "@/components/SupportersManager";
@@ -1136,6 +1137,7 @@ const StaffPanel = () => {
               {activeTab === "server-management" && (
                 <div className="space-y-6">
                   <ConsolidatedServerManager />
+                  <ServerStatsHistory />
                 </div>
               )}
 
