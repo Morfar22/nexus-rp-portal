@@ -65,7 +65,11 @@ const CFXServerSettings = () => {
           serverName: data.Data.hostname,
           players: data.Data.clients || 0,
           maxPlayers: data.Data.sv_maxclients || 64,
-          status: 'online'
+          status: 'online',
+          gametype: data.Data.gametype,
+          mapname: data.Data.mapname,
+          resources: data.Data.resources?.length || 0,
+          tags: data.Data.tags?.length || 0
         });
 
         toast({
@@ -209,6 +213,14 @@ const CFXServerSettings = () => {
                 <div className="text-sm space-y-1">
                   <p><strong>Server:</strong> {testResult.serverName}</p>
                   <p><strong>Spillere:</strong> {testResult.players}/{testResult.maxPlayers}</p>
+                  <p><strong>Gametype:</strong> {testResult.gametype || 'N/A'}</p>
+                  <p><strong>Map:</strong> {testResult.mapname || 'N/A'}</p>
+                  {testResult.resources > 0 && (
+                    <p><strong>Resources:</strong> {testResult.resources}</p>
+                  )}
+                  {testResult.tags > 0 && (
+                    <p><strong>Tags:</strong> {testResult.tags}</p>
+                  )}
                   <p><strong>Status:</strong> <span className="text-green-500">Online</span></p>
                 </div>
               </div>

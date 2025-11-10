@@ -13,15 +13,29 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import CFXServerSettings from '@/components/CFXServerSettings';
 
+interface Player {
+  id: number;
+  name: string;
+  identifiers: string[];
+  ping: number;
+}
+
 interface CFXServerStats {
   hostname: string;
   clients: number;
   sv_maxclients: number;
-  players: any[];
+  players: Player[];
   gametype: string;
   mapname: string;
   server: string;
   connectEndPoint: string;
+  resources?: string[];
+  tags?: string[];
+  vars?: Record<string, any>;
+  iconVersion?: number;
+  ownerID?: number;
+  private?: boolean;
+  upvotePower?: number;
 }
 
 export default function ServerManagement() {
@@ -371,7 +385,7 @@ export default function ServerManagement() {
             </CardContent>
           </Card>
         ) : serverStats ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-6">
             {/* Main Server Card */}
             <Card className="lg:col-span-2 bg-gaming-card border-gaming-border">
               <CardHeader className="pb-3">
@@ -425,38 +439,29 @@ export default function ServerManagement() {
                   </div>
                 </div>
 
-                {/* Additional Stats Grid */}
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gaming-border/30">
-                  <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <Gamepad2 className="h-6 w-6 text-neon-blue" />
-                    <div>
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {serverStats.gametype}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Gametype</p>
-                    </div>
-                  </div>
+                {/* Connect Button */}
+                {serverStats.connectEndPoint && (
+                  <Button 
+                    className="w-full bg-neon-purple hover:bg-neon-purple/80"
+                    onClick={() => window.open(`fivem://connect/${serverStats.connectEndPoint}`, '_blank')}
+                  >
+                    Forbind til Server
+                  </Button>
+                )}
 
-                  <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <Globe className="h-6 w-6 text-neon-purple" />
-                    <div>
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {serverStats.mapname}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Map</p>
+                {/* Tags */}
+                {serverStats.tags && serverStats.tags.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-2">Server Tags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {serverStats.tags.slice(0, 10).map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-3 p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
-                    <Zap className="h-6 w-6 text-neon-green" />
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {serverStats.players?.length || 0}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Active</p>
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {lastUpdate && (
                   <div className="text-xs text-muted-foreground bg-gaming-dark/50 p-3 rounded border border-gaming-border">
@@ -466,65 +471,51 @@ export default function ServerManagement() {
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <div className="space-y-4">
+            {/* Players List */}
+            {serverStats.players && serverStats.players.length > 0 && (
               <Card className="bg-gaming-card border-gaming-border">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm text-muted-foreground">Server Status</CardTitle>
+                <CardHeader>
+                  <CardTitle className="text-foreground">Aktive Spillere ({serverStats.players.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-foreground">Online</span>
-                      <Badge variant="default" className="bg-green-500/20 text-green-500 border-green-500/50">
-                        Aktiv
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-foreground">Players</span>
-                      <span className="text-sm font-semibold text-foreground">{serverStats.clients}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-foreground">Max Players</span>
-                      <span className="text-sm font-semibold text-foreground">{serverStats.sv_maxclients}</span>
-                    </div>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {serverStats.players.map((player, index) => (
+                      <div key={index} className="flex justify-between items-center p-3 bg-gaming-darker/50 rounded-lg border border-gaming-border/50">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 rounded-full bg-neon-purple/20 flex items-center justify-center">
+                            <span className="text-xs font-semibold text-neon-purple">{index + 1}</span>
+                          </div>
+                          <span className="text-foreground font-medium">{player.name}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="text-xs">
+                            {player.ping}ms
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
+            )}
 
+            {/* Server Resources */}
+            {serverStats.resources && serverStats.resources.length > 0 && (
               <Card className="bg-gaming-card border-gaming-border">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm text-muted-foreground">Quick Actions</CardTitle>
+                <CardHeader>
+                  <CardTitle className="text-foreground">Server Resources ({serverStats.resources.length})</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  {displayIp && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => {
-                        navigator.clipboard.writeText(displayIp);
-                        toast({
-                          title: "Kopieret!",
-                          description: "Server IP kopieret til udklipsholder",
-                        });
-                      }}
-                    >
-                      <Server className="w-4 h-4 mr-2" />
-                      Kopier Server IP
-                    </Button>
-                  )}
-                  {discordUrl && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => window.open(discordUrl, '_blank')}
-                    >
-                      Åbn Discord
-                    </Button>
-                  )}
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
+                    {serverStats.resources.map((resource, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs justify-start">
+                        {resource}
+                      </Badge>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
           </div>
         ) : (
           <Card className="bg-gaming-card border-gaming-border">
