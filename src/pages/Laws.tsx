@@ -156,9 +156,9 @@ const Laws = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gaming-dark">
+    <div className="min-h-screen bg-gradient-hero">
       <Navbar />
-      <div className="py-20 bg-gradient-hero">
+      <div className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-3 mb-4">

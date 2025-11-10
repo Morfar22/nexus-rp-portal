@@ -188,7 +188,7 @@ export default function Keybinds() {
   const categories = Array.from(new Set(keybinds.map(k => k.category)));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gaming-dark via-background to-gaming-dark">
+    <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">

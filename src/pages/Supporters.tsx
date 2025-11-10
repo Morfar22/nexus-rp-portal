@@ -137,28 +137,8 @@ export default function Supporters() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gaming-dark via-gaming-darker to-gaming-dark"></div>
-      <div className="absolute inset-0 cyber-grid opacity-20"></div>
-      
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="particle"
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 20}s`,
-              animationDuration: `${18 + Math.random() * 10}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10">
-        <Navbar />
+    <div className="min-h-screen bg-gradient-hero">
+      <Navbar />
         
         <main className="container mx-auto px-4 py-16">
           {/* Hero Section */}
@@ -354,7 +334,6 @@ export default function Supporters() {
             </Card>
           </section>
         </main>
-      </div>
     </div>
   );
 }

@@ -11,7 +11,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gaming-dark">
+    <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

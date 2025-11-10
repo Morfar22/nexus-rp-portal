@@ -258,7 +258,7 @@ const handleCustomSubscribe = async (amount: number) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-hero">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">Loading packages...</div>
@@ -269,7 +269,7 @@ const handleCustomSubscribe = async (amount: number) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">

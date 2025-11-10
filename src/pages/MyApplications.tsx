@@ -93,7 +93,7 @@ const MyApplications = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gaming-dark flex flex-col">
+      <div className="min-h-screen bg-gradient-hero flex flex-col">
         <Navbar />
         <div className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
           <Card className="max-w-md w-full bg-gaming-card border-gaming-border">
@@ -123,7 +123,7 @@ const MyApplications = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gaming-dark">
+    <div className="min-h-screen bg-gradient-hero">
       <Navbar />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

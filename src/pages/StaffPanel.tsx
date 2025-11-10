@@ -894,7 +894,7 @@ const StaffPanel = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gaming-dark">
+      <div className="min-h-screen bg-gradient-hero">
         <Navbar />
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
@@ -908,13 +908,13 @@ const StaffPanel = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-gaming-dark w-full">
+      <div className="min-h-screen bg-gradient-hero w-full">
         <Navbar />
         
         <div className="flex w-full">
           <StaffSidebar activeTab={activeTab} onTabChange={setActiveTab} />
           
-          <main className="flex-1 bg-gaming-dark">
+          <main className="flex-1 bg-gradient-hero">
             <div className="border-b border-gaming-border p-4 flex items-center bg-gaming-darker/30">
               <SidebarTrigger className="mr-4 hover:bg-gaming-card hover:scale-110 transition-all duration-300 rounded-lg p-2" />
               <div className="animate-slide-up">
