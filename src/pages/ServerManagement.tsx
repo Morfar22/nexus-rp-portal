@@ -271,6 +271,13 @@ export default function ServerManagement() {
           )}
         </div>
 
+        {/* CFX.re Server Settings - PRIMARY CONFIGURATION */}
+        {isStaff && (
+          <div className="mb-8">
+            <CFXServerSettings />
+          </div>
+        )}
+
         {/* Server Configuration */}
         <Card className="mb-8 bg-gaming-card border-gaming-border">
           <CardHeader>
@@ -334,13 +341,6 @@ export default function ServerManagement() {
             )}
           </CardContent>
         </Card>
-
-        {/* CFX.re Server Settings */}
-        {isStaff && (
-          <div className="mb-8">
-            <CFXServerSettings />
-          </div>
-        )}
 
         {/* Live Server Statistics */}
         <div className="mb-6">
