@@ -26,7 +26,7 @@ import {
   Settings,
   BarChart3
 } from "lucide-react";
-import CFXServerSettings from "@/components/CFXServerSettings";
+// CFXServerSettings removed - each server now has its own CFX code
 
 interface ServerData {
   id: string;
@@ -352,9 +352,6 @@ export default function ConsolidatedServerManager() {
 
   return (
     <div className="space-y-6">
-      {/* CFX.re Server Settings */}
-      <CFXServerSettings />
-
       {/* Live Server Management */}
       <div className="flex justify-between items-center">
         <div>
