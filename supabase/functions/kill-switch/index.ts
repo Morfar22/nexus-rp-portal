@@ -76,8 +76,23 @@ serve(async (req) => {
 
       const killSwitchActive = settings?.setting_value?.kill_switch_active || false;
 
+      // Check if Linux webhook is configured
+      const webhookUrl = Deno.env.get('LINUX_WEBHOOK_URL');
+      const webhookToken = Deno.env.get('LINUX_WEBHOOK_TOKEN');
+      let linuxServerStatus = { success: false, error: null };
+
+      if (webhookUrl && webhookToken) {
+        linuxServerStatus.success = true;
+        linuxServerStatus.error = null;
+      } else {
+        linuxServerStatus.error = 'Webhook not configured';
+      }
+
       return new Response(
-        JSON.stringify({ active: killSwitchActive }),
+        JSON.stringify({ 
+          active: killSwitchActive,
+          linux_server: linuxServerStatus
+        }),
         { headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
