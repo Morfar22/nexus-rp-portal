@@ -3,6 +3,17 @@ import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { AlertTriangle, Power, Shield, Loader2, Server } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
@@ -17,6 +28,8 @@ const KillSwitchControl = () => {
     error: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,6 +85,25 @@ const KillSwitchControl = () => {
 
     fetchStatus();
   }, [isAdmin, session_token]);
+
+  const handleKillSwitchClick = () => {
+    // If deactivating (currently active), skip confirmation
+    if (killSwitchActive) {
+      toggleKillSwitch();
+      return;
+    }
+    
+    // If activating, show confirmation dialog
+    setConfirmText('');
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmShutdown = () => {
+    if (confirmText === 'CONFIRM SHUTDOWN') {
+      setShowConfirmDialog(false);
+      toggleKillSwitch();
+    }
+  };
 
   const toggleKillSwitch = async () => {
     if (!session_token) return;
@@ -223,7 +255,7 @@ const KillSwitchControl = () => {
 
         <div className="flex flex-col items-center space-y-6">
           <Button
-            onClick={toggleKillSwitch}
+            onClick={handleKillSwitchClick}
             disabled={loading}
             size="lg"
             variant={killSwitchActive ? "default" : "destructive"}
@@ -242,6 +274,52 @@ const KillSwitchControl = () => {
             )}
           </Button>
         </div>
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <AlertDialogContent className="bg-gaming-card border-red-500">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center text-red-400">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                Confirm Emergency Shutdown
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-4">
+                <p className="text-foreground">
+                  This action will immediately:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Shut down the entire website</li>
+                  <li>Power off the Linux server</li>
+                  <li>Disconnect all active users</li>
+                </ul>
+                <div className="bg-red-500/10 border border-red-500/30 rounded p-3">
+                  <p className="text-sm text-red-400 font-semibold mb-2">
+                    Type "CONFIRM SHUTDOWN" to proceed:
+                  </p>
+                  <Input
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="CONFIRM SHUTDOWN"
+                    className="bg-background/50 border-red-500/50"
+                    autoFocus
+                  />
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setConfirmText('')}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmShutdown}
+                disabled={confirmText !== 'CONFIRM SHUTDOWN'}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Confirm Shutdown
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <div className="mt-8 pt-6 border-t border-gaming-border">
           <div className="space-y-2 text-xs text-muted-foreground">
