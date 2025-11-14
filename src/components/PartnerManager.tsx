@@ -68,7 +68,7 @@ export default function PartnerManager() {
     e.preventDefault();
     
     try {
-      const sessionToken = localStorage.getItem('sessionToken');
+      const sessionToken = localStorage.getItem('custom_session_token');
       if (!sessionToken) {
         toast({
           title: "Error",
@@ -124,7 +124,7 @@ export default function PartnerManager() {
     if (!confirm("Are you sure you want to delete this partner?")) return;
 
     try {
-      const sessionToken = localStorage.getItem('sessionToken');
+      const sessionToken = localStorage.getItem('custom_session_token');
       if (!sessionToken) {
         toast({
           title: "Error",
