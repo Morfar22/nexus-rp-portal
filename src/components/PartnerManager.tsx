@@ -134,6 +134,8 @@ export default function PartnerManager() {
         return;
       }
 
+      console.log('Deleting partner with ID:', id);
+
       const { data, error } = await supabase.functions.invoke('partners-manager', {
         body: {
           action: 'delete',
@@ -142,15 +144,24 @@ export default function PartnerManager() {
         }
       });
 
-      if (error) throw error;
+      console.log('Delete response:', { data, error });
+
+      if (error) {
+        console.error('Function invocation error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       
       toast({ title: "Success", description: "Partner deleted successfully" });
       fetchPartners();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting partner:", error);
       toast({
         title: "Error",
-        description: "Failed to delete partner",
+        description: error.message || "Failed to delete partner",
         variant: "destructive",
       });
     }
