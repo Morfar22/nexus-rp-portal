@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StatusEntry {
   title: string;
@@ -30,44 +31,15 @@ const CFXStatusIndicator = () => {
   const fetchStatus = async () => {
     setIsLoading(true);
     try {
-      // Try multiple CORS proxies
-      const proxies = [
-        'https://cors-anywhere.herokuapp.com/',
-        'https://corsproxy.io/?',
-        'https://api.codetabs.com/v1/proxy?quest='
-      ];
+      // Use edge function to avoid CORS issues
+      const { data, error } = await supabase.functions.invoke('cfx-status');
       
-      let response;
-      let xmlText = '';
+      if (error) throw error;
       
-      // Try direct fetch first (might work in some environments)
-      try {
-        response = await fetch('https://status.cfx.re/history.atom');
-        if (response.ok) {
-          xmlText = await response.text();
-        }
-      } catch (directError) {
-        console.log('Direct fetch failed, trying proxies...');
-        
-        // Try proxies one by one
-        for (const proxy of proxies) {
-          try {
-            const proxyUrl = `${proxy}${encodeURIComponent('https://status.cfx.re/history.atom')}`;
-            response = await fetch(proxyUrl);
-            if (response.ok) {
-              xmlText = await response.text();
-              break;
-            }
-          } catch (proxyError) {
-            console.log(`Proxy ${proxy} failed:`, proxyError);
-            continue;
-          }
-        }
-      }
+      const xmlText = data?.text;
       
       if (!xmlText) {
-        // If all fetch attempts fail, set a default operational status
-        // This is better than showing "unknown" when the service is likely operational
+        // If fetch fails, set a default operational status
         setStatus({
           overallStatus: 'operational',
           lastUpdated: new Date().toISOString(),
