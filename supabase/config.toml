@@ -39,6 +39,9 @@ verify_jwt = false
 [functions.package-manager]
 verify_jwt = false
 
+[functions.partners-manager]
+verify_jwt = false
+
 [functions.staff-analytics]
 verify_jwt = false
 
@@ -64,4 +67,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.translation-sync]
+verify_jwt = false
+
+[functions.cfx-status]
 verify_jwt = false
