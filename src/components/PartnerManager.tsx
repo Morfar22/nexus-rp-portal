@@ -68,22 +68,31 @@ export default function PartnerManager() {
     e.preventDefault();
     
     try {
-      if (editingPartner) {
-        const { error } = await supabase
-          .from("partners")
-          .update(formData)
-          .eq("id", editingPartner.id);
-
-        if (error) throw error;
-        toast({ title: "Success", description: "Partner updated successfully" });
-      } else {
-        const { error } = await supabase
-          .from("partners")
-          .insert([{ ...formData, created_by: (await supabase.auth.getUser()).data.user?.id }]);
-
-        if (error) throw error;
-        toast({ title: "Success", description: "Partner created successfully" });
+      const sessionToken = localStorage.getItem('sessionToken');
+      if (!sessionToken) {
+        toast({
+          title: "Error",
+          description: "No session found",
+          variant: "destructive",
+        });
+        return;
       }
+
+      const { data, error } = await supabase.functions.invoke('partners-manager', {
+        body: {
+          action: editingPartner ? 'update' : 'create',
+          sessionToken,
+          data: formData,
+          partnerId: editingPartner?.id
+        }
+      });
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Success", 
+        description: editingPartner ? "Partner updated successfully" : "Partner created successfully" 
+      });
 
       resetForm();
       fetchPartners();
@@ -115,10 +124,23 @@ export default function PartnerManager() {
     if (!confirm("Are you sure you want to delete this partner?")) return;
 
     try {
-      const { error } = await supabase
-        .from("partners")
-        .delete()
-        .eq("id", id);
+      const sessionToken = localStorage.getItem('sessionToken');
+      if (!sessionToken) {
+        toast({
+          title: "Error",
+          description: "No session found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('partners-manager', {
+        body: {
+          action: 'delete',
+          sessionToken,
+          partnerId: id
+        }
+      });
 
       if (error) throw error;
       
