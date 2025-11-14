@@ -17,10 +17,13 @@ interface PartnerData {
 }
 
 async function validateSession(sessionToken: string) {
+  console.log('Validating session token...')
+  
   const { data: session, error } = await supabase
     .from('custom_sessions')
     .select(`
       user_id,
+      expires_at,
       custom_users!inner(
         id,
         role,
@@ -31,16 +34,41 @@ async function validateSession(sessionToken: string) {
     .gt('expires_at', new Date().toISOString())
     .single()
 
-  if (error || !session) {
-    return null
+  if (error) {
+    console.error('Session validation error:', error)
+    return { error: 'Session not found or expired', user: null }
   }
+  
+  if (!session) {
+    console.log('No session found')
+    return { error: 'No session found', user: null }
+  }
+
+  console.log('Session found:', {
+    user_id: session.user_id,
+    expires_at: session.expires_at,
+    role: session.custom_users?.role,
+    banned: session.custom_users?.banned
+  })
 
   const user = session.custom_users
-  if (user.banned || !['admin', 'staff'].includes(user.role)) {
-    return null
+  if (!user) {
+    console.log('No user data in session')
+    return { error: 'Invalid session data', user: null }
   }
 
-  return user
+  if (user.banned) {
+    console.log('User is banned')
+    return { error: 'User is banned', user: null }
+  }
+
+  if (!['admin', 'staff'].includes(user.role)) {
+    console.log('User does not have required role:', user.role)
+    return { error: `Insufficient permissions. Role: ${user.role}`, user: null }
+  }
+
+  console.log('Session validated successfully')
+  return { error: null, user }
 }
 
 Deno.serve(async (req) => {
@@ -52,14 +80,27 @@ Deno.serve(async (req) => {
   try {
     const { action, sessionToken, data, partnerId } = await req.json()
 
-    // Validate session and permissions
-    const user = await validateSession(sessionToken)
-    if (!user) {
+    console.log('Request received:', { action, hasSessionToken: !!sessionToken, partnerId })
+
+    if (!sessionToken) {
+      console.error('No session token provided')
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }), 
+        JSON.stringify({ error: 'No session token provided' }), 
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Validate session and permissions
+    const validation = await validateSession(sessionToken)
+    if (validation.error || !validation.user) {
+      console.error('Session validation failed:', validation.error)
+      return new Response(
+        JSON.stringify({ error: validation.error || 'Unauthorized' }), 
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const user = validation.user
 
     switch (action) {
       case 'create':
