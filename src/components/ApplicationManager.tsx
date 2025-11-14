@@ -692,6 +692,17 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [editingPermissions, setEditingPermissions] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+
+  const filterApplications = (status?: string) => {
+    if (!status || status === "all") return applications;
+    return applications.filter((app: any) => app.status === status);
+  };
+
+  const getTabCount = (status?: string) => {
+    if (!status || status === "all") return applications.length;
+    return applications.filter((app: any) => app.status === status).length;
+  };
 
   return (
     <Card className="p-6 bg-gaming-card border-gaming-border">
@@ -702,11 +713,39 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
         </Badge>
       </div>
 
-      <div className="space-y-4">
-        {applications.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No applications found</p>
-        ) : (
-          applications.map((app) => (
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5 mb-4">
+          <TabsTrigger value="all">
+            All <Badge variant="secondary" className="ml-2">{getTabCount()}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="pending">
+            Pending <Badge variant="secondary" className="ml-2">{getTabCount("pending")}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="under_review">
+            Under Review <Badge variant="secondary" className="ml-2">{getTabCount("under_review")}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="approved">
+            Approved <Badge variant="secondary" className="ml-2">{getTabCount("approved")}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="rejected">
+            Denied <Badge variant="secondary" className="ml-2">{getTabCount("rejected")}</Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        {["all", "pending", "under_review", "approved", "rejected"].map((tab) => {
+          const filteredApps = filterApplications(tab === "all" ? undefined : tab);
+          
+          return (
+            <TabsContent key={tab} value={tab}>
+              <div className="space-y-4">
+                {filteredApps.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    {tab === "all" 
+                      ? "No applications found" 
+                      : `No ${tab.replace('_', ' ')} applications`}
+                  </p>
+                ) : (
+                  filteredApps.map((app) => (
             <Card key={app.id} className="p-4 bg-gaming-dark border-gaming-border">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -998,6 +1037,10 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
           ))
         )}
       </div>
+    </TabsContent>
+  );
+})}
+</Tabs>
     </Card>
   );
 };
