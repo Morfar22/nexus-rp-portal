@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileText, 
   Eye, 
@@ -38,6 +39,17 @@ export const ApplicationsList = ({
 }: ApplicationsListProps) => {
   const [reviewNotes, setReviewNotes] = useState("");
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [activeTab, setActiveTab] = useState("all");
+
+  const filterApplications = (status?: string) => {
+    if (!status || status === "all") return applications;
+    return applications.filter(app => app.status === status);
+  };
+
+  const getTabCount = (status?: string) => {
+    if (!status || status === "all") return applications.length;
+    return applications.filter(app => app.status === status).length;
+  };
 
   const handleReview = (app: Application) => {
     setSelectedApp(app);
@@ -85,23 +97,51 @@ export const ApplicationsList = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-20 bg-gaming-dark rounded-lg"></div>
-              </div>
-            ))}
-          </div>
-        ) : applications.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Applications Found</h3>
-            <p className="text-muted-foreground">No applications have been submitted yet.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {applications.map((app) => {
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-4">
+            <TabsTrigger value="all">
+              All <Badge variant="secondary" className="ml-2">{getTabCount()}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="pending">
+              Pending <Badge variant="secondary" className="ml-2">{getTabCount("pending")}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="under_review">
+              Under Review <Badge variant="secondary" className="ml-2">{getTabCount("under_review")}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="approved">
+              Approved <Badge variant="secondary" className="ml-2">{getTabCount("approved")}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="rejected">
+              Denied <Badge variant="secondary" className="ml-2">{getTabCount("rejected")}</Badge>
+            </TabsTrigger>
+          </TabsList>
+
+          {["all", "pending", "under_review", "approved", "rejected"].map((tab) => {
+            const filteredApps = filterApplications(tab === "all" ? undefined : tab);
+            
+            return (
+              <TabsContent key={tab} value={tab}>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-20 bg-gaming-dark rounded-lg"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredApps.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Applications Found</h3>
+                    <p className="text-muted-foreground">
+                      {tab === "all" 
+                        ? "No applications have been submitted yet." 
+                        : `No ${tab.replace('_', ' ')} applications.`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredApps.map((app) => {
               const StatusIcon = getStatusIcon(app.status);
               
               return (
@@ -193,6 +233,10 @@ export const ApplicationsList = ({
             })}
           </div>
         )}
+      </TabsContent>
+    );
+  })}
+</Tabs>
 
         {/* Review Dialog */}
         <Dialog open={selectedApp !== null} onOpenChange={(open) => !open && setSelectedApp(null)}>
