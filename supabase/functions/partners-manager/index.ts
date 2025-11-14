@@ -133,13 +133,22 @@ async function updatePartner(partnerId: string, updates: any) {
 
 async function deletePartner(partnerId: string) {
   try {
-    const { error } = await supabase
+    console.log('Attempting to delete partner:', partnerId)
+    
+    const { data, error } = await supabase
       .from('partners')
       .delete()
       .eq('id', partnerId)
+      .select()
 
-    if (error) throw error
+    console.log('Delete result:', { data, error })
 
+    if (error) {
+      console.error('Delete error:', error)
+      throw error
+    }
+
+    console.log('Partner deleted successfully')
     return new Response(
       JSON.stringify({ success: true }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
