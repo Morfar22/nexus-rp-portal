@@ -11,13 +11,19 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('[EMAIL-TEMPLATE-MANAGER] Request received');
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { action, sessionToken, templateData } = await req.json();
+    const body = await req.json();
+    console.log('[EMAIL-TEMPLATE-MANAGER] Request body:', JSON.stringify(body));
+    
+    const { action, sessionToken, templateData } = body;
 
     // Validate session token
+    console.log('[EMAIL-TEMPLATE-MANAGER] Validating session token');
     const { data: session, error: sessionError } = await supabase
       .from('custom_sessions')
       .select('user_id')
@@ -26,13 +32,17 @@ Deno.serve(async (req) => {
       .single();
 
     if (sessionError || !session) {
+      console.log('[EMAIL-TEMPLATE-MANAGER] Session validation failed:', sessionError?.message);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired session' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    console.log('[EMAIL-TEMPLATE-MANAGER] Session validated for user:', session.user_id);
 
     // Verify user is admin
+    console.log('[EMAIL-TEMPLATE-MANAGER] Checking user permissions');
     const { data: user, error: userError } = await supabase
       .from('custom_users')
       .select('role, banned')
@@ -40,15 +50,20 @@ Deno.serve(async (req) => {
       .single();
 
     if (userError || !user || user.role !== 'admin' || user.banned) {
+      console.log('[EMAIL-TEMPLATE-MANAGER] Permission denied - role:', user?.role, 'banned:', user?.banned);
       return new Response(
         JSON.stringify({ error: 'Unauthorized: Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    console.log('[EMAIL-TEMPLATE-MANAGER] User authorized as admin');
 
     // Handle different actions
+    console.log('[EMAIL-TEMPLATE-MANAGER] Handling action:', action);
     switch (action) {
       case 'upsert': {
+        console.log('[EMAIL-TEMPLATE-MANAGER] Upserting template:', templateData.template_type);
         const { error: upsertError } = await supabase
           .from('email_templates')
           .upsert({
@@ -62,8 +77,12 @@ Deno.serve(async (req) => {
             onConflict: 'template_type'
           });
 
-        if (upsertError) throw upsertError;
+        if (upsertError) {
+          console.log('[EMAIL-TEMPLATE-MANAGER] Upsert error:', upsertError);
+          throw upsertError;
+        }
 
+        console.log('[EMAIL-TEMPLATE-MANAGER] Template saved successfully');
         return new Response(
           JSON.stringify({ success: true, message: 'Template saved successfully' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
