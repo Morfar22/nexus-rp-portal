@@ -104,13 +104,22 @@ Best regards,
 
   const fetchTemplates = async () => {
     try {
-      const { data, error } = await supabase
-        .from('email_templates')
-        .select('*')
-        .order('template_type');
+      const sessionToken = localStorage.getItem('custom_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('email-template-manager', {
+        body: {
+          action: 'fetch',
+          sessionToken
+        }
+      });
 
       if (error) throw error;
-      setTemplates(data || []);
+      if (data?.error) throw new Error(data.error);
+      
+      setTemplates(data.templates || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
       toast({

@@ -90,13 +90,18 @@ Deno.serve(async (req) => {
       }
 
       case 'fetch': {
+        console.log('[EMAIL-TEMPLATE-MANAGER] Fetching templates');
         const { data: templates, error: fetchError } = await supabase
           .from('email_templates')
           .select('*')
           .order('template_type');
 
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.log('[EMAIL-TEMPLATE-MANAGER] Fetch error:', fetchError);
+          throw fetchError;
+        }
 
+        console.log('[EMAIL-TEMPLATE-MANAGER] Templates fetched:', templates?.length || 0);
         return new Response(
           JSON.stringify({ templates }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
