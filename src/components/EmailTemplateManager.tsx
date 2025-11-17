@@ -126,20 +126,26 @@ Best regards,
   const updateTemplate = async (templateType: string, subject: string, body: string) => {
     setSaving(true);
     try {
-      // Use upsert to either update existing or create new template
-      const { error } = await supabase
-        .from('email_templates')
-        .upsert({ 
-          template_type: templateType,
-          subject, 
-          body, 
-          is_active: true,
-          updated_at: new Date().toISOString() 
-        }, {
-          onConflict: 'template_type'
-        });
+      const sessionToken = localStorage.getItem('custom_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found. Please log in again.');
+      }
+
+      const { data, error } = await supabase.functions.invoke('email-template-manager', {
+        body: {
+          action: 'upsert',
+          sessionToken,
+          templateData: {
+            template_type: templateType,
+            subject,
+            body,
+            is_active: true
+          }
+        }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await fetchTemplates();
       toast({
@@ -150,7 +156,7 @@ Best regards,
       console.error('Error saving template:', error);
       toast({
         title: "Error",
-        description: "Failed to save email template",
+        description: error instanceof Error ? error.message : "Failed to save email template",
         variant: "destructive"
       });
     } finally {
