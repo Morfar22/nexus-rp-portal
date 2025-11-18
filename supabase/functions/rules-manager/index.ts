@@ -82,10 +82,7 @@ serve(async (req) => {
         console.log('[RULES-MANAGER] Creating rule')
         const { error: createError } = await supabase
           .from('rules')
-          .insert({
-            ...ruleData,
-            created_by: sessionData.user_id
-          })
+          .insert(ruleData)
 
         if (createError) {
           console.log('[RULES-MANAGER] Create error:', createError)
