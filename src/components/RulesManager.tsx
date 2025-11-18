@@ -35,14 +35,22 @@ const RulesManager = () => {
   const fetchRules = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('rules')
-        .select('*')
-        .order('category', { ascending: true })
-        .order('order_index', { ascending: true });
+      const sessionToken = localStorage.getItem('custom_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('rules-manager', {
+        body: {
+          action: 'fetch',
+          sessionToken
+        }
+      });
 
       if (error) throw error;
-      setRules(data || []);
+      if (data?.error) throw new Error(data.error);
+      
+      setRules(data.rules || []);
     } catch (error) {
       console.error('Error fetching rules:', error);
       toast({
@@ -57,14 +65,21 @@ const RulesManager = () => {
 
   const createRule = async () => {
     try {
-      const { error } = await supabase
-        .from('rules')
-        .insert({
-          ...newRule,
-          created_by: user?.id
-        });
+      const sessionToken = localStorage.getItem('custom_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('rules-manager', {
+        body: {
+          action: 'create',
+          sessionToken,
+          ruleData: newRule
+        }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await fetchRules();
       setIsCreating(false);
@@ -91,12 +106,22 @@ const RulesManager = () => {
 
   const updateRule = async (ruleId: string, updates: any) => {
     try {
-      const { error } = await supabase
-        .from('rules')
-        .update(updates)
-        .eq('id', ruleId);
+      const sessionToken = localStorage.getItem('custom_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('rules-manager', {
+        body: {
+          action: 'update',
+          sessionToken,
+          ruleId,
+          ruleData: updates
+        }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await fetchRules();
       setEditingRule(null);
@@ -116,12 +141,21 @@ const RulesManager = () => {
 
   const deleteRule = async (ruleId: string) => {
     try {
-      const { error } = await supabase
-        .from('rules')
-        .delete()
-        .eq('id', ruleId);
+      const sessionToken = localStorage.getItem('custom_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('rules-manager', {
+        body: {
+          action: 'delete',
+          sessionToken,
+          ruleId
+        }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await fetchRules();
       toast({

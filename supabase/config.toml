@@ -71,3 +71,9 @@ verify_jwt = false
 
 [functions.cfx-status]
 verify_jwt = false
+
+[functions.email-template-manager]
+verify_jwt = false
+
+[functions.rules-manager]
+verify_jwt = false
