@@ -89,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
     const recipientEmail = originalUserEmail || userEmail;
     
     const emailResponse = await resend.emails.send({
-      from: "Gaming Community <noreply@dreamlightrp.co>",
+      from: "Adventurer RP <noreply@adventurerp.dk>",
       to: [recipientEmail],
       subject: subject,
       html: banEmailHtml,

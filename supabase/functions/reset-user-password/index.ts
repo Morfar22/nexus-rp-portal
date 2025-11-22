@@ -91,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Email user the password reset link via Resend
     const emailResponse = await resend.emails.send({
-      from: "Gaming Community <noreply@adventurerp.dk>",
+      from: "Adventurer RP <noreply@adventurerp.dk>",
       to: [targetEmail],
       subject: "Reset Your Password",
       html: `
