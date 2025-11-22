@@ -165,6 +165,13 @@ serve(async (req) => {
         const approvedDiscordTag = data.discord_name || data.discord_tag || data.form_data?.discord_tag || data.form_data?.discord_name || "Not provided";
         const approvedFivemName = data.fivem_name || data.form_data?.fivem_name || approvedSteamName || "Not provided";
         const approvedEmail = data.applicantEmail || data.user_email || "Not provided";
+        const approvedDiscordId = data.discord_id || null;
+        
+        // Use Discord tag for display name
+        const approvedDisplayName = approvedDiscordTag !== "Not provided" ? approvedDiscordTag : approvedSteamName;
+        
+        // Create ping if Discord ID is available
+        const approvedPing = approvedDiscordId ? `<@${approvedDiscordId}>` : '';
         
         embed = {
           title: "✅ Application Approved",
@@ -178,7 +185,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "Application Management System" }
         }
-        content = `🎉 **Application approved** for **${approvedSteamName}**! Welcome to the server!`
+        content = `${approvedPing} 🎉 **Application approved** for **${approvedDisplayName}**! Welcome to the server!`
         break
 
       case 'application_denied':
@@ -188,9 +195,13 @@ serve(async (req) => {
         const deniedSteamName = data.steam_name || data.form_data?.steam_name || "Not provided";
         const deniedFivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
         const deniedEmail = data.applicantEmail || data.user_email || "Not provided";
+        const deniedDiscordId = data.discord_id || null;
         
         // Use Discord tag for display name if available, otherwise use applicant name
         const deniedDisplayName = deniedDiscordTag !== "Not provided" ? deniedDiscordTag : deniedApplicantName;
+        
+        // Create ping if Discord ID is available
+        const deniedPing = deniedDiscordId ? `<@${deniedDiscordId}>` : '';
         
         embed = {
           title: "❌ Application Denied",
@@ -204,7 +215,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "Application Management System" }
         }
-        content = `🚫 **Application denied** for **${deniedDisplayName}**`
+        content = `${deniedPing} 🚫 **Application denied** for **${deniedDisplayName}**`
         break
 
       case 'staff_action':
