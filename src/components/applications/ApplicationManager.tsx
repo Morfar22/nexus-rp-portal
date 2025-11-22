@@ -241,6 +241,17 @@ const ApplicationManager = () => {
             
             // Send Discord notification
             try {
+              // Get Discord ID if user has connected Discord
+              let discordId = null;
+              if (application.user_id) {
+                const { data: userData } = await supabase
+                  .from('custom_users')
+                  .select('discord_id')
+                  .eq('id', application.user_id)
+                  .single();
+                discordId = userData?.discord_id || null;
+              }
+
               const discordEventType = status === 'approved' ? 'application_approved' : 'application_denied';
               const discordResult = await supabase.functions.invoke('discord-logger', {
                 body: {
@@ -250,6 +261,7 @@ const ApplicationManager = () => {
                     fivem_name: fivemName || 'Not provided',
                     discord_name: discordName || 'Not provided',
                     discord_tag: discordName || 'Not provided',
+                    discord_id: discordId,
                     applicant_name: applicantName,
                     user_email: applicantEmail,
                     applicantEmail: applicantEmail,
