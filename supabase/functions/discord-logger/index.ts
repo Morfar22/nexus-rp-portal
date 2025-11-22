@@ -183,10 +183,14 @@ serve(async (req) => {
 
       case 'application_denied':
         webhookUrl = applicationDiscordSettings.staff_webhook_url || webhooks.applications
-        const deniedSteamName = data.steam_name || data.form_data?.steam_name || data.applicant_name || "Not provided";
-        const deniedDiscordTag = data.discord_name || data.discord_tag || data.form_data?.discord_tag || data.form_data?.discord_name || "Not provided";
-        const deniedFivemName = data.fivem_name || data.form_data?.fivem_name || deniedSteamName || "Not provided";
+        const deniedApplicantName = data.applicant_name || data.form_data?.full_name || "Not provided";
+        const deniedDiscordTag = data.discord_name || data.discord_tag || data.form_data?.discord || data.form_data?.discord_tag || data.form_data?.discord_name || "Not provided";
+        const deniedSteamName = data.steam_name || data.form_data?.steam_name || "Not provided";
+        const deniedFivemName = data.fivem_name || data.form_data?.fivem_name || "Not provided";
         const deniedEmail = data.applicantEmail || data.user_email || "Not provided";
+        
+        // Use Discord tag for display name if available, otherwise use applicant name
+        const deniedDisplayName = deniedDiscordTag !== "Not provided" ? deniedDiscordTag : deniedApplicantName;
         
         embed = {
           title: "❌ Application Denied",
@@ -200,7 +204,7 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           footer: { text: "Application Management System" }
         }
-        content = `🚫 **Application denied** for **${deniedSteamName}**`
+        content = `🚫 **Application denied** for **${deniedDisplayName}**`
         break
 
       case 'staff_action':
