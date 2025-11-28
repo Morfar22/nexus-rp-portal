@@ -74,15 +74,15 @@ serve(async (req) => {
       logStep("Custom amount checkout", { customAmount, amountInCents });
 
       session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
+        payment_method_types: ["card", "mobilepay"],
         mode: "payment",
         line_items: [
           {
             price_data: {
-              currency: "usd",
+              currency: "dkk",
               product_data: {
                 name: "Custom Support",
-                description: "User defined contribution"
+                description: "Brugerdefineret bidrag"
               },
               unit_amount: amountInCents
             },
@@ -132,26 +132,35 @@ serve(async (req) => {
       }
 
       // Create checkout session
+      // MobilePay understøtter kun engangsbetaling, ikke subscriptions
+      // Så for abonnementer bruger vi kun card
+      const paymentMethodTypes = packageData.interval === 'one_time' 
+        ? ["card", "mobilepay"] 
+        : ["card"];
+      
       session = await stripe.checkout.sessions.create({
+        payment_method_types: paymentMethodTypes,
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
         line_items: [
           {
             price_data: {
-              currency: packageData.currency,
+              currency: packageData.currency || "dkk",
               product_data: {
                 name: packageData.name,
                 description: packageData.description || undefined
               },
               unit_amount: packageData.price_amount,
-              recurring: {
-                interval: packageData.interval
-              }
+              ...(packageData.interval !== 'one_time' && {
+                recurring: {
+                  interval: packageData.interval
+                }
+              })
             },
             quantity: 1
           }
         ],
-        mode: "subscription",
+        mode: packageData.interval === 'one_time' ? "payment" : "subscription",
         automatic_tax: {
           enabled: true
         },
