@@ -83,3 +83,9 @@ verify_jwt = false
 
 [functions.customer-portal]
 verify_jwt = false
+
+[functions.discord-oauth]
+verify_jwt = false
+
+[functions.sync-discord-profiles]
+verify_jwt = false
