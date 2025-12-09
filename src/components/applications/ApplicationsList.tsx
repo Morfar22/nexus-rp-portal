@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   FileText, 
   Eye, 
@@ -16,11 +18,16 @@ import {
   Clock, 
   Trash2, 
   User, 
-  RefreshCw 
+  RefreshCw,
+  Bot,
+  Loader2
 } from "lucide-react";
 import { Application } from "./types";
 import { getStatusBadgeClass, formatDate } from "./utils";
 import { CreateApplicationDialog } from "./CreateApplicationDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
+import { toast } from "sonner";
 
 interface ApplicationsListProps {
   applications: Application[];
@@ -30,6 +37,12 @@ interface ApplicationsListProps {
   onRefresh: () => void;
 }
 
+interface AIDetectionResult {
+  isAI: boolean;
+  score: number;
+  reasons: string[];
+}
+
 export const ApplicationsList = ({ 
   applications, 
   isLoading, 
@@ -37,9 +50,13 @@ export const ApplicationsList = ({
   onDelete, 
   onRefresh 
 }: ApplicationsListProps) => {
+  const { t } = useTranslation();
+  const { session_token } = useCustomAuth();
   const [reviewNotes, setReviewNotes] = useState("");
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [aiCheckingId, setAiCheckingId] = useState<string | null>(null);
+  const [aiResults, setAiResults] = useState<Record<string, AIDetectionResult>>({});
 
   const filterApplications = (status?: string) => {
     if (!status || status === "all") return applications;
@@ -62,6 +79,94 @@ export const ApplicationsList = ({
     await onStatusUpdate(selectedApp.id, status, reviewNotes);
     setSelectedApp(null);
     setReviewNotes("");
+  };
+
+  const handleAICheck = async (applicationId: string) => {
+    if (!session_token) {
+      toast.error("Ingen gyldig session");
+      return;
+    }
+
+    setAiCheckingId(applicationId);
+    try {
+      const { data, error } = await supabase.functions.invoke("detect-ai-content", {
+        body: { applicationId },
+        headers: {
+          Authorization: `Bearer ${session_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      setAiResults(prev => ({
+        ...prev,
+        [applicationId]: {
+          isAI: data.isAI,
+          score: data.score,
+          reasons: data.reasons,
+        },
+      }));
+
+      if (data.isAI) {
+        toast.warning(`AI indhold fundet! Score: ${data.score}%`);
+      } else {
+        toast.success(`Ingen AI indhold fundet. Score: ${data.score}%`);
+      }
+
+      onRefresh();
+    } catch (error) {
+      console.error("Error checking AI:", error);
+      toast.error("Kunne ikke tjekke for AI indhold");
+    } finally {
+      setAiCheckingId(null);
+    }
+  };
+
+  const getAIBadge = (app: Application) => {
+    const result = aiResults[app.id];
+    const hasBeenChecked = (app as any).ai_checked_at || result;
+    const isAI = result?.isAI ?? (app as any).ai_detected;
+    const score = result?.score ?? (app as any).ai_detection_score ?? 0;
+
+    if (!hasBeenChecked) {
+      return null;
+    }
+
+    if (isAI) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                <Bot className="h-3 w-3 mr-1" />
+                AI {score}%
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>AI-genereret indhold fundet</p>
+              <p className="text-xs text-muted-foreground">Score: {score}%</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Ikke AI
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Intet AI-indhold fundet</p>
+            <p className="text-xs text-muted-foreground">Score: {score}%</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   const getStatusIcon = (status: string) => {
@@ -166,6 +271,7 @@ export const ApplicationsList = ({
                             <StatusIcon className="h-3 w-3 mr-1" />
                             {app.status.charAt(0).toUpperCase() + app.status.slice(1).replace('_', ' ')}
                           </Badge>
+                          {getAIBadge(app)}
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground mb-3">
@@ -192,6 +298,29 @@ export const ApplicationsList = ({
                       </div>
                       
                       <div className="flex items-center space-x-2 ml-4">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAICheck(app.id)}
+                                disabled={aiCheckingId === app.id}
+                                className="border-orange-500/30 hover:border-orange-500 text-orange-400"
+                              >
+                                {aiCheckingId === app.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Bot className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Tjek for AI-genereret indhold</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
                         <Button 
                           variant="outline" 
                           size="sm" 
