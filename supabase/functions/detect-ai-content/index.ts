@@ -33,29 +33,38 @@ async function detectAIContentWithAI(text: string): Promise<{ isAI: boolean; sco
         messages: [
           {
             role: "system",
-            content: `Du er en ekspert i at analysere tekst for at afgøre om den er skrevet af AI (som ChatGPT, Claude, etc.) eller af et menneske.
+            content: `Du er en STRENG og SKEPTISK ekspert i at opdage AI-genereret tekst. Din opgave er at fange ChatGPT, Claude og lignende AI-værktøjer.
 
-Analyser den givne tekst og vurder sandsynligheden for at den er AI-genereret baseret på:
-1. Sprogmønstre og sætningsstruktur
-2. Brug af generiske fraser og buzzwords
-3. Mangel på personlige detaljer eller følelser
-4. Overordentlig perfekt grammatik og tegnsætning
-5. Repetitive mønstre og strukturer
-6. Mangel på uformelt sprog eller slang
-7. Overdrevent forklarende stil
+VIGTIGE TEGN PÅ AI-GENERERET TEKST (ChatGPT på dansk):
+1. Overdrevent strukturerede svar med klare punkter
+2. Brug af buzzwords som: "solid erfaring", "går meget op i", "professionel", "effektiv", "struktureret", "tydelige procedurer", "kvalitativ", "motiverende", "central del", "trives i", "overblik"
+3. Perfekt grammatik uden stavefejl eller tastefejl
+4. Sætninger der lyder som fra en lærebog eller officiel guide
+5. Overdrevent positive og optimistiske formuleringer
+6. Mangel på slang, forkortelser eller uformelt sprog
+7. "Jeg kan lide at..." eller "Jeg er god til..." gentages
+8. Svar der dækker alle punkter perfekt uden at glemme noget
+9. Formalsproglige vendinger som "derudover", "endvidere", "desuden"
+10. Tekst der virker som den er skrevet for at imponere i stedet for at være ærlig
 
-Svar KUN med et JSON-objekt i dette format:
+VÆR SKEPTISK! De fleste ansøgninger i dag bruger ChatGPT. Hvis teksten lyder "for god til at være sand" eller virker som en perfekt ansøgning, er den sandsynligvis AI-genereret.
+
+Svar KUN med et JSON-objekt:
 {
   "isAI": true/false,
   "score": 0-100,
-  "reasons": ["grund 1", "grund 2", "grund 3"]
+  "reasons": ["grund 1 på dansk", "grund 2 på dansk", "grund 3 på dansk"]
 }
 
-Score: 0-30 = sandsynligvis menneske, 31-60 = usikkert, 61-100 = sandsynligvis AI`
+Score betydning:
+- 0-25: Meget sandsynligt menneske (med fejl, uformelt sprog, personlige detaljer)
+- 26-50: Måske menneske (noget formelt men stadig personligt)
+- 51-75: Sandsynligvis AI (for struktureret, for perfekt)
+- 76-100: Næsten sikkert AI (alle tegn på AI-generering)`
           },
           {
             role: "user",
-            content: `Analyser denne tekst for AI-genereret indhold:\n\n${text.substring(0, 3000)}`
+            content: `Analyser denne danske ansøgningstekst KRITISK for AI-genereret indhold. Vær SKEPTISK - de fleste ansøgninger i dag bruger ChatGPT:\n\n${text.substring(0, 3000)}`
           }
         ],
         temperature: 0.1,
