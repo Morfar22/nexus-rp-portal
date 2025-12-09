@@ -129,6 +129,10 @@ export type Database = {
       }
       applications: {
         Row: {
+          ai_checked_at: string | null
+          ai_checked_by: string | null
+          ai_detected: boolean | null
+          ai_detection_score: number | null
           application_type_id: string
           closed: boolean
           closed_at: string | null
@@ -149,6 +153,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_checked_at?: string | null
+          ai_checked_by?: string | null
+          ai_detected?: boolean | null
+          ai_detection_score?: number | null
           application_type_id: string
           closed?: boolean
           closed_at?: string | null
@@ -169,6 +177,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_checked_at?: string | null
+          ai_checked_by?: string | null
+          ai_detected?: boolean | null
+          ai_detection_score?: number | null
           application_type_id?: string
           closed?: boolean
           closed_at?: string | null
@@ -189,6 +201,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "applications_ai_checked_by_fkey"
+            columns: ["ai_checked_by"]
+            isOneToOne: false
+            referencedRelation: "custom_users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "applications_application_type_id_fkey"
             columns: ["application_type_id"]
