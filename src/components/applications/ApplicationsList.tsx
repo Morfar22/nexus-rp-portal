@@ -433,6 +433,64 @@ export const ApplicationsList = ({
                   </CardContent>
                 </Card>
 
+                {/* AI Detection */}
+                <Card className="bg-gaming-dark border-gaming-border">
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Bot className="h-4 w-4 text-orange-400" />
+                        AI Detektion
+                      </span>
+                      {getAIBadge(selectedApp)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        Tjek om ansøgningen indeholder AI-genereret indhold
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAICheck(selectedApp.id)}
+                        disabled={aiCheckingId === selectedApp.id}
+                        className="border-orange-500/30 hover:border-orange-500 text-orange-400"
+                      >
+                        {aiCheckingId === selectedApp.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Tjekker...
+                          </>
+                        ) : (
+                          <>
+                            <Bot className="h-4 w-4 mr-2" />
+                            Tjek for AI
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    {(aiResults[selectedApp.id] || (selectedApp as any).ai_checked_at) && (
+                      <div className="mt-3 p-3 bg-gaming-card rounded-lg border border-gaming-border">
+                        <div className="flex items-center gap-2 mb-2">
+                          {(aiResults[selectedApp.id]?.isAI ?? (selectedApp as any).ai_detected) ? (
+                            <AlertCircle className="h-4 w-4 text-orange-400" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4 text-green-400" />
+                          )}
+                          <span className="font-medium text-sm">
+                            {(aiResults[selectedApp.id]?.isAI ?? (selectedApp as any).ai_detected) 
+                              ? 'AI-genereret indhold fundet' 
+                              : 'Intet AI-indhold fundet'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Score: {aiResults[selectedApp.id]?.score ?? (selectedApp as any).ai_detection_score ?? 0}%
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Review Actions */}
                 <Card className="bg-gaming-dark border-gaming-border">
                   <CardHeader>
