@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.sync-discord-profiles]
 verify_jwt = false
+
+[functions.detect-ai-content]
+verify_jwt = false
