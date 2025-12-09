@@ -10,11 +10,103 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, CheckCircle, XCircle, Clock, Trash2, Webhook, Settings, Shield } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Clock, Trash2, Webhook, Settings, Shield, Bot, Loader2, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ApplicationPermissionsManager } from "@/components/applications/ApplicationPermissionsManager";
+
+// AI Detection Component
+const AIDetectionSection = ({ applicationId, application }: { applicationId: string; application: any }) => {
+  const [isChecking, setIsChecking] = useState(false);
+  const [result, setResult] = useState<{ isAI: boolean; score: number } | null>(null);
+  const { toast } = useToast();
+
+  const handleAICheck = async () => {
+    setIsChecking(true);
+    try {
+      const sessionToken = localStorage.getItem('custom_session_token');
+      if (!sessionToken) {
+        toast({ title: "Fejl", description: "Du er ikke logget ind", variant: "destructive" });
+        return;
+      }
+
+      const response = await supabase.functions.invoke('detect-ai-content', {
+        body: { applicationId },
+        headers: { Authorization: `Bearer ${sessionToken}` }
+      });
+
+      if (response.error) throw response.error;
+      
+      setResult({
+        isAI: response.data.isAI,
+        score: response.data.score
+      });
+      
+      toast({
+        title: response.data.isAI ? "AI-indhold fundet" : "Intet AI-indhold",
+        description: `Score: ${response.data.score}%`,
+        variant: response.data.isAI ? "destructive" : "default"
+      });
+    } catch (error: any) {
+      console.error('AI check error:', error);
+      toast({ title: "Fejl", description: error.message, variant: "destructive" });
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const hasResult = result || application.ai_checked_at;
+  const isAI = result?.isAI ?? application.ai_detected;
+  const score = result?.score ?? application.ai_detection_score ?? 0;
+
+  return (
+    <div className="p-4 bg-gaming-dark rounded-lg border border-orange-500/30 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Bot className="h-5 w-5 text-orange-400" />
+          <span className="font-medium text-foreground">AI Detektion</span>
+          {hasResult && (
+            <Badge variant={isAI ? "destructive" : "secondary"} className={isAI ? "" : "bg-green-600"}>
+              {isAI ? "AI Fundet" : "Ingen AI"}
+            </Badge>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleAICheck}
+          disabled={isChecking}
+          className="border-orange-500/30 hover:border-orange-500 text-orange-400"
+        >
+          {isChecking ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Tjekker...
+            </>
+          ) : (
+            <>
+              <Bot className="h-4 w-4 mr-2" />
+              Tjek for AI
+            </>
+          )}
+        </Button>
+      </div>
+      {hasResult && (
+        <div className="flex items-center gap-2 text-sm">
+          {isAI ? (
+            <AlertCircle className="h-4 w-4 text-orange-400" />
+          ) : (
+            <CheckCircle className="h-4 w-4 text-green-400" />
+          )}
+          <span className="text-muted-foreground">
+            {isAI ? 'AI-genereret indhold fundet' : 'Intet AI-indhold fundet'} - Score: {score}%
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ApplicationSettingsPanel = () => {
   const [applicationSettings, setApplicationSettings] = useState<any>({});
@@ -890,6 +982,9 @@ const ApplicationsList = ({ applications, availableRoles, updateApplicationStatu
                       
                       {selectedApp && (
                         <div className="space-y-4 sm:space-y-6">
+                          {/* AI Detection Section */}
+                          <AIDetectionSection applicationId={selectedApp.id} application={selectedApp} />
+
                           {/* Dynamic form fields based on application type */}
                           {selectedApp.application_types?.form_fields && Array.isArray(selectedApp.application_types.form_fields) ? (
                             <div className="grid grid-cols-1 gap-3 sm:gap-4">
