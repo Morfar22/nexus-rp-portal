@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ interface Subscription {
 }
 
 export default function Packages() {
+  const { t } = useTranslation();
   const { user, session_token } = useCustomAuth();
   const [packages, setPackages] = useState<Package[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -63,7 +65,7 @@ export default function Packages() {
       setPackages(data || []);
     } catch (error) {
       console.error("Error fetching packages:", error);
-      toast.error("Failed to load packages");
+      toast.error(t('packages_page.failed_load'));
     }
   };
 
@@ -72,12 +74,9 @@ export default function Packages() {
 
     setCheckingSubscription(true);
     try {
-      // Get the custom session token from useCustomAuth context
       if (!session_token) {
         throw new Error('No session token found');
       }
-
-      console.log('Checking subscription for user:', user.id, 'with token:', session_token);
 
       const { data, error } = await supabase.functions.invoke("check-subscription", {
         headers: {
@@ -85,15 +84,11 @@ export default function Packages() {
         },
       });
 
-      console.log('Check subscription response:', { data, error });
-
       if (error) throw error;
-      
-      console.log('Setting subscription data:', data);
       setSubscription(data);
     } catch (error) {
       console.error("Error checking subscription:", error);
-      toast.error("Failed to check subscription status");
+      toast.error(t('packages_page.failed_subscription_check'));
     } finally {
       setCheckingSubscription(false);
       setLoading(false);
@@ -102,12 +97,12 @@ export default function Packages() {
 
   const handleSubscribe = async (packageId: string) => {
     if (!user) {
-      toast.error("Please log in to subscribe");
+      toast.error(t('packages_page.please_login'));
       return;
     }
 
     if (!session_token) {
-      toast.error("No valid session found");
+      toast.error(t('packages_page.no_session'));
       return;
     }
 
@@ -125,60 +120,57 @@ export default function Packages() {
       }
     } catch (error) {
       console.error("Error creating checkout:", error);
-      toast.error("Failed to start subscription process");
+      toast.error(t('packages_page.failed_checkout'));
     }
   };
 
-const handleCustomSubscribe = async (amount: number) => {
-  if (!user) {
-    toast.error("Please log in to support");
-    return;
-  }
-
-  if (!session_token) {
-    toast.error("No valid session found");
-    return;
-  }
-
-  // Sikre value er et tal og minimum 1 usd
-  const numericAmount = Math.max(1, Number(amount)); // Minimum $1
-
-  if (isNaN(numericAmount) || numericAmount < 1) {
-    toast.error("Enter an amount of at least $1");
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase.functions.invoke("create-checkout", {
-      body: { customAmount: numericAmount },
-      headers: {
-        Authorization: `Bearer ${session_token}`,
-      },
-    });
-
-    if (error) throw error;
-    if (data?.url) {
-      window.open(data.url, "_blank");
-    } else {
-      toast.error("No payment link returned from server!");
+  const handleCustomSubscribe = async (amount: number) => {
+    if (!user) {
+      toast.error(t('packages_page.please_login_support'));
+      return;
     }
-  } catch (error) {
-    // Vis evt. server-fejl til bruger for debugging
-    console.error("Error creating custom checkout:", error);
-    toast.error(
-      error?.message
-        ? `Failed to start custom payment process: ${error.message}`
-        : "Failed to start custom payment process"
-    );
-  }
-};
 
+    if (!session_token) {
+      toast.error(t('packages_page.no_session'));
+      return;
+    }
+
+    const numericAmount = Math.max(1, Number(amount));
+
+    if (isNaN(numericAmount) || numericAmount < 1) {
+      toast.error(t('packages_page.min_amount_error'));
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { customAmount: numericAmount },
+        headers: {
+          Authorization: `Bearer ${session_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      } else {
+        toast.error(t('packages_page.failed_custom_checkout'));
+      }
+    } catch (error: any) {
+      console.error("Error creating custom checkout:", error);
+      toast.error(
+        error?.message
+          ? `${t('packages_page.failed_custom_checkout')}: ${error.message}`
+          : t('packages_page.failed_custom_checkout')
+      );
+    }
+  };
 
   const handleManageSubscription = async () => {
     if (!user) return;
 
     if (!session_token) {
-      toast.error("No valid session found");
+      toast.error(t('packages_page.no_session'));
       return;
     }
 
@@ -195,7 +187,7 @@ const handleCustomSubscribe = async (amount: number) => {
       }
     } catch (error) {
       console.error("Error opening customer portal:", error);
-      toast.error("Failed to open subscription management");
+      toast.error(t('packages_page.failed_portal'));
     }
   };
 
@@ -207,7 +199,6 @@ const handleCustomSubscribe = async (amount: number) => {
         .eq("id", user?.id)
         .single();
 
-      // Sikker reduce: Undgå tom array-fejl!
       let mostExpensivePackage: Package | null = null;
       if (packages.length > 0) {
         mostExpensivePackage = packages.reduce(
@@ -215,7 +206,6 @@ const handleCustomSubscribe = async (amount: number) => {
         );
       }
 
-      // Trigger purchase webhook kun hvis du har et pakkeobjekt
       if (mostExpensivePackage) {
         await supabase.functions.invoke("purchase-webhook", {
           body: {
@@ -227,7 +217,6 @@ const handleCustomSubscribe = async (amount: number) => {
           },
         });
       } else {
-        // Hvis customAmount: send fallback eller undlad at kalde webhook
         await supabase.functions.invoke("purchase-webhook", {
           body: {
             customerEmail: user?.email,
@@ -239,12 +228,11 @@ const handleCustomSubscribe = async (amount: number) => {
         });
       }
 
-      toast.success("Payment successful! Welcome to your new package!");
+      toast.success(t('packages_page.payment_success'));
       window.history.replaceState({}, document.title, window.location.pathname);
       await checkSubscription();
     } catch (error) {
       console.error("Error handling payment success:", error);
-      // Don't show error to user as payment was successful
     }
   };
 
@@ -261,7 +249,7 @@ const handleCustomSubscribe = async (amount: number) => {
       <div className="min-h-screen bg-gradient-hero">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading packages...</div>
+          <div className="text-center">{t('packages_page.loading')}</div>
         </div>
         <Footer />
       </div>
@@ -273,9 +261,9 @@ const handleCustomSubscribe = async (amount: number) => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 text-foreground">Choose Your Package</h1>
+          <h1 className="text-4xl font-bold mb-4 text-foreground">{t('packages_page.choose_package')}</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Select the perfect subscription package for your gaming experience
+            {t('packages_page.description')}
           </p>
         </div>
 
@@ -283,23 +271,20 @@ const handleCustomSubscribe = async (amount: number) => {
           <div className="mb-8 p-4 bg-card rounded-lg border">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-foreground">Subscription Status</h3>
+                <h3 className="font-semibold text-foreground">{t('packages_page.subscription_status')}</h3>
                 <p className="text-muted-foreground">
-                  {(() => {
-                    console.log('Rendering subscription status:', subscription);
-                    return subscription.subscribed ? (
-                      <>
-                        Active: {subscription.subscription_tier}
-                        {subscription.subscription_end && (
-                          <span className="ml-2">
-                            (expires {new Date(subscription.subscription_end).toLocaleDateString()})
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      "No active subscription"
-                    );
-                  })()}
+                  {subscription.subscribed ? (
+                    <>
+                      {t('packages_page.active')}: {subscription.subscription_tier}
+                      {subscription.subscription_end && (
+                        <span className="ml-2">
+                          ({t('packages_page.expires')} {new Date(subscription.subscription_end).toLocaleDateString()})
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    t('packages_page.no_active_subscription')
+                  )}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -308,12 +293,12 @@ const handleCustomSubscribe = async (amount: number) => {
                   onClick={checkSubscription}
                   disabled={checkingSubscription}
                 >
-                  {checkingSubscription ? "Checking..." : "Refresh Status"}
+                  {checkingSubscription ? t('packages_page.checking') : t('packages_page.refresh_status')}
                 </Button>
                 {subscription.subscribed && (
                   <Button onClick={handleManageSubscription}>
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Manage Subscription
+                    {t('packages_page.manage_subscription')}
                   </Button>
                 )}
               </div>
@@ -328,7 +313,7 @@ const handleCustomSubscribe = async (amount: number) => {
               <Card key={pkg.id} className={`relative ${isCurrentPackage ? 'ring-2 ring-primary' : ''}`}>
                 {isCurrentPackage && (
                   <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                    Current Plan
+                    {t('packages_page.current_plan')}
                   </Badge>
                 )}
                 <CardHeader className="text-center">
@@ -354,7 +339,7 @@ const handleCustomSubscribe = async (amount: number) => {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-muted-foreground text-center">No features listed</p>
+                    <p className="text-muted-foreground text-center">{t('packages_page.no_features')}</p>
                   )}
                 </CardContent>
                 <CardFooter>
@@ -364,13 +349,13 @@ const handleCustomSubscribe = async (amount: number) => {
                     disabled={!user || isCurrentPackage}
                   >
                     {!user ? (
-                      "Login to Subscribe"
+                      t('packages_page.login_to_subscribe')
                     ) : isCurrentPackage ? (
-                      "Current Package"
+                      t('packages_page.current_package')
                     ) : subscription?.subscribed ? (
-                      "Switch Package"
+                      t('packages_page.switch_package')
                     ) : (
-                      "Subscribe Now"
+                      t('packages_page.subscribe_now')
                     )}
                   </Button>
                 </CardFooter>
@@ -381,14 +366,14 @@ const handleCustomSubscribe = async (amount: number) => {
           {/* Custom Amount Card */}
           <Card className="relative">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl text-foreground">Custom Support</CardTitle>
+              <CardTitle className="text-2xl text-foreground">{t('packages_page.custom_support')}</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Choose your own amount (min. $1)
+                {t('packages_page.custom_support_description')}
               </CardDescription>
               <div className="text-4xl font-bold text-primary">
                 ${customAmount}
                 <span className="text-base font-normal text-muted-foreground">
-                  /one-time
+                  /{t('packages_page.one_time')}
                 </span>
               </div>
             </CardHeader>
@@ -401,7 +386,7 @@ const handleCustomSubscribe = async (amount: number) => {
                 onChange={(e) => setCustomAmount(Number(e.target.value))}
               />
               <p className="text-sm text-muted-foreground text-center">
-                Thank you for supporting us! 🙏
+                {t('packages_page.thank_you')}
               </p>
             </CardContent>
             <CardFooter>
@@ -410,7 +395,7 @@ const handleCustomSubscribe = async (amount: number) => {
                 onClick={() => handleCustomSubscribe(customAmount)}
                 disabled={!user || customAmount < 1}
               >
-                {!user ? "Login to Support" : "Donate"}
+                {!user ? t('packages_page.login_to_support') : t('packages_page.donate')}
               </Button>
             </CardFooter>
           </Card>
@@ -418,7 +403,7 @@ const handleCustomSubscribe = async (amount: number) => {
 
         {packages.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No packages available at the moment.</p>
+            <p className="text-muted-foreground">{t('packages_page.no_packages')}</p>
           </div>
         )}
       </div>
