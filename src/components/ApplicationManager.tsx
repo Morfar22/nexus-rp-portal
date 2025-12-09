@@ -28,25 +28,35 @@ const AIDetectionSection = ({ applicationId, application }: { applicationId: str
       const sessionToken = localStorage.getItem('custom_session_token');
       if (!sessionToken) {
         toast({ title: "Fejl", description: "Du er ikke logget ind", variant: "destructive" });
+        setIsChecking(false);
         return;
       }
 
-      const response = await supabase.functions.invoke('detect-ai-content', {
-        body: { applicationId },
-        headers: { Authorization: `Bearer ${sessionToken}` }
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-ai-content`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({ applicationId })
       });
 
-      if (response.error) throw response.error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'AI check failed');
+      }
+
+      const data = await response.json();
       
       setResult({
-        isAI: response.data.isAI,
-        score: response.data.score
+        isAI: data.isAI,
+        score: data.score
       });
       
       toast({
-        title: response.data.isAI ? "AI-indhold fundet" : "Intet AI-indhold",
-        description: `Score: ${response.data.score}%`,
-        variant: response.data.isAI ? "destructive" : "default"
+        title: data.isAI ? "AI-indhold fundet" : "Intet AI-indhold",
+        description: `Score: ${data.score}%`,
+        variant: data.isAI ? "destructive" : "default"
       });
     } catch (error: any) {
       console.error('AI check error:', error);
