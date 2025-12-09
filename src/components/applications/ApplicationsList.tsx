@@ -382,59 +382,8 @@ export const ApplicationsList = ({
             
             {selectedApp && (
               <div className="space-y-6">
-                {/* Applicant Information */}
-                <Card className="bg-gaming-dark border-gaming-border">
-                  <CardHeader>
-                    <CardTitle className="text-sm">Applicant Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <Label className="text-foreground">Username</Label>
-                      <p className="text-muted-foreground">{selectedApp.profiles?.username || 'Unknown'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-foreground">Email</Label>
-                      <p className="text-muted-foreground">{selectedApp.profiles?.email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-foreground">Discord Name</Label>
-                      <p className="text-muted-foreground">{selectedApp.discord_name || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-foreground">Application Type</Label>
-                      <p className="text-muted-foreground">{selectedApp.application_types?.name || 'Unknown'}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Form Data */}
-                <Card className="bg-gaming-dark border-gaming-border">
-                  <CardHeader>
-                    <CardTitle className="text-sm">Application Data</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {selectedApp.form_data && Object.keys(selectedApp.form_data).length > 0 ? (
-                      Object.entries(selectedApp.form_data).map(([key, value]) => (
-                        <div key={key}>
-                          <Label className="text-foreground capitalize">
-                            {key.replace(/_/g, ' ')}
-                          </Label>
-                          <p className="text-muted-foreground text-sm mt-1">
-                            {value ? (typeof value === 'string' ? value : JSON.stringify(value)) : 'N/A'}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-4">
-                        <p className="text-muted-foreground">No form data available for this application.</p>
-                        <p className="text-xs text-muted-foreground mt-1">This may be an older application or created without form data.</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* AI Detection */}
-                <Card className="bg-gaming-dark border-gaming-border">
+                {/* AI Detection - FIRST */}
+                <Card className="bg-gaming-dark border-gaming-border border-orange-500/30">
                   <CardHeader>
                     <CardTitle className="text-sm flex items-center justify-between">
                       <span className="flex items-center gap-2">
@@ -490,6 +439,58 @@ export const ApplicationsList = ({
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Applicant Information */}
+                <Card className="bg-gaming-dark border-gaming-border">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Applicant Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <Label className="text-foreground">Username</Label>
+                      <p className="text-muted-foreground">{selectedApp.profiles?.username || 'Unknown'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-foreground">Email</Label>
+                      <p className="text-muted-foreground">{selectedApp.profiles?.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-foreground">Discord Name</Label>
+                      <p className="text-muted-foreground">{selectedApp.discord_name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-foreground">Application Type</Label>
+                      <p className="text-muted-foreground">{selectedApp.application_types?.name || 'Unknown'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Form Data */}
+                <Card className="bg-gaming-dark border-gaming-border">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Application Data</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {selectedApp.form_data && Object.keys(selectedApp.form_data).length > 0 ? (
+                      Object.entries(selectedApp.form_data).map(([key, value]) => (
+                        <div key={key}>
+                          <Label className="text-foreground capitalize">
+                            {key.replace(/_/g, ' ')}
+                          </Label>
+                          <p className="text-muted-foreground text-sm mt-1">
+                            {value ? (typeof value === 'string' ? value : JSON.stringify(value)) : 'N/A'}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-muted-foreground">No form data available for this application.</p>
+                        <p className="text-xs text-muted-foreground mt-1">This may be an older application or created without form data.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
 
                 {/* Review Actions */}
                 <Card className="bg-gaming-dark border-gaming-border">
