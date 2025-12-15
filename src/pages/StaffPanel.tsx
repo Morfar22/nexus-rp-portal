@@ -49,6 +49,7 @@ const LazyPerformanceOptimizer = lazy(() =>
     default: module.PerformanceOptimizer
   }))
 );
+const FivemMap = lazy(() => import("@/components/FivemMap"));
 import HomepageContentManager from "@/components/HomepageContentManager";
 import ClosedApplications from "@/components/ClosedApplications";
 import LogsViewer from "@/components/LogsViewer";
@@ -949,6 +950,7 @@ const StaffPanel = () => {
                     {activeTab === "chat" && "Live Chat Management"}
                     {activeTab === "security" && "Security Management"}
                     {activeTab === "performance" && "Performance Optimization"}
+                    {activeTab === "fivem-map" && "FiveM Interaktivt Kort"}
                   </h1>
                 <div className="flex items-center space-x-2 mt-1">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
@@ -1223,6 +1225,29 @@ const StaffPanel = () => {
                         </div>
                       }>
                         <LazyPerformanceOptimizer />
+                      </Suspense>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {activeTab === "fivem-map" && (
+                <div className="space-y-6">
+                  <Card className="bg-gaming-card border-gaming-border">
+                    <div className="p-6">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <Shield className="h-5 w-5 text-neon-green" />
+                        <h2 className="text-xl font-semibold text-foreground">FiveM Interaktivt Kort</h2>
+                      </div>
+                      <p className="text-muted-foreground mb-6">
+                        Interaktivt GTA V kort med mulighed for at se lokationer og tilpasse indstillinger.
+                      </p>
+                      <Suspense fallback={
+                        <div className="space-y-4">
+                          <Skeleton className="h-[600px] w-full" />
+                        </div>
+                      }>
+                        <FivemMap showSettings={true} />
                       </Suspense>
                     </div>
                   </Card>

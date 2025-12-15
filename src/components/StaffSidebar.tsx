@@ -37,7 +37,8 @@ import {
   Crown,
   Heart,
   Keyboard,
-  Languages
+  Languages,
+  Map
 } from "lucide-react";
 
 interface StaffSidebarProps {
@@ -98,6 +99,7 @@ const navigationItems = [
     group: "System",
     items: [
       { id: "server-management", label: "Server Management", icon: Activity },
+      { id: "fivem-map", label: "FiveM Kort", icon: Map },
       { id: "navbar", label: "Navigation", icon: Layout },
       { id: "deployment", label: "Deployment", icon: Rocket },
       { id: "settings", label: "General Settings", icon: Settings },
