@@ -72,7 +72,10 @@ export const FivemMap = ({
   const [players, setPlayers] = useState<FiveMPlayer[]>([]);
   const [serverOnline, setServerOnline] = useState<boolean | null>(null);
   const [fetchingPlayers, setFetchingPlayers] = useState(false);
+  const [tileStatus, setTileStatus] = useState<"loading" | "ok" | "error">("loading");
   const markersRef = useRef<L.Marker[]>([]);
+  const tileErrorCountRef = useRef(0);
+  const tileFallbackUsedRef = useRef(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -218,12 +221,26 @@ export const FivemMap = ({
     if (loading) return;
     if (!mapElRef.current) return;
 
+    const buildTileTemplate = (assetUrl: string, ext: "jpg" | "png") => {
+      const trimmed = assetUrl.replace(/\/+$/, "");
+      // Allow either a base URL (we append the template) or a full Leaflet template
+      if (trimmed.includes("{z}") && trimmed.includes("{x}") && trimmed.includes("{y}")) {
+        return trimmed;
+      }
+      return `${trimmed}/{z}/{x}/{y}.${ext}`;
+    };
+
     // Cleanup existing map
     if (mapRef.current) {
       mapRef.current.remove();
       mapRef.current = null;
       tileLayerRef.current = null;
     }
+
+    // Reset tile status
+    tileErrorCountRef.current = 0;
+    tileFallbackUsedRef.current = false;
+    setTileStatus("loading");
 
     const map = L.map(mapElRef.current, {
       crs: CustomCRS as unknown as L.CRS,
@@ -236,17 +253,59 @@ export const FivemMap = ({
       attributionControl: false,
     });
 
-    const url = `${settings.assetUrl}/{z}/{x}/{y}.jpg`;
-    const tiles = L.tileLayer(url, {
+    const tileOptions: L.TileLayerOptions = {
       minZoom: settings.minZoom,
       maxZoom: settings.maxZoom,
       noWrap: true,
       keepBuffer: 64,
-    });
+    };
 
+    const mountTileLayer = (template: string) => {
+      const layer = L.tileLayer(template, tileOptions);
+
+      layer.on("tileload", () => {
+        setTileStatus("ok");
+      });
+
+      layer.on("tileerror", () => {
+        tileErrorCountRef.current += 1;
+
+        // If the default .jpg fails, try .png automatically (common for GTA map tiles)
+        if (tileErrorCountRef.current >= 3 && !tileFallbackUsedRef.current) {
+          tileFallbackUsedRef.current = true;
+          tileErrorCountRef.current = 0;
+
+          try {
+            map.removeLayer(layer);
+          } catch {
+            // ignore
+          }
+
+          const pngTemplate = buildTileTemplate(settings.assetUrl, "png");
+          const pngLayer = mountTileLayer(pngTemplate);
+          pngLayer.addTo(map);
+          tileLayerRef.current = pngLayer;
+
+          toast({
+            title: "Tiles kunne ikke indlæses",
+            description: "Forsøgte .jpg → skifter automatisk til .png.",
+          });
+          return;
+        }
+
+        if (tileErrorCountRef.current >= 6) {
+          setTileStatus("error");
+        }
+      });
+
+      return layer;
+    };
+
+    const initialTemplate = buildTileTemplate(settings.assetUrl, "jpg");
+    const tiles = mountTileLayer(initialTemplate);
     tiles.addTo(map);
 
-    // FiveM tile space bounds (matches snippet)
+    // FiveM tile space bounds
     const maxZoom = settings.maxZoom;
     const bounds = new L.LatLngBounds(
       map.unproject([0, 8192], maxZoom),
@@ -307,7 +366,15 @@ export const FivemMap = ({
             {/* Server Connection Section */}
             <div className="p-3 rounded-lg bg-gaming-darker border border-gaming-border">
               <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${serverOnline === true ? 'bg-green-500' : serverOnline === false ? 'bg-red-500' : 'bg-muted'}`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    serverOnline === true
+                      ? "bg-primary"
+                      : serverOnline === false
+                        ? "bg-destructive"
+                        : "bg-muted"
+                  }`}
+                />
                 Server Forbindelse
               </h4>
               <div className="grid grid-cols-3 gap-2">
@@ -438,13 +505,22 @@ export const FivemMap = ({
         </Card>
       )}
 
-      <div
-        className="w-full h-[600px] rounded-lg overflow-hidden border border-gaming-border"
-        style={{ backgroundColor: "#0fa7d0" }}
-      >
+      <div className="w-full h-[600px] rounded-lg overflow-hidden border border-gaming-border bg-gaming-darker relative">
+        {tileStatus === "error" && (
+          <div className="absolute inset-0 z-[900] flex items-center justify-center p-4">
+            <Card className="p-4 max-w-md bg-gaming-card border-gaming-border">
+              <p className="text-sm text-foreground font-medium">Tiles kunne ikke indlæses</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Tjek at din Tile URL er korrekt (og prøv evt. en URL der ender på .png
+                tiles). Jeg prøver automatisk .png hvis .jpg fejler.
+              </p>
+            </Card>
+          </div>
+        )}
+
         <div
           ref={mapElRef}
-          className="w-full h-full"
+          className="w-full h-full bg-gaming-darker"
           aria-label="FiveM interaktivt kort"
         />
       </div>
