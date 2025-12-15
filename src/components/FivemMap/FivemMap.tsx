@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import { TileLayerWrapper } from "./TileLayerWrapper";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import L, { LatLngBounds } from "leaflet";
 import { CustomCRS } from "./CustomCRS";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -37,15 +36,18 @@ interface MapSettings {
   showPlayerMarkers: boolean;
 }
 
-// Component to handle map resize when container changes
-function MapResizer() {
+// Component to set bounds after map is ready
+function MapBoundsHandler({ minZoom, maxZoom }: { minZoom: number; maxZoom: number }) {
   const map = useMap();
   
   useEffect(() => {
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
-  }, [map]);
+    const bounds = new LatLngBounds(
+      map.unproject([0, 8192], maxZoom),
+      map.unproject([8192, 0], maxZoom)
+    );
+    map.setMaxBounds(bounds);
+    map.invalidateSize();
+  }, [map, maxZoom]);
   
   return null;
 }
@@ -269,13 +271,12 @@ export const FivemMap = ({
           preferCanvas={true}
           zoom={settings.defaultZoom}
         >
-          <MapResizer />
-          <TileLayerWrapper
-            keepBuffer={64}
-            noWrap={true}
+          <MapBoundsHandler minZoom={settings.minZoom} maxZoom={settings.maxZoom} />
+          <TileLayer
             url={`${settings.assetUrl}/{z}/{x}/{y}.jpg`}
             minZoom={settings.minZoom}
             maxZoom={settings.maxZoom}
+            noWrap={true}
           />
         </MapContainer>
       </div>
