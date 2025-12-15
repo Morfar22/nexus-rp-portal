@@ -35,6 +35,15 @@ interface MapSettings {
   maxZoom: number;
   defaultZoom: number;
   showPlayerMarkers: boolean;
+  serverIp: string;
+  serverPort: number;
+}
+
+interface FiveMPlayer {
+  id: number;
+  name: string;
+  ping: number;
+  identifiers?: string[];
 }
 
 export const FivemMap = ({
@@ -54,10 +63,16 @@ export const FivemMap = ({
     maxZoom: defaultMaxZoom,
     defaultZoom: 3,
     showPlayerMarkers: true,
+    serverIp: "",
+    serverPort: 30120,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [players, setPlayers] = useState<FiveMPlayer[]>([]);
+  const [serverOnline, setServerOnline] = useState<boolean | null>(null);
+  const [fetchingPlayers, setFetchingPlayers] = useState(false);
+  const markersRef = useRef<L.Marker[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,6 +99,8 @@ export const FivemMap = ({
           maxZoom: saved.maxZoom ?? defaultMaxZoom,
           defaultZoom: saved.defaultZoom ?? prev.defaultZoom,
           showPlayerMarkers: saved.showPlayerMarkers ?? prev.showPlayerMarkers,
+          serverIp: saved.serverIp || "",
+          serverPort: saved.serverPort ?? 30120,
         }));
       }
     } catch (e) {
@@ -108,6 +125,8 @@ export const FivemMap = ({
         maxZoom: settings.maxZoom,
         defaultZoom: settings.defaultZoom,
         showPlayerMarkers: settings.showPlayerMarkers,
+        serverIp: settings.serverIp,
+        serverPort: settings.serverPort,
       };
 
       if (existing) {
@@ -136,6 +155,10 @@ export const FivemMap = ({
         description: "Kortindstillingerne er blevet gemt.",
       });
       setShowSettingsPanel(false);
+      // Fetch players after saving if server is configured
+      if (settings.serverIp) {
+        fetchPlayers();
+      }
     } catch (e) {
       console.error("Error saving map settings:", e);
       toast({
@@ -147,6 +170,48 @@ export const FivemMap = ({
       setSaving(false);
     }
   };
+
+  // Fetch players from FiveM server
+  const fetchPlayers = async () => {
+    if (!settings.serverIp) return;
+    
+    setFetchingPlayers(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("test-fivem-server", {
+        body: { serverIp: settings.serverIp, port: settings.serverPort },
+      });
+
+      if (error) throw error;
+
+      if (data?.serverResponding && data?.results?.["/players.json"]?.data) {
+        const playerData = data.results["/players.json"].data;
+        if (Array.isArray(playerData)) {
+          setPlayers(playerData);
+          setServerOnline(true);
+        }
+      } else {
+        setServerOnline(false);
+        setPlayers([]);
+      }
+    } catch (e) {
+      console.error("Error fetching players:", e);
+      setServerOnline(false);
+      setPlayers([]);
+    } finally {
+      setFetchingPlayers(false);
+    }
+  };
+
+  // Fetch players on initial load if server is configured
+  useEffect(() => {
+    if (!loading && settings.serverIp) {
+      fetchPlayers();
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchPlayers, 30000);
+      return () => clearInterval(interval);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, settings.serverIp, settings.serverPort]);
 
   // Initialize / re-initialize Leaflet map when settings change
   useEffect(() => {
@@ -239,6 +304,59 @@ export const FivemMap = ({
           </h3>
 
           <div className="space-y-4">
+            {/* Server Connection Section */}
+            <div className="p-3 rounded-lg bg-gaming-darker border border-gaming-border">
+              <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${serverOnline === true ? 'bg-green-500' : serverOnline === false ? 'bg-red-500' : 'bg-muted'}`} />
+                Server Forbindelse
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2 space-y-1">
+                  <Label className="text-xs">Server IP</Label>
+                  <Input
+                    value={settings.serverIp}
+                    onChange={(e) =>
+                      setSettings((s) => ({ ...s, serverIp: e.target.value }))
+                    }
+                    placeholder="123.45.67.89"
+                    className="bg-gaming-dark border-gaming-border h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Port</Label>
+                  <Input
+                    type="number"
+                    value={settings.serverPort}
+                    onChange={(e) =>
+                      setSettings((s) => ({
+                        ...s,
+                        serverPort: parseInt(e.target.value) || 30120,
+                      }))
+                    }
+                    placeholder="30120"
+                    className="bg-gaming-dark border-gaming-border h-8 text-sm"
+                  />
+                </div>
+              </div>
+              {settings.serverIp && (
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {fetchingPlayers ? "Henter spillere..." : `${players.length} spillere online`}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={fetchPlayers}
+                    disabled={fetchingPlayers}
+                    className="h-6 text-xs"
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${fetchingPlayers ? 'animate-spin' : ''}`} />
+                    Opdater
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label>Tile URL</Label>
               <Input
