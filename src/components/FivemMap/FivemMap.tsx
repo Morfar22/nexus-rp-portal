@@ -251,9 +251,9 @@ export const FivemMap = ({
       zoomControl: true,
       preferCanvas: true,
       attributionControl: false,
-      maxBoundsViscosity: 1.0,
-      zoomSnap: 1,
-      zoomDelta: 1,
+      zoomSnap: 0.5,
+      zoomDelta: 0.5,
+      wheelPxPerZoomLevel: 120,
     });
 
     const maxZoom = settings.maxZoom;
@@ -262,8 +262,11 @@ export const FivemMap = ({
       map.unproject([8192, 0], maxZoom)
     );
 
-    // Start centered on the map (fixes "weird zoom" / empty view)
-    map.setView(bounds.getCenter(), settings.defaultZoom, { animate: false });
+    // Set max bounds to prevent panning outside map
+    map.setMaxBounds(bounds.pad(0.1));
+
+    // Start centered on the map
+    map.fitBounds(bounds, { animate: false });
 
     const tileOptions: L.TileLayerOptions = {
       minZoom: settings.minZoom,
@@ -318,8 +321,7 @@ export const FivemMap = ({
     const tiles = mountTileLayer(initialTemplate);
     tiles.addTo(map);
 
-    // FiveM tile space bounds
-    map.setMaxBounds(bounds);
+    // Ensure proper sizing after mount
 
     // Ensure proper sizing after mount
     setTimeout(() => map.invalidateSize(), 50);
