@@ -252,6 +252,8 @@ export const FivemMap = ({
       preferCanvas: true,
       attributionControl: false,
       maxBoundsViscosity: 1.0,
+      zoomSnap: 1,
+      zoomDelta: 1,
     });
 
     const maxZoom = settings.maxZoom;
@@ -259,6 +261,9 @@ export const FivemMap = ({
       map.unproject([0, 8192], maxZoom),
       map.unproject([8192, 0], maxZoom)
     );
+
+    // Start centered on the map (fixes "weird zoom" / empty view)
+    map.setView(bounds.getCenter(), settings.defaultZoom, { animate: false });
 
     const tileOptions: L.TileLayerOptions = {
       minZoom: settings.minZoom,
