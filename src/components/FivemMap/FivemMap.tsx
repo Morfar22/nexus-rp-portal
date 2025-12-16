@@ -251,13 +251,21 @@ export const FivemMap = ({
       zoomControl: true,
       preferCanvas: true,
       attributionControl: false,
+      maxBoundsViscosity: 1.0,
     });
+
+    const maxZoom = settings.maxZoom;
+    const bounds = new L.LatLngBounds(
+      map.unproject([0, 8192], maxZoom),
+      map.unproject([8192, 0], maxZoom)
+    );
 
     const tileOptions: L.TileLayerOptions = {
       minZoom: settings.minZoom,
       maxZoom: settings.maxZoom,
       noWrap: true,
       keepBuffer: 64,
+      bounds,
     };
 
     const mountTileLayer = (template: string) => {
@@ -306,11 +314,6 @@ export const FivemMap = ({
     tiles.addTo(map);
 
     // FiveM tile space bounds
-    const maxZoom = settings.maxZoom;
-    const bounds = new L.LatLngBounds(
-      map.unproject([0, 8192], maxZoom),
-      map.unproject([8192, 0], maxZoom)
-    );
     map.setMaxBounds(bounds);
 
     // Ensure proper sizing after mount

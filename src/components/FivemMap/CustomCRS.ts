@@ -19,5 +19,6 @@ export const CustomCRS = L.extend({}, L.CRS.Simple, {
     return Math.sqrt(x_difference * x_difference + y_difference * y_difference);
   },
   transformation: new L.Transformation(scale_x, center_x, -scale_y, center_y),
-  infinite: true,
+  // Prevent infinite world wrap (fixes repeated map tiles)
+  infinite: false,
 });
